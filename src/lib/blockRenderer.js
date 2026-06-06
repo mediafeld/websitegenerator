@@ -62,8 +62,9 @@ function buildCSSVars(palette) {
 }
 
 // Rendere eine komplette Seite aus Block-Array
-export function renderPage({ blocks, palette, font = 'Inter Tight', title = '', forEditor = false }) {
+export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false }) {
   const fontParam = font.replace(/ /g, '+')
+  const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@400;500;600;700;800;900` : ''
   const blocksHtml = (blocks || [])
     .map(b => renderBlock(b.type, b.variant, b.content))
     .join('\n')
@@ -74,8 +75,8 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', title = '', 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>${title}</title>
-<link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-${ANIM_CDN}
+<link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900${headlineParam}&display=swap" rel="stylesheet">
+${forEditor ? '' : ANIM_CDN}
 <style>
   *{font-family:'${font}',sans-serif;box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
@@ -83,11 +84,12 @@ ${ANIM_CDN}
   ${buildCSSVars(palette)}
   details summary::-webkit-details-marker{display:none;}
   a{transition:all 0.2s;}
+  ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' : ''}
 </style>
 </head>
 <body>
 ${blocksHtml}
-${ANIM_INIT}
+${forEditor ? '' : ANIM_INIT}
 </body>
 </html>`
 }

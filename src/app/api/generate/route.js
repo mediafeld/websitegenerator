@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { getBranche, getBranchenFelder } from '@/lib/branchen'
+import { getStockImages } from '@/lib/stockImages'
 
 export async function POST(request) {
   try {
@@ -148,10 +149,25 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
     }
 
     const pages = {}
+    const stock = getStockImages(formData.branche)
+    let galleryIdx = 0
     Object.entries(pageData).forEach(([seite, data]) => {
+      const blocks = (data.blocks || []).map(b => {
+        const c = { ...(b.content || {}) }
+        // Leere Bild-Slots mit professionellen Bildern füllen
+        if ((b.type === 'hero-full' || b.type === 'header-slim') && !c.heroImg) c.heroImg = stock.hero
+        if (b.type === 'about' && !c.aboutImg) c.aboutImg = stock.about
+        if (b.type === 'gallery') {
+          c.images = (c.images && c.images.length ? c.images : [0,1,2,3,4,5]).map((im, i) => (typeof im === 'string' && im) ? im : stock.gallery[i % stock.gallery.length])
+        }
+        if (b.type === 'team' && Array.isArray(c.members)) {
+          c.members = c.members.map((m, i) => ({ ...m, img: m.img || stock.gallery[i % stock.gallery.length] }))
+        }
+        return { ...b, content: c }
+      })
       pages[seite] = [
         { type: 'nav', variant: 'nav-modern', content: { ...globalContent } },
-        ...(data.blocks || []),
+        ...blocks,
         { type: 'footer', variant: 'footer-modern', content: { ...globalContent, footerDesc: formData.beschreibung } },
       ]
     })

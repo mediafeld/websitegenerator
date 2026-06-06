@@ -31,6 +31,7 @@ export default function EditorPage() {
   const [imagesUsed, setImagesUsed] = useState(0)
   const [lastImgClick, setLastImgClick] = useState(null)
   const [renderKey, setRenderKey] = useState(0)
+  const [selected, setSelected] = useState(null)
   const formDataRef = useRef({})
   const [expandedBlock, setExpandedBlock] = useState(null) // welcher Block in der Liste aufgeklappt ist
 
@@ -159,92 +160,119 @@ export default function EditorPage() {
 
   function injectEditor(html) {
     const css = `<style id="wg-ed">
-      [data-edit]{cursor:text;transition:outline 0.12s;border-radius:3px;}
-      [data-edit]:hover{outline:2px dashed ${primary}88;outline-offset:2px;}
-      [data-edit]:focus{outline:2px solid ${primary};outline-offset:2px;background:${primary}0a;}
-      [data-img]{cursor:pointer;position:relative;transition:outline 0.12s;}
-      [data-img]:hover{outline:3px solid ${primary};outline-offset:-3px;}
-      [data-block]{position:relative;transition:outline 0.12s;}
-      [data-block]:hover{outline:2px solid ${primary}44;outline-offset:-2px;}
-      .wg-bc{position:absolute;top:10px;right:10px;z-index:99999;display:none;gap:5px;}
-      [data-block]:hover .wg-bc{display:flex;}
-      .wg-b{width:30px;height:30px;border:none;border-radius:7px;background:rgba(15,23,42,0.88);color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-      .wg-b:hover{background:${primary};transform:scale(1.1);}
-      .wg-b.del:hover{background:#dc2626;}
-      .wg-tb{position:fixed;z-index:999999;background:#0f172a;border-radius:9px;padding:5px;display:none;gap:3px;box-shadow:0 6px 24px rgba(0,0,0,0.35);}
-      .wg-tb button{background:none;border:none;color:#fff;cursor:pointer;width:30px;height:28px;border-radius:6px;font-size:13px;display:flex;align-items:center;justify-content:center;}
-      .wg-tb button:hover{background:rgba(255,255,255,0.18);}
-      .wg-tb button.on{background:${primary};}
-      .wg-tb .sep{width:1px;background:rgba(255,255,255,0.2);margin:2px 1px;}
+      * { scroll-behavior: auto !important; }
+      [data-edit]{ cursor:text; border-radius:3px; }
+      [data-edit]:hover{ outline:1px dashed ${primary}99; outline-offset:2px; }
+      [data-sel]{ position:relative; transition:outline 0.1s; }
+      [data-sel]:hover{ outline:2px solid ${primary}55; outline-offset:1px; cursor:pointer; }
+      .wg-on{ outline:2px solid ${primary} !important; outline-offset:1px; }
+      .wg-on::after{ content:attr(data-label); position:absolute; top:-19px; left:-2px; background:${primary}; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px 4px 0 0; white-space:nowrap; z-index:99999; pointer-events:none; font-family:sans-serif; }
+      [data-block]{ position:relative; }
+      [data-block]:hover{ outline:1px solid ${primary}33; outline-offset:-1px; }
+      .wg-bc{ position:absolute; top:8px; right:8px; z-index:99998; display:none; gap:4px; }
+      [data-block]:hover .wg-bc{ display:flex; }
+      .wg-b{ width:28px; height:28px; border:none; border-radius:6px; background:rgba(15,23,42,0.85); color:#fff; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+      .wg-b:hover{ background:${primary}; }
+      .wg-b.del:hover{ background:#dc2626; }
     </style>`
 
     const js = `<script>(function(){
       if(window.__wgE)return;window.__wgE=1;
-      var activeEl=null;
+      var sel=null;
 
-      // Toolbar bauen
-      var tb=document.createElement('div');tb.className='wg-tb';
-      tb.innerHTML='<button data-c="bold" title="Fett"><b>B</b></button><button data-c="italic" title="Kursiv"><i>I</i></button><button data-c="underline" title="Unterstrichen"><u>U</u></button><div class="sep"></div><button data-a="left" title="Links">⬅</button><button data-a="center" title="Mitte">⬛</button><button data-a="right" title="Rechts">➡</button><div class="sep"></div><button data-s="up" title="Größer">A+</button><button data-s="down" title="Kleiner">A-</button>';
-      document.body.appendChild(tb);
+      // 1) ALLE Klicks abfangen - keine Navigation im Editor
+      document.addEventListener('click',function(e){
+        var a=e.target.closest('a');
+        if(a){e.preventDefault();}
+        // Buttons auch nicht auslösen
+        if(e.target.closest('button')&&!e.target.closest('.wg-bc')){e.preventDefault();}
+      },true);
 
-      tb.querySelectorAll('button').forEach(function(b){
-        b.addEventListener('mousedown',function(e){
-          e.preventDefault();
-          if(!activeEl)return;
-          activeEl.contentEditable=true;
-          if(b.dataset.c){
-            // Wenn nichts markiert: ganzes Element markieren
-            var sel=window.getSelection();
-            if(sel.isCollapsed){
-              var range=document.createRange();
-              range.selectNodeContents(activeEl);
-              sel.removeAllRanges();sel.addRange(range);
-            }
-            document.execCommand('styleWithCSS',false,true);
-            document.execCommand(b.dataset.c,false,null);
-          }
-          if(b.dataset.a)activeEl.style.textAlign=b.dataset.a;
-          if(b.dataset.s){
-            var cur=parseInt(window.getComputedStyle(activeEl).fontSize)||16;
-            activeEl.style.fontSize=(b.dataset.s==='up'?cur+2:Math.max(10,cur-2))+'px';
-          }
-          saveEdit(activeEl);
-        });
-      });
+      // 2) Wählbare Elemente markieren: Überschriften, Absätze, Buttons, Links, Bilder, Icons
+      var SEL='h1,h2,h3,h4,p,a,button,[data-img],[data-edit],span[style],.wg-btn,li';
+      function labelFor(el){
+        var t=el.tagName.toLowerCase();
+        if(el.hasAttribute('data-img'))return 'Bild';
+        if(t==='a'||t==='button')return 'Button';
+        if(t==='h1')return 'Überschrift H1';
+        if(t==='h2'||t==='h3'||t==='h4')return 'Überschrift';
+        if(t==='p')return 'Text';
+        if(t==='li')return 'Listenpunkt';
+        return 'Element';
+      }
 
-      function showTB(el){
+      function selectEl(el){
+        if(sel)sel.classList.remove('wg-on');
+        sel=el;
+        el.classList.add('wg-on');
+        el.setAttribute('data-label',labelFor(el));
+        var cs=window.getComputedStyle(el);
         var r=el.getBoundingClientRect();
-        tb.style.display='flex';
-        tb.style.top=Math.max(8,r.top-44)+'px';
-        tb.style.left=Math.max(8,r.left)+'px';
+        parent.postMessage({t:'select',
+          tag:el.tagName.toLowerCase(),
+          isImg:el.hasAttribute('data-img'),
+          isText:el.hasAttribute('data-edit'),
+          key:el.getAttribute('data-edit')||el.getAttribute('data-img')||'',
+          align:cs.textAlign,
+          color:rgbToHex(cs.color),
+          fontSize:parseInt(cs.fontSize)||16,
+          fontWeight:cs.fontWeight,
+          block:bIdx(el),
+          rect:{top:r.top,left:r.left,width:r.width,height:r.height}
+        },'*');
       }
-      function hideTB(){tb.style.display='none';}
 
-      // editable text
-      document.querySelectorAll('[data-edit]').forEach(function(el){
+      // Klick auf Element = auswählen (nicht navigieren)
+      document.querySelectorAll(SEL).forEach(function(el){
+        if(el.closest('.wg-bc'))return;
+        el.setAttribute('data-sel','1');
         el.addEventListener('click',function(e){
-          e.stopPropagation();
-          if(activeEl&&activeEl!==this){activeEl.contentEditable=false;}
-          this.contentEditable=true;this.focus();activeEl=this;showTB(this);
+          e.stopPropagation();e.preventDefault();
+          selectEl(this);
+          // Text: editierbar machen
+          if(this.hasAttribute('data-edit')){this.contentEditable=true;}
+          else if(this.hasAttribute('data-img')){parent.postMessage({t:'imgClick',key:this.getAttribute('data-img'),block:bIdx(this)},'*');}
         });
-        el.addEventListener('blur',function(){saveEdit(this);});
-        el.addEventListener('keydown',function(e){if(e.key==='Enter'&&this.tagName!=='TEXTAREA'&&!e.shiftKey){e.preventDefault();this.blur();hideTB();}});
       });
-      function saveEdit(el){
-        parent.postMessage({t:'edit',key:el.dataset.edit,val:el.innerHTML,align:el.style.textAlign,fs:el.style.fontSize,block:bIdx(el)},'*');
+
+      // Text-Speichern bei Blur
+      document.querySelectorAll('[data-edit]').forEach(function(el){
+        el.addEventListener('blur',function(){
+          parent.postMessage({t:'edit',key:el.dataset.edit,val:el.innerHTML,block:bIdx(el)},'*');
+        });
+        el.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.blur();}});
+      });
+
+      // 3) Befehle von React empfangen (Formatierung etc.)
+      window.addEventListener('message',function(e){
+        var d=e.data;if(!d||!d.cmd||!sel)return;
+        if(d.cmd==='align'){sel.style.textAlign=d.val;saveSel();}
+        if(d.cmd==='color'){sel.style.color=d.val;saveSel();}
+        if(d.cmd==='fontSize'){sel.style.fontSize=d.val;saveSel();}
+        if(d.cmd==='bold'){toggleStyle(sel,'fontWeight','700','400');saveSel();}
+        if(d.cmd==='italic'){toggleStyle(sel,'fontStyle','italic','normal');saveSel();}
+        if(d.cmd==='underline'){toggleStyle(sel,'textDecoration','underline','none');saveSel();}
+        if(d.cmd==='deselect'){if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}}
+      });
+      function toggleStyle(el,prop,on,off){
+        var cur=window.getComputedStyle(el)[prop];
+        el.style[prop]=(cur===on||cur.indexOf(on)>=0)?off:on;
+      }
+      function saveSel(){
+        if(!sel)return;
+        if(sel.hasAttribute('data-edit')){
+          parent.postMessage({t:'edit',key:sel.dataset.edit,val:sel.innerHTML,block:bIdx(sel)},'*');
+        }
+        // Stil-Änderungen an Nicht-Text-Elementen: als Style speichern
+        parent.postMessage({t:'style',block:bIdx(sel),key:sel.getAttribute('data-edit')||'',cssText:sel.style.cssText},'*');
       }
 
-      // images
-      document.querySelectorAll('[data-img]').forEach(function(el){
-        el.addEventListener('click',function(e){e.stopPropagation();parent.postMessage({t:'img',key:this.dataset.img,block:bIdx(this)},'*');});
-      });
-
-      // block controls
+      // 4) Block-Steuerung
       document.querySelectorAll('[data-block]').forEach(function(el,i){
         var type=el.dataset.block;
         if(type==='nav'||type==='footer')return;
         var bc=document.createElement('div');bc.className='wg-bc';
-        bc.innerHTML='<button class="wg-b" data-x="var" title="Layout">⟳</button><button class="wg-b" data-x="up" title="Hoch">↑</button><button class="wg-b" data-x="down" title="Runter">↓</button><button class="wg-b" data-x="dup" title="Duplizieren">⎘</button><button class="wg-b del" data-x="del" title="Löschen">✕</button>';
+        bc.innerHTML='<button class="wg-b" data-x="var" title="Layout">⟳</button><button class="wg-b" data-x="up" title="Hoch">↑</button><button class="wg-b" data-x="down" title="Runter">↓</button><button class="wg-b" data-x="dup" title="Duplizieren">⧉</button><button class="wg-b del" data-x="del" title="Löschen">✕</button>';
         bc.querySelectorAll('button').forEach(function(btn){
           btn.onclick=function(e){e.stopPropagation();var x=btn.dataset.x;
             if(x==='var')parent.postMessage({t:'variant',block:i,type:type},'*');
@@ -258,11 +286,14 @@ export default function EditorPage() {
       });
 
       function bIdx(node){var b=node.closest('[data-block]');if(!b)return -1;var all=document.querySelectorAll('[data-block]');for(var i=0;i<all.length;i++)if(all[i]===b)return i;return -1;}
+      function rgbToHex(rgb){var m=rgb.match(/\\d+/g);if(!m)return '#000000';return '#'+m.slice(0,3).map(function(x){return ('0'+parseInt(x).toString(16)).slice(-2)}).join('');}
 
-      document.addEventListener('click',function(e){
-        if(!e.target.closest('[data-edit]')&&activeEl){activeEl.contentEditable=false;activeEl=null;hideTB();}
+      // Klick ins Leere = Auswahl aufheben
+      document.body.addEventListener('click',function(e){
+        if(e.target===document.body||e.target.hasAttribute('data-block')){
+          if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;parent.postMessage({t:'deselect'},'*');}
+        }
       });
-      document.addEventListener('scroll',function(){if(activeEl)showTB(activeEl);},true);
     })();</script>`
 
     return html.replace('</head>', css + '</head>').replace('</body>', js + '</body>')
@@ -274,7 +305,10 @@ export default function EditorPage() {
       const d = e.data
       if (!d?.t) return
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
-      if (d.t === 'img') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
+      if (d.t === 'imgClick') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
+      if (d.t === 'select') setSelected(d)
+      if (d.t === 'deselect') setSelected(null)
+      if (d.t === 'style') { /* live im iframe, kein extra Speichern nötig */ }
       if (d.t === 'variant') setVariantPicker({ blockIdx: d.block, type: d.type })
       if (d.t === 'move') moveBlock(d.block, d.dir)
       if (d.t === 'del') delBlock(d.block)
@@ -283,6 +317,11 @@ export default function EditorPage() {
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
   }, [activePage, pages, histIdx, history])
+
+  // Befehl an iframe senden (Formatierung)
+  function sendCmd(cmd, val) {
+    iframeRef.current?.contentWindow?.postMessage({ cmd, val }, '*')
+  }
 
   // ── Content-Operationen ──
   function updateContent(blockIdx, key, val, isImage = false) {
@@ -535,7 +574,11 @@ export default function EditorPage() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div style={{ width: 210, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 12 }}>
+        <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
+          {selected ? (
+            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} />
+          ) : (
+          <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
           <div style={{ marginBottom: 14 }}>
             <button onClick={() => { setImgTarget('logo'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569', marginBottom: 6 }}>🖼 Header-Logo hochladen</button>
@@ -577,6 +620,8 @@ export default function EditorPage() {
           </div>
 
           <button onClick={() => { if (confirm('Neu starten? Aktuelle Website geht verloren.')) { sessionStorage.clear(); router.push('/') } }} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 12 }}>← Neu starten</button>
+          </div>
+          )}
         </div>
       </div>
 
@@ -700,6 +745,97 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
       <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: 10, color: 'rgba(255,255,255,0.4)', display: 'flex', justifyContent: 'space-between' }}>
         <span>v3.0 · websitegenerator24</span>
       </div>
+    </div>
+  )
+}
+
+// ── Eigenschaften-Panel (Elementor-Stil) ──
+function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage }) {
+  const [fontSize, setFontSize] = useState(selected.fontSize || 16)
+  const [unit, setUnit] = useState('px')
+  const [color, setColor] = useState(selected.color || '#000000')
+
+  useEffect(() => {
+    setFontSize(selected.fontSize || 16)
+    setColor(selected.color || '#000000')
+  }, [selected])
+
+  const label = selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
+
+  function applyFontSize(val, u) {
+    setFontSize(val)
+    const v = u === 'em' ? (val / 16).toFixed(2) + 'em' : val + 'px'
+    sendCmd('fontSize', v)
+  }
+
+  const Section = ({ title, children }) => (
+    <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{title}</div>
+      {children}
+    </div>
+  )
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #f0f0f0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: primary + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{selected.isImg ? '🖼️' : 'T'}</div>
+          <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>{label}</span>
+        </div>
+        <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 26, height: 26, borderRadius: 6, cursor: 'pointer', fontSize: 13, color: '#666' }}>✕</button>
+      </div>
+
+      {selected.isImg ? (
+        <Section title="Bild">
+          <button onClick={onImageClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>📁 Bild hochladen</button>
+          <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✨ KI-Bild generieren</button>
+        </Section>
+      ) : (
+        <>
+          <Section title="Ausrichtung">
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[['left', '⬅', 'Links'], ['center', '⬛', 'Mitte'], ['right', '➡', 'Rechts'], ['justify', '☰', 'Blocksatz']].map(([val, ic, t]) => (
+                <button key={val} title={t} onClick={() => sendCmd('align', val)} style={{ flex: 1, padding: '9px 0', border: `1px solid ${selected.align === val ? primary : '#e5e5e5'}`, borderRadius: 7, background: selected.align === val ? primary + '0d' : '#fff', cursor: 'pointer', fontSize: 13 }}>{ic}</button>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Stil">
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[['bold', 'B', { fontWeight: 800 }], ['italic', 'I', { fontStyle: 'italic' }], ['underline', 'U', { textDecoration: 'underline' }]].map(([cmd, ic, st]) => (
+                <button key={cmd} onClick={() => sendCmd(cmd)} style={{ flex: 1, padding: '9px 0', border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 14, ...st }}>{ic}</button>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Schriftgröße">
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+              <input type="number" value={fontSize} onChange={e => applyFontSize(parseInt(e.target.value) || 16, unit)} style={{ width: 60, border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
+              <div style={{ display: 'flex', border: '1px solid #e5e5e5', borderRadius: 7, overflow: 'hidden' }}>
+                {['px', 'em'].map(u => (
+                  <button key={u} onClick={() => { setUnit(u); applyFontSize(fontSize, u) }} style={{ padding: '8px 12px', border: 'none', background: unit === u ? primary : '#fff', color: unit === u ? '#fff' : '#666', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{u}</button>
+                ))}
+              </div>
+            </div>
+            <input type="range" min="10" max="80" value={fontSize} onChange={e => applyFontSize(parseInt(e.target.value), unit)} style={{ width: '100%', accentColor: primary }} />
+          </Section>
+
+          <Section title="Textfarbe">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="color" value={color} onChange={e => { setColor(e.target.value); sendCmd('color', e.target.value) }} style={{ width: 40, height: 36, borderRadius: 7, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+              <input type="text" value={color} onChange={e => { setColor(e.target.value); sendCmd('color', e.target.value) }} style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 13, fontFamily: 'monospace', outline: 'none' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 5, marginTop: 8, flexWrap: 'wrap' }}>
+              {['#000000', '#ffffff', primary, '#64748b', '#dc2626', '#16a34a', '#ca8a04'].map(c => (
+                <div key={c} onClick={() => { setColor(c); sendCmd('color', c) }} style={{ width: 24, height: 24, borderRadius: 6, background: c, cursor: 'pointer', border: '1px solid #e5e5e5' }} />
+              ))}
+            </div>
+          </Section>
+
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Doppelklick auf den Text in der Vorschau, um ihn direkt zu bearbeiten.</div>
+        </>
+      )}
     </div>
   )
 }
