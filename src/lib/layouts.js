@@ -79,10 +79,10 @@ export const LAYOUTS = [
     ],
   },
   {
-    id: 'gastro',
-    name: 'Gastronomie',
-    sub: 'Mit Speisekarte',
-    desc: 'Hero, Speisekarte, Galerie, Kontakt. Speziell für Restaurant & Café.',
+    id: 'showcase',
+    name: 'Showcase',
+    sub: 'Mit Listen-Sektion',
+    desc: 'Große Listen-Sektion für Angebote, Galerie und Kontakt. Ideal wenn du viele Einzelpunkte zeigen willst.',
     wire: ['hero', 'menu', 'gallery', 'quotes', 'contact'],
     blocks: [
       { type: 'hero-full', variant: 'hero-center' },
@@ -96,7 +96,7 @@ export const LAYOUTS = [
 
 // Branchen-Empfehlung fürs Layout
 export const BRANCHEN_LAYOUT = {
-  restaurant: 'gastro', salon: 'visual', fitness: 'conversion', anwalt: 'authority',
+  restaurant: 'showcase', salon: 'visual', fitness: 'conversion', anwalt: 'authority',
   praxis: 'authority', handwerk: 'conversion', immobilien: 'visual', agentur: 'minimal',
   fahrschule: 'conversion', andere: 'classic',
 }

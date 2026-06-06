@@ -29,7 +29,8 @@ export default function EditorPage() {
   const [pagePattern, setPagePattern] = useState('none')
   const [imageQuota, setImageQuota] = useState(8)
   const [imagesUsed, setImagesUsed] = useState(0)
-  const [lastImgClick, setLastImgClick] = useState(null) // {blockIdx, key} für generiertes Bild
+  const [lastImgClick, setLastImgClick] = useState(null)
+  const [renderKey, setRenderKey] = useState(0)
   const formDataRef = useRef({})
   const [expandedBlock, setExpandedBlock] = useState(null) // welcher Block in der Liste aufgeklappt ist
 
@@ -94,10 +95,20 @@ export default function EditorPage() {
     setHistIdx(prev => Math.min(prev + 1, 49))
   }, [histIdx])
 
-  function applyPages(newPages, addHistory = true) {
+  function applyPages(newPages, addHistory = true, structural = true) {
     setPages(newPages)
-    sessionStorage.setItem('wg24_pages', JSON.stringify(newPages))
+    safeStore(newPages)
     if (addHistory) pushHistory(newPages)
+    if (structural) setRenderKey(k => k + 1)
+  }
+
+  // sessionStorage sicher speichern (fängt Quota-Überlauf ab)
+  function safeStore(newPages) {
+    try {
+      sessionStorage.setItem('wg24_pages', JSON.stringify(newPages))
+    } catch (err) {
+      console.warn('Speicher voll – Bilder werden komprimiert gehalten', err)
+    }
   }
 
   function undo() {
@@ -106,7 +117,8 @@ export default function EditorPage() {
     setHistIdx(idx)
     const restored = JSON.parse(history[idx])
     setPages(restored)
-    sessionStorage.setItem('wg24_pages', JSON.stringify(restored))
+    safeStore(restored)
+    setRenderKey(k => k + 1)
   }
   function redo() {
     if (histIdx >= history.length - 1) return
@@ -114,23 +126,25 @@ export default function EditorPage() {
     setHistIdx(idx)
     const restored = JSON.parse(history[idx])
     setPages(restored)
-    sessionStorage.setItem('wg24_pages', JSON.stringify(restored))
+    safeStore(restored)
+    setRenderKey(k => k + 1)
   }
   function resetAll() {
     if (!confirm('Alle Änderungen zurücksetzen auf den Erstentwurf?')) return
     const restored = JSON.parse(initialRef.current)
     setPages(restored)
-    sessionStorage.setItem('wg24_pages', JSON.stringify(restored))
+    safeStore(restored)
     setHistory([initialRef.current])
     setHistIdx(0)
+    setRenderKey(k => k + 1)
   }
 
-  // ── Render in iframe ──
+  // ── Render in iframe – NUR bei strukturellen Änderungen (renderKey) ──
   useEffect(() => {
     if (!iframeRef.current || !palette || !activePage || !blocks.length) return
     const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true })
     iframeRef.current.srcdoc = injectEditor(injectPattern(html))
-  }, [activePage, pages, palette, font, fontHeadline, pagePattern])
+  }, [renderKey, activePage, palette, font, fontHeadline, pagePattern])
 
   function applyPattern(pat) {
     setPagePattern(pat.id)
@@ -177,7 +191,18 @@ export default function EditorPage() {
         b.addEventListener('mousedown',function(e){
           e.preventDefault();
           if(!activeEl)return;
-          if(b.dataset.c)document.execCommand(b.dataset.c);
+          activeEl.contentEditable=true;
+          if(b.dataset.c){
+            // Wenn nichts markiert: ganzes Element markieren
+            var sel=window.getSelection();
+            if(sel.isCollapsed){
+              var range=document.createRange();
+              range.selectNodeContents(activeEl);
+              sel.removeAllRanges();sel.addRange(range);
+            }
+            document.execCommand('styleWithCSS',false,true);
+            document.execCommand(b.dataset.c,false,null);
+          }
           if(b.dataset.a)activeEl.style.textAlign=b.dataset.a;
           if(b.dataset.s){
             var cur=parseInt(window.getComputedStyle(activeEl).fontSize)||16;
@@ -206,7 +231,7 @@ export default function EditorPage() {
         el.addEventListener('keydown',function(e){if(e.key==='Enter'&&this.tagName!=='TEXTAREA'&&!e.shiftKey){e.preventDefault();this.blur();hideTB();}});
       });
       function saveEdit(el){
-        parent.postMessage({t:'edit',key:el.dataset.edit,val:el.innerText,align:el.style.textAlign,fs:el.style.fontSize,block:bIdx(el)},'*');
+        parent.postMessage({t:'edit',key:el.dataset.edit,val:el.innerHTML,align:el.style.textAlign,fs:el.style.fontSize,block:bIdx(el)},'*');
       }
 
       // images
@@ -248,7 +273,7 @@ export default function EditorPage() {
     function onMsg(e) {
       const d = e.data
       if (!d?.t) return
-      if (d.t === 'edit') updateContent(d.block, d.key, d.val, { align: d.align, fs: d.fs })
+      if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
       if (d.t === 'img') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
       if (d.t === 'variant') setVariantPicker({ blockIdx: d.block, type: d.type })
       if (d.t === 'move') moveBlock(d.block, d.dir)
@@ -260,7 +285,7 @@ export default function EditorPage() {
   }, [activePage, pages, histIdx, history])
 
   // ── Content-Operationen ──
-  function updateContent(blockIdx, key, val) {
+  function updateContent(blockIdx, key, val, isImage = false) {
     const next = { ...pages }
     const arr = [...next[activePage]]
     const block = { ...arr[blockIdx] }
@@ -286,10 +311,15 @@ export default function EditorPage() {
       const items = [...(content.kategorien[ki]?.items || [])]
       items[ii] = { ...items[ii], [field]: val }
       content.kategorien[ki] = { ...content.kategorien[ki], items }
+    } else if (key.startsWith('img_')) {
+      const idx = parseInt(key.split('_').pop())
+      content.images = [...(content.images || [])]; content.images[idx] = val
     } else { content[key] = val }
 
     block.content = content; arr[blockIdx] = block; next[activePage] = arr
-    applyPages(next)
+    // Text-Edits: KEIN iframe-Neubau (kein Scroll-Sprung, Formatierung bleibt)
+    // Bilder: Neubau nötig damit Bild erscheint
+    applyPages(next, true, isImage)
   }
 
   function changeVariant(blockIdx, variantId) {
@@ -319,21 +349,53 @@ export default function EditorPage() {
 
   function onFile(e) {
     const file = e.target.files?.[0]; if (!file || !imgTarget) return
-    const reader = new FileReader()
-    reader.onload = ev => {
-      const src = ev.target.result
-      if (imgTarget === 'logo') {
+    compressImage(file, (compressedSrc) => {
+      if (imgTarget === 'logo' || imgTarget === 'logoFooter') {
         const next = { ...pages }
+        const logoKey = imgTarget === 'logoFooter' ? 'logoFooter' : 'logo'
         Object.keys(next).forEach(seite => {
-          next[seite] = next[seite].map(b => (b.type === 'nav' || b.type === 'footer') ? { ...b, content: { ...b.content, logo: src } } : b)
+          next[seite] = next[seite].map(b => {
+            if (imgTarget === 'logo' && b.type === 'nav') return { ...b, content: { ...b.content, logo: compressedSrc } }
+            if (imgTarget === 'logoFooter' && b.type === 'footer') return { ...b, content: { ...b.content, logo: compressedSrc } }
+            if (imgTarget === 'logo' && b.type === 'footer' && !b.content.logo) return { ...b, content: { ...b.content, logo: compressedSrc } }
+            return b
+          })
         })
         applyPages(next)
       } else {
-        updateContent(imgTarget.blockIdx, imgTarget.key, src)
+        updateContent(imgTarget.blockIdx, imgTarget.key, compressedSrc, true)
       }
       setImgTarget(null)
+    })
+    e.target.value = ''
+  }
+
+  // Bild komprimieren (max 1600px, WebP/JPEG) → passt in sessionStorage
+  function compressImage(file, callback) {
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const img = new Image()
+      img.onload = () => {
+        const maxDim = 1600
+        let { width, height } = img
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim }
+          else { width = Math.round(width * maxDim / height); height = maxDim }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width; canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        // WebP wenn möglich, sonst JPEG
+        let out
+        try { out = canvas.toDataURL('image/webp', 0.82) } catch { out = canvas.toDataURL('image/jpeg', 0.85) }
+        if (!out.startsWith('data:image/webp')) out = canvas.toDataURL('image/jpeg', 0.85)
+        callback(out)
+      }
+      img.onerror = () => callback(ev.target.result)
+      img.src = ev.target.result
     }
-    reader.readAsDataURL(file); e.target.value = ''
+    reader.readAsDataURL(file)
   }
 
   function updateColor(c) {
@@ -361,7 +423,7 @@ export default function EditorPage() {
         }
       }
     }
-    if (target) updateContent(target.blockIdx, target.key, imgData)
+    if (target) updateContent(target.blockIdx, target.key, imgData, true)
     const newUsed = imagesUsed + 1
     setImagesUsed(newUsed)
     sessionStorage.setItem('wg24_imagesUsed', String(newUsed))
@@ -399,7 +461,6 @@ export default function EditorPage() {
           <button key={d} onClick={() => setDevice(d)} style={{ width: 30, height: 30, border: `1px solid ${device === d ? primary : '#e5e5e5'}`, borderRadius: 7, background: device === d ? '#f5f5f5' : '#fff', cursor: 'pointer', fontSize: 14 }}>{ic}</button>
         ))}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
-        <button onClick={() => { setImgTarget('logo'); fileRef.current?.click() }} style={{ fontSize: 12, fontWeight: 600, color: '#555', background: '#f5f5f5', border: '1px solid #e5e5e5', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>🖼 Logo</button>
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>✨ AI Designer</button>
         <button onClick={() => alert('Checkout kommt bald!')} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Kaufen & Download →</button>
       </div>
@@ -425,7 +486,7 @@ export default function EditorPage() {
             {tab === 'blocks' && (
               <>
                 <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 4 }}>Block hinzufügen – Layout wählen</div>
-                {ADDABLE_BLOCKS.map(b => {
+                {ADDABLE_BLOCKS.filter(b => !b.nurBranche || b.nurBranche.includes(formDataRef.current?.branche)).map(b => {
                   const variants = getVariants(b.type)
                   const isOpen = expandedBlock === b.type
                   return (
@@ -475,7 +536,14 @@ export default function EditorPage() {
 
         {/* RIGHT PANEL */}
         <div style={{ width: 210, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 12 }}>
-          <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>CI Hauptfarbe</div>
+          <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
+          <div style={{ marginBottom: 14 }}>
+            <button onClick={() => { setImgTarget('logo'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569', marginBottom: 6 }}>🖼 Header-Logo hochladen</button>
+            <button onClick={() => { setImgTarget('logoFooter'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569' }}>🖼 Footer-Logo (hell/invertiert)</button>
+            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, lineHeight: 1.4 }}>Footer ist meist dunkel – lad dort eine helle Logo-Version hoch. Ohne Footer-Logo wird das Header-Logo automatisch aufgehellt.</div>
+          </div>
+
+          <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>CI Hauptfarbe</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
             {COLORS.map(c => (
               <div key={c} onClick={() => updateColor(c)} style={{ width: 22, height: 22, borderRadius: '50%', background: c, cursor: 'pointer', outline: color === c ? `2px solid ${c}` : 'none', outlineOffset: 2, transform: color === c ? 'scale(1.15)' : 'scale(1)' }} />

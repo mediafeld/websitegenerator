@@ -132,9 +132,27 @@ export default function WizardPage() {
   function handleLogoUpload(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const r = new FileReader()
-    r.onload = ev => upd('logo', ev.target.result)
-    r.readAsDataURL(file)
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const img = new Image()
+      img.onload = () => {
+        const maxDim = 600
+        let { width, height } = img
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim }
+          else { width = Math.round(width * maxDim / height); height = maxDim }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width; canvas.height = height
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+        let out
+        try { out = canvas.toDataURL('image/webp', 0.9) } catch { out = canvas.toDataURL('image/png') }
+        upd('logo', out)
+      }
+      img.onerror = () => upd('logo', ev.target.result)
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
   }
 
   const palette = generateCIPalette(fd.farbe)

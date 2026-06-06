@@ -479,7 +479,7 @@ export const FOOTER = {
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px;" class="footer-grid">
       <div>
         <div data-logo style="font-size:20px;font-weight:800;color:#fff;margin-bottom:12px;letter-spacing:-0.02em;">
-          <img data-img="logo" src="${c.logo || ''}" style="height:32px;width:auto;object-fit:contain;${c.logo ? '' : 'display:none;'}margin-bottom:8px;">
+          <img data-img="logoFooter" src="${c.logoFooter || c.logo || ''}" style="height:32px;width:auto;object-fit:contain;${(c.logoFooter || c.logo) ? '' : 'display:none;'}margin-bottom:8px;${c.logoFooter ? '' : 'filter:brightness(0) invert(1);'}">
           ${c.logo ? '' : ed('firmenname', c.firmenname, 'span')}
         </div>
         <p style="font-size:14px;line-height:1.7;max-width:260px;">${ed('footer_desc', c.footerDesc || c.beschreibung, 'span')}</p>
@@ -598,7 +598,7 @@ export const ADDABLE_BLOCKS = [
   { type: 'gallery', label: 'Galerie', emoji: '🖼️' },
   { type: 'faq', label: 'FAQ', emoji: '❓' },
   { type: 'contact', label: 'Kontakt', emoji: '✉️' },
-  { type: 'menu', label: 'Speisekarte', emoji: '🍽️' },
+  { type: 'menu', label: 'Speisekarte', emoji: '🍽️', nurBranche: ['restaurant'] },
   { type: 'custom', label: 'Eigener Code', emoji: '💻' },
 ]
 
