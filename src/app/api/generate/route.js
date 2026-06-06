@@ -105,7 +105,15 @@ Format menu-Block content: {"tag":"Speisekarte","title":"...","kategorien":[{"na
 
 REGELN:
 1. STARTSEITE: Verwende GENAU diese Block-Reihenfolge und Varianten: ${layoutBeschreibung}
-2. UNTERSEITEN: header-slim (Variante "${stil.header}") + thematisch passende Bloecke (NIE hero-full!)
+2. UNTERSEITEN: Jede Unterseite beginnt mit header-slim (Variante "${stil.header}") und bekommt DANACH zur Seite passende, UNTERSCHIEDLICHE Bloecke:
+   - "Leistungen"/"Angebot": services + faq + cta
+   - "Ueber uns": about + team + stats + testimonials
+   - "Team": team + about
+   - "Galerie": gallery + cta
+   - "Preise": services (als Preisliste) + faq + cta
+   - "Kontakt": contact + faq
+   - "Portfolio": gallery + testimonials
+   WICHTIG: Jede Seite MUSS andere Bloecke haben - niemals zwei identische Seiten! Variiere auch die Varianten.
 3. Halte dich strikt an die vorgegebene Startseiten-Struktur
 4. ALLE Texte: echt, ${anrede}, Ton "${ton}", branchenspezifisch
 5. Nutze die Branchen-Details fuer konkrete Inhalte
@@ -154,8 +162,12 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
     Object.entries(pageData).forEach(([seite, data]) => {
       const blocks = (data.blocks || []).map(b => {
         const c = { ...(b.content || {}) }
-        // Leere Bild-Slots mit professionellen Bildern füllen
-        if ((b.type === 'hero-full' || b.type === 'header-slim') && !c.heroImg) c.heroImg = stock.hero
+        // Hero: IMMER ein Hintergrundbild + Overlay (egal welche Variante)
+        if (b.type === 'hero-full') {
+          if (!c.heroImg) c.heroImg = stock.hero
+          if (!c.bgImg) { c.bgImg = stock.hero; c.bgOverlay = 'rgba(15,23,42,0.62)' }
+        }
+        if (b.type === 'header-slim' && !c.bgImg) { c.bgImg = stock.about; c.bgOverlay = 'rgba(15,23,42,0.6)' }
         if (b.type === 'about' && !c.aboutImg) c.aboutImg = stock.about
         if (b.type === 'gallery') {
           c.images = (c.images && c.images.length ? c.images : [0,1,2,3,4,5]).map((im, i) => (typeof im === 'string' && im) ? im : stock.gallery[i % stock.gallery.length])

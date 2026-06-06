@@ -19,6 +19,17 @@ const img = (key, src, cls = '', fallbackGradient = true) => {
   </div>`
 }
 
+// Section-Hintergrund: Bild + Overlay (steuerbar via content)
+// c.bgImg = Bild-URL, c.bgOverlay = Farbe (z.B. 'rgba(15,23,42,0.6)'), c.bgParallax = bool
+function sectionBgStyle(c, fallback = '') {
+  if (c.bgImg) {
+    const overlay = c.bgOverlay || 'rgba(15,23,42,0.55)'
+    const attach = c.bgParallax ? 'background-attachment:fixed;' : ''
+    return `background-image:linear-gradient(${overlay},${overlay}),url('${esc(c.bgImg)}');background-size:cover;background-position:center;${attach}`
+  }
+  return fallback
+}
+
 // ═══════════════════════════════════════════════════════════════
 // NAVIGATION (überall identisch)
 // ═══════════════════════════════════════════════════════════════
@@ -57,7 +68,7 @@ export const HERO_FULL = {
     {
       id: 'hero-gradient', name: 'Gradient Dunkel',
       render: (c) => `
-<section data-block="hero-full" data-variant="hero-gradient" style="position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden;background:linear-gradient(135deg,var(--p900),var(--p700) 60%,var(--p600));padding:80px 0;">
+<section data-block="hero-full" data-variant="hero-gradient" data-section="1" style="position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(135deg,var(--p900),var(--p700) 60%,var(--p600));')}padding:80px 0;">
   <div style="position:absolute;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.08),transparent 70%);"></div>
   <div style="position:absolute;bottom:-80px;left:5%;width:300px;height:300px;border-radius:50%;background:var(--accent);opacity:0.12;filter:blur(40px);"></div>
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
@@ -107,17 +118,17 @@ export const HERO_FULL = {
     {
       id: 'hero-center', name: 'Zentriert Minimal',
       render: (c) => `
-<section data-block="hero-full" data-variant="hero-center" style="background:#fff;padding:120px 0 100px;text-align:center;position:relative;overflow:hidden;">
+<section data-block="hero-full" data-variant="hero-center" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:120px 0 100px;text-align:center;position:relative;overflow:hidden;">
   <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,var(--p100),transparent 70%);opacity:0.6;"></div>
   <div style="max-width:800px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
     <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 16px;border-radius:99px;margin-bottom:24px;">${ed('tag', c.tag, 'span')}</div>
-    <h1 data-reveal style="font-size:clamp(40px,6vw,68px);font-weight:900;line-height:1.08;letter-spacing:-0.04em;color:#0f172a;margin-bottom:24px;">${ed('headline', c.headline, 'span')}</h1>
-    <p data-reveal style="font-size:20px;color:#64748b;line-height:1.7;margin:0 auto 36px;max-width:560px;">${ed('subline', c.subline, 'span')}</p>
+    <h1 data-reveal style="font-size:clamp(40px,6vw,68px);font-weight:900;line-height:1.08;letter-spacing:-0.04em;color:${c.bgImg ? '#fff' : '#0f172a'};margin-bottom:24px;">${ed('headline', c.headline, 'span')}</h1>
+    <p data-reveal style="font-size:20px;color:${c.bgImg ? 'rgba(255,255,255,0.85)' : '#64748b'};line-height:1.7;margin:0 auto 36px;max-width:560px;">${ed('subline', c.subline, 'span')}</p>
     <div data-reveal style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:64px;">
       <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
-      <a href="#leistungen" style="background:#fff;color:var(--p700);text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid var(--p200);">${ed('cta2', c.cta2, 'span')}</a>
+      <a href="#leistungen" style="background:${c.bgImg ? 'rgba(255,255,255,0.15)' : '#fff'};color:${c.bgImg ? '#fff' : 'var(--p700)'};text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid ${c.bgImg ? 'rgba(255,255,255,0.4)' : 'var(--p200)'};">${ed('cta2', c.cta2, 'span')}</a>
     </div>
-    <div data-reveal>${img('hero_img', c.heroImg, 'border-radius:20px;width:100%;height:400px;box-shadow:0 20px 60px rgba(0,0,0,0.15);')}</div>
+    ${c.bgImg ? '' : `<div data-reveal>${img('hero_img', c.heroImg, 'border-radius:20px;width:100%;height:400px;box-shadow:0 20px 60px rgba(0,0,0,0.15);')}</div>`}
   </div>
 </section>`
     },

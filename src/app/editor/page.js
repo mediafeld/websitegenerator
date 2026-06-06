@@ -32,6 +32,7 @@ export default function EditorPage() {
   const [lastImgClick, setLastImgClick] = useState(null)
   const [renderKey, setRenderKey] = useState(0)
   const [selected, setSelected] = useState(null)
+  const [blockPicker, setBlockPicker] = useState(null)
   const formDataRef = useRef({})
   const [expandedBlock, setExpandedBlock] = useState(null) // welcher Block in der Liste aufgeklappt ist
 
@@ -246,12 +247,19 @@ export default function EditorPage() {
       // 3) Befehle von React empfangen (Formatierung etc.)
       window.addEventListener('message',function(e){
         var d=e.data;if(!d||!d.cmd||!sel)return;
-        if(d.cmd==='align'){sel.style.textAlign=d.val;saveSel();}
+        // Block-Level-Element für Ausrichtung finden (span ist inline → wirkt nicht)
+        var target=sel;
+        var tn=sel.tagName.toLowerCase();
+        if(tn==='span'){ var p=sel.parentElement; if(p) target=p; }
+        if(d.cmd==='align'){ target.style.textAlign=d.val; saveSel(); }
         if(d.cmd==='color'){sel.style.color=d.val;saveSel();}
         if(d.cmd==='fontSize'){sel.style.fontSize=d.val;saveSel();}
         if(d.cmd==='bold'){toggleStyle(sel,'fontWeight','700','400');saveSel();}
         if(d.cmd==='italic'){toggleStyle(sel,'fontStyle','italic','normal');saveSel();}
         if(d.cmd==='underline'){toggleStyle(sel,'textDecoration','underline','none');saveSel();}
+        if(d.cmd==='sectionBg'){var s=sel.closest('[data-section]')||sel.closest('[data-block]');if(s){s.style.backgroundImage="linear-gradient("+d.overlay+","+d.overlay+"),url('"+d.img+"')";s.style.backgroundSize='cover';s.style.backgroundPosition='center';if(d.parallax)s.style.backgroundAttachment='fixed';else s.style.backgroundAttachment='scroll';}parent.postMessage({t:'sectionStyle',block:bIdx(sel),img:d.img,overlay:d.overlay,parallax:d.parallax},'*');}
+        if(d.cmd==='dupEl'){var cl=sel.cloneNode(true);cl.classList.remove('wg-on');sel.parentNode.insertBefore(cl,sel.nextSibling);}
+        if(d.cmd==='delEl'){var pn=sel.parentNode;sel.remove();sel=null;parent.postMessage({t:'deselect'},'*');}
         if(d.cmd==='deselect'){if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}}
       });
       function toggleStyle(el,prop,on,off){
@@ -288,11 +296,18 @@ export default function EditorPage() {
       function bIdx(node){var b=node.closest('[data-block]');if(!b)return -1;var all=document.querySelectorAll('[data-block]');for(var i=0;i<all.length;i++)if(all[i]===b)return i;return -1;}
       function rgbToHex(rgb){var m=rgb.match(/\\d+/g);if(!m)return '#000000';return '#'+m.slice(0,3).map(function(x){return ('0'+parseInt(x).toString(16)).slice(-2)}).join('');}
 
-      // Klick ins Leere = Auswahl aufheben
-      document.body.addEventListener('click',function(e){
-        if(e.target===document.body||e.target.hasAttribute('data-block')){
-          if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;parent.postMessage({t:'deselect'},'*');}
-        }
+      // Klick auf Section-Hintergrund (nicht auf Inhalt) = Section wählen
+      document.querySelectorAll('[data-section]').forEach(function(s){
+        s.addEventListener('click',function(e){
+          // nur wenn direkt auf die Section geklickt (nicht auf Kind-Element)
+          if(e.target===this){
+            e.stopPropagation();
+            if(sel)sel.classList.remove('wg-on');
+            sel=this;this.classList.add('wg-on');this.setAttribute('data-label','Bereich');
+            var cs=window.getComputedStyle(this);
+            parent.postMessage({t:'selectSection',block:bIdx(this)},'*');
+          }
+        });
       });
     })();</script>`
 
@@ -307,6 +322,8 @@ export default function EditorPage() {
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
       if (d.t === 'imgClick') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
       if (d.t === 'select') setSelected(d)
+      if (d.t === 'selectSection') setSelected({ isSection: true, block: d.block })
+      if (d.t === 'sectionStyle') saveSectionStyle(d.block, d.img, d.overlay, d.parallax)
       if (d.t === 'deselect') setSelected(null)
       if (d.t === 'style') { /* live im iframe, kein extra Speichern nötig */ }
       if (d.t === 'variant') setVariantPicker({ blockIdx: d.block, type: d.type })
@@ -321,6 +338,23 @@ export default function EditorPage() {
   // Befehl an iframe senden (Formatierung)
   function sendCmd(cmd, val) {
     iframeRef.current?.contentWindow?.postMessage({ cmd, val }, '*')
+  }
+
+  // Section-Hintergrund speichern (im content als bgImg/bgOverlay/bgParallax)
+  function saveSectionStyle(blockIdx, bgImg, bgOverlay, bgParallax) {
+    const next = { ...pages }; const arr = [...next[activePage]]
+    arr[blockIdx] = { ...arr[blockIdx], content: { ...arr[blockIdx].content, bgImg, bgOverlay, bgParallax } }
+    next[activePage] = arr; applyPages(next, true, false)
+  }
+
+  // Section-Hintergrundbild setzen (von Panel)
+  function setSectionBg(blockIdx, opts) {
+    const block = pages[activePage]?.[blockIdx]
+    const img = opts.img !== undefined ? opts.img : block?.content?.bgImg
+    const overlay = opts.overlay !== undefined ? opts.overlay : (block?.content?.bgOverlay || 'rgba(15,23,42,0.55)')
+    const parallax = opts.parallax !== undefined ? opts.parallax : (block?.content?.bgParallax || false)
+    iframeRef.current?.contentWindow?.postMessage({ cmd: 'sectionBg', img, overlay, parallax }, '*')
+    saveSectionStyle(blockIdx, img, overlay, parallax)
   }
 
   // ── Content-Operationen ──
@@ -401,6 +435,8 @@ export default function EditorPage() {
           })
         })
         applyPages(next)
+      } else if (imgTarget?.key === '__sectionBg') {
+        setSectionBg(imgTarget.blockIdx, { img: compressedSrc })
       } else {
         updateContent(imgTarget.blockIdx, imgTarget.key, compressedSrc, true)
       }
@@ -524,32 +560,18 @@ export default function EditorPage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
             {tab === 'blocks' && (
               <>
-                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 4 }}>Block hinzufügen – Layout wählen</div>
-                {ADDABLE_BLOCKS.filter(b => !b.nurBranche || b.nurBranche.includes(formDataRef.current?.branche)).map(b => {
-                  const variants = getVariants(b.type)
-                  const isOpen = expandedBlock === b.type
-                  return (
-                    <div key={b.type} style={{ marginBottom: 4 }}>
-                      <div onClick={() => setExpandedBlock(isOpen ? null : b.type)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', border: `1px solid ${isOpen ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: isOpen ? primary + '0a' : '#fff', transition: 'all 0.1s' }}>
-                        <span style={{ fontSize: 17 }}>{b.emoji}</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: '#111' }}>{b.label}</span>
-                        <span style={{ marginLeft: 'auto', color: '#aaa', fontSize: 12, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>›</span>
-                      </div>
-                      {isOpen && (
-                        <div style={{ padding: '6px 4px 4px', animation: 'slideDown 0.2s ease' }}>
-                          {variants.map(v => (
-                            <div key={v.id} onClick={() => addBlock(b.type, v.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, cursor: 'pointer', marginBottom: 3, background: '#f8fafc', border: '1px solid #f0f0f0' }}
-                              onMouseEnter={e => { e.currentTarget.style.background = primary + '14'; e.currentTarget.style.borderColor = primary }}
-                              onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#f0f0f0' }}>
-                              <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>{v.name}</span>
-                              <span style={{ marginLeft: 'auto', color: primary, fontWeight: 700, fontSize: 14 }}>+</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 8 }}>Element hinzufügen</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+                  {ADDABLE_BLOCKS.filter(b => !b.nurBranche || b.nurBranche.includes(formDataRef.current?.branche)).map(b => (
+                    <div key={b.type} onClick={() => setBlockPicker(b.type)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '14px 8px', border: '1px solid #e5e5e5', borderRadius: 10, cursor: 'pointer', background: '#fff', transition: 'all 0.12s', textAlign: 'center' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.background = primary + '08' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.background = '#fff' }}>
+                      <span style={{ fontSize: 22 }}>{b.emoji}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{b.label}</span>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 12, lineHeight: 1.5, padding: '0 4px' }}>Klick auf ein Element → wähle aus mehreren Design-Varianten in der Vorschau.</div>
               </>
             )}
             {tab === 'pages' && (
@@ -576,7 +598,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} />
+            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -624,6 +646,30 @@ export default function EditorPage() {
           )}
         </div>
       </div>
+
+      {/* BLOCK PICKER (Element hinzufügen mit Vorschau) */}
+      {blockPicker && (
+        <Modal onClose={() => setBlockPicker(null)} title={`${BLOCK_REGISTRY[blockPicker]?.label || 'Element'} hinzufügen`} sub="Wähle ein Design – wird an deine Farben & Inhalte angepasst">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 16 }}>
+            {getVariants(blockPicker).map(v => {
+              const previewHtml = renderPage({ blocks: [{ type: blockPicker, variant: v.id, content: buildDefaultContent(blockPicker) }], palette, font, fontHeadline, forEditor: true })
+              return (
+                <div key={v.id} onClick={() => { addBlock(blockPicker, v.id); setBlockPicker(null) }} style={{ border: '2px solid #e5e5e5', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${primary}22` }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
+                  <div style={{ height: 200, overflow: 'hidden', background: '#fff', position: 'relative', borderBottom: '1px solid #f0f0f0' }}>
+                    <iframe srcDoc={previewHtml} style={{ width: '285%', height: '570%', transform: 'scale(0.35)', transformOrigin: 'top left', border: 'none', pointerEvents: 'none' }} />
+                  </div>
+                  <div style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{v.name}</span>
+                    <span style={{ background: primary, color: '#fff', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 700 }}>+ Einfügen</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Modal>
+      )}
 
       {/* VARIANT PICKER */}
       {variantPicker && (
@@ -750,17 +796,32 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage }) {
+function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload }) {
   const [fontSize, setFontSize] = useState(selected.fontSize || 16)
   const [unit, setUnit] = useState('px')
   const [color, setColor] = useState(selected.color || '#000000')
+  const [overlayColor, setOverlayColor] = useState('#0f172a')
+  const [overlayOpacity, setOverlayOpacity] = useState(55)
+  const [parallax, setParallax] = useState(sectionContent?.bgParallax || false)
+  const selKey = (selected.block ?? '') + ':' + (selected.key || selected.tag || (selected.isSection ? 'section' : ''))
 
   useEffect(() => {
     setFontSize(selected.fontSize || 16)
     setColor(selected.color || '#000000')
-  }, [selected])
+    setUnit('px')
+    setParallax(sectionContent?.bgParallax || false)
+  }, [selKey])
 
-  const label = selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
+  function hexToRgba(hex, opacity) {
+    const h = hex.replace('#', '')
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16)
+    return `rgba(${r},${g},${b},${(opacity / 100).toFixed(2)})`
+  }
+  function applyOverlay(c, o, p) {
+    onSectionBg({ overlay: hexToRgba(c, o), parallax: p })
+  }
+
+  const label = selected.isSection ? 'Bereich / Section' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
 
   function applyFontSize(val, u) {
     setFontSize(val)
@@ -786,7 +847,37 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
         <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 26, height: 26, borderRadius: 6, cursor: 'pointer', fontSize: 13, color: '#666' }}>✕</button>
       </div>
 
-      {selected.isImg ? (
+      {/* Element-Aktionen */}
+      <div style={{ display: 'flex', gap: 5, marginBottom: 16 }}>
+        <button onClick={() => sendCmd('dupEl')} title="Duplizieren" style={{ flex: 1, padding: '8px 0', border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#475569' }}>⧉ Klonen</button>
+        <button onClick={() => sendCmd('delEl')} title="Löschen" style={{ flex: 1, padding: '8px 0', border: '1px solid #fecaca', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#dc2626' }}>✕ Löschen</button>
+      </div>
+
+      {selected.isSection ? (
+        <>
+          <Section title="Hintergrundbild">
+            {sectionContent?.bgImg && <img src={sectionContent.bgImg} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
+            <button onClick={onSectionImageUpload} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6, fontFamily: 'inherit' }}>📁 Bild hochladen</button>
+            <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✨ KI-Bild generieren</button>
+          </Section>
+
+          <Section title="Overlay (Abdunkelung)">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+              <input type="color" value={overlayColor} onChange={e => { setOverlayColor(e.target.value); applyOverlay(e.target.value, overlayOpacity, parallax) }} style={{ width: 40, height: 34, borderRadius: 7, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+              <span style={{ fontSize: 12, color: '#64748b' }}>Deckkraft: {overlayOpacity}%</span>
+            </div>
+            <input type="range" min="0" max="90" value={overlayOpacity} onChange={e => { const v = parseInt(e.target.value); setOverlayOpacity(v); applyOverlay(overlayColor, v, parallax) }} style={{ width: '100%', accentColor: primary }} />
+          </Section>
+
+          <Section title="Effekt">
+            <div onClick={() => { const p = !parallax; setParallax(p); applyOverlay(overlayColor, overlayOpacity, p) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${parallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: parallax ? primary + '0d' : '#fff' }}>
+              <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${parallax ? primary : '#ccc'}`, background: parallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{parallax ? '✓' : ''}</div>
+              <div><div style={{ fontSize: 13, fontWeight: 600 }}>Parallax-Effekt</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bleibt beim Scrollen fest</div></div>
+            </div>
+          </Section>
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Klick auf einzelne Elemente (Text, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
+        </>
+      ) : selected.isImg ? (
         <Section title="Bild">
           <button onClick={onImageClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>📁 Bild hochladen</button>
           <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✨ KI-Bild generieren</button>
