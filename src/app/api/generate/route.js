@@ -32,6 +32,17 @@ export async function POST(request) {
     }
     const stil = stilMap[formData.stilVariante] || stilMap['dark-elite']
 
+    // Gewähltes Layout (Block-Reihenfolge der Startseite)
+    const layoutBlocks = formData.layoutBlocks || [
+      { type: 'hero-full', variant: stil.hero },
+      { type: 'services', variant: stil.services },
+      { type: 'about', variant: stil.about },
+      { type: 'testimonials', variant: 'testi-cards' },
+      { type: 'cta', variant: 'cta-gradient' },
+      { type: 'contact', variant: 'contact-split' },
+    ]
+    const layoutBeschreibung = layoutBlocks.map(b => `${b.type} (Variante ${b.variant})`).join(' -> ')
+
     const prompt = `Du bist ein erstklassiger Webdesigner und Werbetexter. Erstelle den kompletten Inhalt fuer eine Website.
 
 UNTERNEHMEN
@@ -92,9 +103,9 @@ WICHTIG bei Restaurant: Fuege auf der Startseite ODER einer Speisekarte-Seite ei
 Format menu-Block content: {"tag":"Speisekarte","title":"...","kategorien":[{"name":"Vorspeisen","items":[{"name":"...","desc":"...","preis":"9,90 EUR"}]},{"name":"Hauptgerichte","items":[...]}]}
 
 REGELN:
-1. STARTSEITE: hero-full (Variante "${stil.hero}") + services (Variante "${stil.services}") + about (Variante "${stil.about}") + testimonials + cta + contact
+1. STARTSEITE: Verwende GENAU diese Block-Reihenfolge und Varianten: ${layoutBeschreibung}
 2. UNTERSEITEN: header-slim (Variante "${stil.header}") + thematisch passende Bloecke (NIE hero-full!)
-3. Verwende die GEWAEHLTEN Varianten oben fuer einen konsistenten Stil
+3. Halte dich strikt an die vorgegebene Startseiten-Struktur
 4. ALLE Texte: echt, ${anrede}, Ton "${ton}", branchenspezifisch
 5. Nutze die Branchen-Details fuer konkrete Inhalte
 6. ${formData.seoPrimaer ? `Baue "${formData.seoPrimaer}" in die Startseiten-H1 ein` : 'Waehle sinnvolle Ueberschriften'}

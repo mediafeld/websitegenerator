@@ -27,6 +27,10 @@ export default function EditorPage() {
   const [color, setColor] = useState('#1d4ed8')
   const [tab, setTab] = useState('blocks')
   const [pagePattern, setPagePattern] = useState('none')
+  const [imageQuota, setImageQuota] = useState(8)
+  const [imagesUsed, setImagesUsed] = useState(0)
+  const [lastImgClick, setLastImgClick] = useState(null) // {blockIdx, key} für generiertes Bild
+  const formDataRef = useRef({})
   const [expandedBlock, setExpandedBlock] = useState(null) // welcher Block in der Liste aufgeklappt ist
 
   // Undo/Redo Historie
@@ -61,6 +65,12 @@ export default function EditorPage() {
     if (fd) {
       const data = JSON.parse(fd)
       if (data.fontHeadline) setFontHeadline(data.fontHeadline)
+      formDataRef.current = data
+      // Kontingent aus Paket
+      const quota = data.paket === 'business' ? 12 : data.paket === 'onepager' ? 6 : 8
+      setImageQuota(quota)
+      const used = parseInt(sessionStorage.getItem('wg24_imagesUsed') || '0')
+      setImagesUsed(used)
     }
     // Historie initialisieren
     initialRef.current = JSON.stringify(parsed)
@@ -239,7 +249,7 @@ export default function EditorPage() {
       const d = e.data
       if (!d?.t) return
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, { align: d.align, fs: d.fs })
-      if (d.t === 'img') { setImgTarget({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
+      if (d.t === 'img') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
       if (d.t === 'variant') setVariantPicker({ blockIdx: d.block, type: d.type })
       if (d.t === 'move') moveBlock(d.block, d.dir)
       if (d.t === 'del') delBlock(d.block)
@@ -335,6 +345,26 @@ export default function EditorPage() {
     const next = { ...pages }; const arr = [...next[activePage]]
     arr[blockIdx] = { ...arr[blockIdx], content: { ...arr[blockIdx].content, html: htmlCode } }
     next[activePage] = arr; applyPages(next); setCustomEditor(null)
+  }
+
+  // Generiertes KI-Bild einsetzen
+  function handleGeneratedImage(imgData) {
+    // Setze in zuletzt angeklickten Bildbereich, sonst ersten img-Block der Seite
+    let target = lastImgClick
+    if (!target) {
+      // Finde ersten Block mit Bild-Feld
+      const arr = pages[activePage] || []
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].type === 'hero-full' || arr[i].type === 'about' || arr[i].type === 'gallery') {
+          target = { blockIdx: i, key: arr[i].type === 'gallery' ? 'img_0' : 'image' }
+          break
+        }
+      }
+    }
+    if (target) updateContent(target.blockIdx, target.key, imgData)
+    const newUsed = imagesUsed + 1
+    setImagesUsed(newUsed)
+    sessionStorage.setItem('wg24_imagesUsed', String(newUsed))
   }
 
   const pageList = Object.keys(pages)
@@ -508,7 +538,7 @@ export default function EditorPage() {
 
       {/* AI PANEL (Floating) */}
       {aiPanel && (
-        <AIPanel onClose={() => setAiPanel(false)} primary={primary} aiTab={aiTab} setAiTab={setAiTab} blocks={blocks} activePage={activePage} />
+        <AIPanel onClose={() => setAiPanel(false)} primary={primary} aiTab={aiTab} setAiTab={setAiTab} blocks={blocks} activePage={activePage} onImageGenerated={handleGeneratedImage} imageQuota={imageQuota} imagesUsed={imagesUsed} formDataRef={formDataRef} />
       )}
 
       {/* CUSTOM CODE EDITOR */}
@@ -538,7 +568,7 @@ function Modal({ children, onClose, title, sub }) {
 }
 
 // ── AI Designer Panel ──
-function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage }) {
+function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImageGenerated, imageQuota, imagesUsed, formDataRef }) {
   // SEO-Check aus vorhandenen Blöcken (KEIN API)
   const h1 = blocks.find(b => b.content?.headline)?.content?.headline || '–'
   const allText = JSON.stringify(blocks)
@@ -596,12 +626,7 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage }) {
           </div>
         )}
         {aiTab === 'images' && (
-          <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Bilder</div>
-            <div style={{ padding: 12, background: 'rgba(255,255,255,0.06)', borderRadius: 8, fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
-              Klick in der Vorschau auf einen Bildbereich, um ein eigenes Bild hochzuladen. KI-Bilder sind in deinem Paket inklusive und werden beim finalen Export erstellt.
-            </div>
-          </div>
+          <ImageGenerator primary={primary} onImageGenerated={onImageGenerated} imageQuota={imageQuota} imagesUsed={imagesUsed} formDataRef={formDataRef} />
         )}
       </div>
       <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: 10, color: 'rgba(255,255,255,0.4)', display: 'flex', justifyContent: 'space-between' }}>
@@ -617,6 +642,97 @@ function SeoRow({ ok, label, val }) {
       <span style={{ color: ok ? '#22c55e' : '#f59e0b' }}>{ok ? '✓' : '!'}</span>
       <span style={{ flex: 1, color: 'rgba(255,255,255,0.8)' }}>{label}</span>
       <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{val}</span>
+    </div>
+  )
+}
+
+// ── KI-Bild-Generator (DALL-E 3) ──
+function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, formDataRef }) {
+  const [prompt, setPrompt] = useState('')
+  const [size, setSize] = useState('landscape')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [preview, setPreview] = useState(null)
+
+  const fd = formDataRef?.current || {}
+  const rest = Math.max(0, imageQuota - imagesUsed)
+
+  // Branchen-Vorschläge
+  const branche = fd.branche || ''
+  const stadt = fd.stadt || ''
+  const VORSCHLAEGE = {
+    restaurant: ['Modernes Restaurant-Interieur mit warmer Beleuchtung', 'Appetitliches Gericht auf elegantem Teller', 'Gemütliche Café-Atmosphäre mit Holzmöbeln'],
+    salon: ['Modernes Friseur-Studio hell und stilvoll', 'Entspannte Beauty-Behandlung', 'Elegante Salon-Einrichtung'],
+    fitness: ['Modernes Fitnessstudio mit Geräten', 'Person beim Krafttraining', 'Helle Gruppenkursfläche'],
+    anwalt: ['Seriöses Anwaltsbüro mit Bücherregal', 'Professionelle Beratungssituation', 'Moderne Kanzlei-Empfang'],
+    praxis: ['Moderne helle Arztpraxis', 'Freundlicher Empfangsbereich Praxis', 'Behandlungsraum sauber und modern'],
+    handwerk: ['Handwerker bei der Arbeit', 'Werkzeuge professionell arrangiert', 'Moderne Baustelle'],
+    immobilien: ['Modernes Wohnhaus von außen', 'Helle stilvolle Wohnung innen', 'Immobilienmakler vor Haus'],
+    agentur: ['Modernes kreatives Büro', 'Team bei Meeting', 'Arbeitsplatz mit Laptop'],
+    fahrschule: ['Modernes Fahrschulauto', 'Fahrlehrer mit Schüler im Auto', 'Theorieraum einer Fahrschule'],
+    andere: ['Professionelles Business-Umfeld', 'Moderne Arbeitsatmosphäre', 'Freundliches Team'],
+  }
+  const vorschlaege = VORSCHLAEGE[branche] || VORSCHLAEGE.andere
+
+  async function generate() {
+    if (!prompt.trim()) { setError('Bitte beschreibe das Bild'); return }
+    if (rest <= 0) { setError('Dein Bild-Kontingent ist aufgebraucht'); return }
+    setLoading(true); setError(null); setPreview(null)
+    try {
+      const res = await fetch('/api/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, size }) })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setPreview(data.image)
+    } catch (e) { setError(e.message) }
+    setLoading(false)
+  }
+
+  function einsetzen() {
+    if (!preview) return
+    onImageGenerated(preview)
+    setPreview(null); setPrompt('')
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>KI-Bilder</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: rest > 0 ? '#22c55e' : '#f59e0b' }}>{rest} / {imageQuota} übrig</span>
+      </div>
+
+      {preview ? (
+        <div>
+          <img src={preview} alt="Vorschau" style={{ width: '100%', borderRadius: 8, marginBottom: 10 }} />
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={einsetzen} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✓ Einsetzen</button>
+            <button onClick={() => setPreview(null)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 7, padding: '9px 12px', fontSize: 12, cursor: 'pointer' }}>Verwerfen</button>
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 8 }}>Klick vorher in der Vorschau auf den Bildbereich, wo das Bild hin soll.</div>
+        </div>
+      ) : (
+        <>
+          <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Beschreibe das gewünschte Bild..." rows={3} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: 10, fontSize: 12, color: '#fff', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box', marginBottom: 8 }} />
+
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>Vorschläge für deine Branche:</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
+            {vorschlaege.map(v => (
+              <div key={v} onClick={() => setPrompt(stadt ? `${v}, ${stadt}` : v)} style={{ padding: '6px 9px', background: 'rgba(255,255,255,0.06)', borderRadius: 6, fontSize: 11, color: 'rgba(255,255,255,0.8)', cursor: 'pointer' }}>+ {v}</div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+            {[['landscape', 'Quer'], ['square', 'Quadrat'], ['portrait', 'Hoch']].map(([id, l]) => (
+              <button key={id} onClick={() => setSize(id)} style={{ flex: 1, padding: '6px 0', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', cursor: 'pointer', background: size === id ? primary : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+            ))}
+          </div>
+
+          {error && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 8 }}>{error}</div>}
+
+          <button onClick={generate} disabled={loading || rest <= 0} style={{ width: '100%', background: rest <= 0 ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 13, fontWeight: 700, cursor: loading || rest <= 0 ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+            {loading ? '✨ Wird generiert...' : rest <= 0 ? 'Kontingent aufgebraucht' : '✨ Bild generieren'}
+          </button>
+        </>
+      )}
     </div>
   )
 }
