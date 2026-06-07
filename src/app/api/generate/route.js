@@ -101,6 +101,8 @@ VERFUEGBARE BLOECKE:
 - menu (menu-cards) NUR bei Restaurant/Cafe - Speisekarte mit Kategorien und Preisen
 
 WICHTIG bei Restaurant: Fuege auf der Startseite ODER einer Speisekarte-Seite einen "menu" Block ein.
+
+ICONS: Bei "services" ist jedes "icon" ein gueltiger Font-Awesome-6-Solid-Name OHNE "fa-" Prefix (z.B. "bolt","bullseye","handshake","shield-halved","clock","phone","star","heart","screwdriver-wrench","scale-balanced","stethoscope","scissors","dumbbell","house","chart-line","users","gem","leaf","truck","wrench","graduation-cap","utensils","car","camera","palette","lightbulb","rocket","lock","gift","calendar-days"). NIEMALS Emojis. Waehle pro Leistung ein thematisch passendes Icon.
 Format menu-Block content: {"tag":"Speisekarte","title":"...","kategorien":[{"name":"Vorspeisen","items":[{"name":"...","desc":"...","preis":"9,90 EUR"}]},{"name":"Hauptgerichte","items":[...]}]}
 
 REGELN:
@@ -123,7 +125,7 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
 {
   "Startseite": { "blocks": [
     {"type":"hero-full","variant":"hero-gradient","content":{"tag":"...","headline":"...","subline":"...","cta1":"...","cta2":"...","stats":[{"num":"15+","label":"Jahre"},{"num":"500+","label":"Kunden"},{"num":"100%","label":"Zufrieden"}]}},
-    {"type":"services","variant":"services-cards","content":{"tag":"...","title":"...","subtitle":"...","items":[{"icon":"zap","title":"...","text":"..."},{"icon":"target","title":"...","text":"..."},{"icon":"handshake","title":"...","text":"..."}]}},
+    {"type":"services","variant":"services-cards","content":{"tag":"...","title":"...","subtitle":"...","items":[{"icon":"bolt","title":"...","text":"..."},{"icon":"bullseye","title":"...","text":"..."},{"icon":"handshake","title":"...","text":"..."}]}},
     {"type":"about","variant":"about-stats","content":{"tag":"Ueber uns","title":"...","text1":"...","text2":"...","stats":[{"num":"...","label":"..."},{"num":"...","label":"..."},{"num":"...","label":"..."},{"num":"...","label":"..."}]}},
     {"type":"testimonials","variant":"testi-cards","content":{"title":"...","items":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}},
     {"type":"cta","variant":"cta-gradient","content":{"title":"...","subtitle":"...","cta1":"...","telefon":"${formData.telefon || ''}"}},

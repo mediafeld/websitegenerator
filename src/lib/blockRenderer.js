@@ -29,7 +29,7 @@ const ANIM_INIT = `
   });
   // FAQ Toggle Icon
   document.querySelectorAll('details').forEach(d=>{
-    d.addEventListener('toggle',()=>{var s=d.querySelector('summary span:last-child');if(s)s.textContent=d.open?'−':'+';});
+    d.addEventListener('toggle',()=>{var s=d.querySelector('.faq-ic i')||d.querySelector('summary span:last-child i');if(s)s.className=d.open?'fa-solid fa-minus':'fa-solid fa-plus';});
   });
   // Kontaktformular
   document.querySelectorAll('[data-contact-form]').forEach(f=>{
@@ -76,6 +76,7 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>${title}</title>
 <link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900${headlineParam}&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 ${forEditor ? '' : ANIM_CDN}
 <style>
   *{font-family:'${font}',sans-serif;box-sizing:border-box;margin:0;padding:0;}

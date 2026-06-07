@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { renderPage } from '@/lib/blockRenderer'
-import { getVariants, ADDABLE_BLOCKS, BLOCK_REGISTRY } from '@/lib/blocks'
+import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY } from '@/lib/blocks'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
 
@@ -15,6 +15,29 @@ const PATTERNS = [
   { id: 'grid', label: 'Raster', css: 'background-image:linear-gradient(rgba(0,0,0,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.05) 1px,transparent 1px);background-size:24px 24px;' },
   { id: 'diagonal', label: 'Linien', css: 'background-image:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(0,0,0,0.03) 12px,rgba(0,0,0,0.03) 13px);' },
 ]
+
+// Verlauf-Vorlagen für Bereich-Hintergründe (nutzen die CI-Farben der Seite)
+const GRADIENTS = [
+  { id: 'brand', label: 'Marke', css: 'linear-gradient(135deg,var(--p700),var(--p500))' },
+  { id: 'brand-dark', label: 'Marke dunkel', css: 'linear-gradient(135deg,var(--p900),var(--p700))' },
+  { id: 'accent', label: 'Akzent', css: 'linear-gradient(135deg,var(--p600),var(--accent))' },
+  { id: 'soft', label: 'Sanft hell', css: 'linear-gradient(135deg,var(--p50),var(--p200))' },
+  { id: 'night', label: 'Nacht', css: 'linear-gradient(135deg,#0f172a,var(--p800))' },
+  { id: 'sunset', label: 'Sonnenuntergang', css: 'linear-gradient(135deg,#ff7e5f,#feb47b)' },
+  { id: 'ocean', label: 'Ozean', css: 'linear-gradient(135deg,#2193b0,#6dd5ed)' },
+  { id: 'violet', label: 'Violett', css: 'linear-gradient(135deg,#7c3aed,#2563eb)' },
+]
+
+// Muster pro Bereich (unabhängig von Bild/Farbe/Verlauf)
+const SECTION_PATTERNS = [
+  { id: 'none', label: 'Keins' },
+  { id: 'dots', label: 'Punkte' },
+  { id: 'grid', label: 'Raster' },
+  { id: 'lines', label: 'Linien' },
+]
+
+// Icon-Auswahl (Font-Awesome-6-Solid-Namen ohne "fa-")
+const ICON_CHOICES = ['star','heart','bolt','bullseye','handshake','shield-halved','circle-check','check','lightbulb','phone','envelope','location-dot','clock','trophy','rocket','wrench','screwdriver-wrench','palette','chart-line','chart-column','users','user','briefcase','house','scale-balanced','stethoscope','scissors','utensils','car','mobile-screen','laptop','earth-europe','lock','comments','gift','calendar-days','sack-dollar','gem','leaf','truck','graduation-cap','camera','fire','thumbs-up','award','headset','gears','hand-holding-heart']
 
 export default function EditorPage() {
   const router = useRouter()
@@ -43,6 +66,7 @@ export default function EditorPage() {
 
   // Modals
   const [variantPicker, setVariantPicker] = useState(null)
+  const [iconPicker, setIconPicker] = useState(null)
   const [imgTarget, setImgTarget] = useState(null)
   const [aiPanel, setAiPanel] = useState(false)
   const [aiTab, setAiTab] = useState('seo')
@@ -152,6 +176,28 @@ export default function EditorPage() {
     setPagePattern(pat.id)
   }
 
+  // Font Awesome auch für die Editor-Oberfläche laden (für Icon-Auswahl)
+  useEffect(() => {
+    if (typeof document === 'undefined' || document.getElementById('wg-fa')) return
+    const l = document.createElement('link')
+    l.id = 'wg-fa'; l.rel = 'stylesheet'
+    l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
+    document.head.appendChild(l)
+  }, [])
+
+  // Bereich-Hintergrundfelder setzen (Farbe / Verlauf / Muster / Bild entfernen) – mit Neuaufbau
+  function setSectionField(blockIdx, fields) {
+    const next = { ...pages }; const arr = [...next[activePage]]
+    arr[blockIdx] = { ...arr[blockIdx], content: { ...arr[blockIdx].content, ...fields } }
+    next[activePage] = arr; applyPages(next, true, true)
+  }
+
+  // Icon eines Elements ändern
+  function setIconForBlock(blockIdx, key, faIconName) {
+    updateContent(blockIdx, key, faIconName, true)
+    setIconPicker(null)
+  }
+
   function injectPattern(html) {
     const pat = PATTERNS.find(p => p.id === pagePattern)
     if (!pat || !pat.css) return html
@@ -190,7 +236,7 @@ export default function EditorPage() {
       },true);
 
       // 2) Wählbare Elemente markieren: Überschriften, Absätze, Buttons, Links, Bilder, Icons
-      var SEL='h1,h2,h3,h4,p,a,button,[data-img],[data-edit],span[style],.wg-btn,li';
+      var SEL='h1,h2,h3,h4,p,a,button,[data-img],[data-icon],[data-edit],span[style],.wg-btn,li';
       function labelFor(el){
         var t=el.tagName.toLowerCase();
         if(el.hasAttribute('data-img'))return 'Bild';
@@ -212,8 +258,10 @@ export default function EditorPage() {
         parent.postMessage({t:'select',
           tag:el.tagName.toLowerCase(),
           isImg:el.hasAttribute('data-img'),
+          isIcon:el.hasAttribute('data-icon'),
           isText:el.hasAttribute('data-edit'),
-          key:el.getAttribute('data-edit')||el.getAttribute('data-img')||'',
+          key:el.getAttribute('data-edit')||el.getAttribute('data-img')||el.getAttribute('data-icon')||'',
+          iconName:el.hasAttribute('data-icon')?(((el.getAttribute('class')||'').match(/fa-(?!solid|regular|brands)[a-z0-9-]+/)||[''])[0]):'',
           align:cs.textAlign,
           color:rgbToHex(cs.color),
           fontSize:parseInt(cs.fontSize)||16,
@@ -232,6 +280,7 @@ export default function EditorPage() {
           selectEl(this);
           // Text: editierbar machen
           if(this.hasAttribute('data-edit')){this.contentEditable=true;}
+          else if(this.hasAttribute('data-icon')){parent.postMessage({t:'iconClick',key:this.getAttribute('data-icon'),block:bIdx(this)},'*');}
           else if(this.hasAttribute('data-img')){parent.postMessage({t:'imgClick',key:this.getAttribute('data-img'),block:bIdx(this)},'*');}
         });
       });
@@ -252,8 +301,8 @@ export default function EditorPage() {
         var tn=sel.tagName.toLowerCase();
         if(tn==='span'){ var p=sel.parentElement; if(p) target=p; }
         if(d.cmd==='align'){ target.style.textAlign=d.val; saveSel(); }
-        if(d.cmd==='color'){sel.style.color=d.val;saveSel();}
-        if(d.cmd==='fontSize'){sel.style.fontSize=d.val;saveSel();}
+        if(d.cmd==='color'){sel.style.color=d.val;}
+        if(d.cmd==='fontSize'){sel.style.fontSize=d.val;}
         if(d.cmd==='bold'){toggleStyle(sel,'fontWeight','700','400');saveSel();}
         if(d.cmd==='italic'){toggleStyle(sel,'fontStyle','italic','normal');saveSel();}
         if(d.cmd==='underline'){toggleStyle(sel,'textDecoration','underline','none');saveSel();}
@@ -321,6 +370,7 @@ export default function EditorPage() {
       if (!d?.t) return
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
       if (d.t === 'imgClick') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
+      if (d.t === 'iconClick') setIconPicker({ blockIdx: d.block, key: d.key })
       if (d.t === 'select') setSelected(d)
       if (d.t === 'selectSection') setSelected({ isSection: true, block: d.block })
       if (d.t === 'sectionStyle') saveSectionStyle(d.block, d.img, d.overlay, d.parallax)
@@ -364,7 +414,27 @@ export default function EditorPage() {
     const block = { ...arr[blockIdx] }
     const content = { ...block.content }
 
-    if (key.startsWith('svc_title_') || key.startsWith('svc_text_')) {
+    if (key.startsWith('svc_icon_')) {
+      const idx = parseInt(key.split('_').pop())
+      content.items = [...(content.items || [])]; content.items[idx] = { ...content.items[idx], icon: val }
+    } else if (key.startsWith('plan_feat_')) {
+      const parts = key.split('_'); const j = parseInt(parts.pop()); const i = parseInt(parts.pop())
+      content.plans = [...(content.plans || [])]
+      const features = [...(content.plans[i]?.features || [])]; features[j] = val
+      content.plans[i] = { ...content.plans[i], features }
+    } else if (key.startsWith('plan_')) {
+      const parts = key.split('_'); const i = parseInt(parts.pop()); const field = parts[1]
+      content.plans = [...(content.plans || [])]; content.plans[i] = { ...content.plans[i], [field]: val }
+    } else if (key.startsWith('step_icon_')) {
+      const i = parseInt(key.split('_').pop())
+      content.steps = [...(content.steps || [])]; content.steps[i] = { ...content.steps[i], icon: val }
+    } else if (key.startsWith('step_')) {
+      const parts = key.split('_'); const i = parseInt(parts.pop()); const field = parts[1]
+      content.steps = [...(content.steps || [])]; content.steps[i] = { ...content.steps[i], [field]: val }
+    } else if (key.startsWith('logo_')) {
+      const i = parseInt(key.split('_').pop())
+      content.logos = [...(content.logos || [])]; content.logos[i] = val
+    } else if (key.startsWith('svc_title_') || key.startsWith('svc_text_')) {
       const idx = parseInt(key.split('_').pop()); const field = key.includes('title') ? 'title' : 'text'
       content.items = [...(content.items || [])]; content.items[idx] = { ...content.items[idx], [field]: val }
     } else if (key.startsWith('testi_') || key.startsWith('faq_')) {
@@ -560,18 +630,31 @@ export default function EditorPage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
             {tab === 'blocks' && (
               <>
-                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 8 }}>Element hinzufügen</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-                  {ADDABLE_BLOCKS.filter(b => !b.nurBranche || b.nurBranche.includes(formDataRef.current?.branche)).map(b => (
-                    <div key={b.type} onClick={() => setBlockPicker(b.type)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '14px 8px', border: '1px solid #e5e5e5', borderRadius: 10, cursor: 'pointer', background: '#fff', transition: 'all 0.12s', textAlign: 'center' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.background = primary + '08' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.background = '#fff' }}>
-                      <span style={{ fontSize: 22 }}>{b.emoji}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{b.label}</span>
+                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 6 }}>Block-Bibliothek</div>
+                {BLOCK_CATEGORIES.map(cat => {
+                  const items = ADDABLE_BLOCKS.filter(b => b.cat === cat && (!b.nurBranche || b.nurBranche.includes(formDataRef.current?.branche)))
+                  if (!items.length) return null
+                  return (
+                    <div key={cat} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', padding: '0 4px 7px', letterSpacing: '0.02em' }}>{cat}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+                        {items.map(b => {
+                          const n = getVariants(b.type).length
+                          return (
+                            <div key={b.type} onClick={() => setBlockPicker(b.type)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '13px 6px 9px', border: '1px solid #e5e5e5', borderRadius: 10, cursor: 'pointer', background: '#fff', transition: 'all 0.12s', textAlign: 'center', position: 'relative' }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.background = primary + '08'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'none' }}>
+                              <span style={{ fontSize: 21 }}>{b.emoji}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 600, color: '#334155', lineHeight: 1.2 }}>{b.label}</span>
+                              <span style={{ fontSize: 8.5, fontWeight: 700, color: '#94a3b8', background: '#f1f5f9', borderRadius: 99, padding: '1px 7px' }}>{n} {n === 1 ? 'Vorlage' : 'Vorlagen'}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                  ))}
-                </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 12, lineHeight: 1.5, padding: '0 4px' }}>Klick auf ein Element → wähle aus mehreren Design-Varianten in der Vorschau.</div>
+                  )
+                })}
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Block → wähle aus mehreren Design-Vorlagen mit Live-Vorschau.</div>
               </>
             )}
             {tab === 'pages' && (
@@ -598,7 +681,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} />
+            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -695,6 +778,21 @@ export default function EditorPage() {
         </Modal>
       )}
 
+      {/* ICON PICKER */}
+      {iconPicker && (
+        <Modal onClose={() => setIconPicker(null)} title="Icon wählen" sub="Klick auf ein Symbol – es ersetzt das aktuelle Icon">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(56px,1fr))', gap: 8 }}>
+            {ICON_CHOICES.map(name => (
+              <div key={name} onClick={() => setIconForBlock(iconPicker.blockIdx, iconPicker.key, name)} title={name} style={{ aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e5e5', borderRadius: 10, cursor: 'pointer', fontSize: 20, color: '#334155', background: '#fff' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.color = primary; e.currentTarget.style.background = primary + '0d' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.color = '#334155'; e.currentTarget.style.background = '#fff' }}>
+                <i className={`fa-solid fa-${name}`} />
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+
       {/* AI PANEL (Floating) */}
       {aiPanel && (
         <AIPanel onClose={() => setAiPanel(false)} primary={primary} aiTab={aiTab} setAiTab={setAiTab} blocks={blocks} activePage={activePage} onImageGenerated={handleGeneratedImage} imageQuota={imageQuota} imagesUsed={imagesUsed} formDataRef={formDataRef} />
@@ -712,6 +810,15 @@ export default function EditorPage() {
 }
 
 // ── Modal ──
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{title}</div>
+      {children}
+    </div>
+  )
+}
+
 function Modal({ children, onClose, title, sub }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={onClose}>
@@ -796,7 +903,7 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload }) {
+function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onIconClick }) {
   const [fontSize, setFontSize] = useState(selected.fontSize || 16)
   const [unit, setUnit] = useState('px')
   const [color, setColor] = useState(selected.color || '#000000')
@@ -821,7 +928,7 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
     onSectionBg({ overlay: hexToRgba(c, o), parallax: p })
   }
 
-  const label = selected.isSection ? 'Bereich / Section' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
+  const label = selected.isSection ? 'Bereich / Section' : selected.isIcon ? 'Icon' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
 
   function applyFontSize(val, u) {
     setFontSize(val)
@@ -829,12 +936,7 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
     sendCmd('fontSize', v)
   }
 
-  const Section = ({ title, children }) => (
-    <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{title}</div>
-      {children}
-    </div>
-  )
+  const selectedIconName = (selected.iconName || '').replace('fa-', '')
 
   return (
     <div>
@@ -857,26 +959,65 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
         <>
           <Section title="Hintergrundbild">
             {sectionContent?.bgImg && <img src={sectionContent.bgImg} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
-            <button onClick={onSectionImageUpload} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6, fontFamily: 'inherit' }}>📁 Bild hochladen</button>
-            <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✨ KI-Bild generieren</button>
+            <button onClick={onSectionImageUpload} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6, fontFamily: 'inherit' }}><i className="fa-solid fa-image" style={{ marginRight: 6 }} />Bild hochladen</button>
+            <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6 }}><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />KI-Bild generieren</button>
+            {sectionContent?.bgImg && <button onClick={() => onSectionField({ bgImg: '' })} style={{ width: '100%', background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}><i className="fa-solid fa-trash" style={{ marginRight: 6 }} />Foto entfernen</button>}
           </Section>
 
-          <Section title="Overlay (Abdunkelung)">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-              <input type="color" value={overlayColor} onChange={e => { setOverlayColor(e.target.value); applyOverlay(e.target.value, overlayOpacity, parallax) }} style={{ width: 40, height: 34, borderRadius: 7, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
-              <span style={{ fontSize: 12, color: '#64748b' }}>Deckkraft: {overlayOpacity}%</span>
+          {sectionContent?.bgImg && (
+            <Section title="Overlay (Abdunkelung)">
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                <input type="color" value={overlayColor} onChange={e => { setOverlayColor(e.target.value); applyOverlay(e.target.value, overlayOpacity, parallax) }} style={{ width: 40, height: 34, borderRadius: 7, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+                <span style={{ fontSize: 12, color: '#64748b' }}>Deckkraft: {overlayOpacity}%</span>
+              </div>
+              <input type="range" min="0" max="90" value={overlayOpacity} onChange={e => { const v = parseInt(e.target.value); setOverlayOpacity(v); applyOverlay(overlayColor, v, parallax) }} style={{ width: '100%', accentColor: primary }} />
+            </Section>
+          )}
+
+          <Section title="Farbverlauf">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 8 }}>
+              {GRADIENTS.map(g => (
+                <div key={g.id} title={g.label} onClick={() => onSectionField({ bgGradient: g.css, bgImg: '', bgColor: '' })} style={{ height: 34, borderRadius: 7, cursor: 'pointer', background: g.css, border: `2px solid ${sectionContent?.bgGradient === g.css ? primary : 'transparent'}`, boxShadow: '0 0 0 1px #e5e5e5' }} />
+              ))}
             </div>
-            <input type="range" min="0" max="90" value={overlayOpacity} onChange={e => { const v = parseInt(e.target.value); setOverlayOpacity(v); applyOverlay(overlayColor, v, parallax) }} style={{ width: '100%', accentColor: primary }} />
+            {sectionContent?.bgGradient && <button onClick={() => onSectionField({ bgGradient: '' })} style={{ width: '100%', background: '#fff', color: '#64748b', border: '1px solid #e5e5e5', borderRadius: 7, padding: '6px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Verlauf entfernen</button>}
+            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, lineHeight: 1.4 }}>Eigene Farben unten unter „Farbe" → der Verlauf nutzt automatisch deine CI-Farben.</div>
           </Section>
 
-          <Section title="Effekt">
-            <div onClick={() => { const p = !parallax; setParallax(p); applyOverlay(overlayColor, overlayOpacity, p) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${parallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: parallax ? primary + '0d' : '#fff' }}>
-              <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${parallax ? primary : '#ccc'}`, background: parallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{parallax ? '✓' : ''}</div>
-              <div><div style={{ fontSize: 13, fontWeight: 600 }}>Parallax-Effekt</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bleibt beim Scrollen fest</div></div>
+          <Section title="Farbe">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="color" value={sectionContent?.bgColor || '#ffffff'} onChange={e => onSectionField({ bgColor: e.target.value, bgImg: '', bgGradient: '' })} style={{ width: 40, height: 36, borderRadius: 7, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+              <span style={{ fontSize: 12, color: '#64748b' }}>Einfarbiger Hintergrund</span>
             </div>
           </Section>
-          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Klick auf einzelne Elemente (Text, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
+
+          <Section title="Muster (über allem)">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+              {SECTION_PATTERNS.map(p => {
+                const active = (sectionContent?.bgPattern || 'none') === p.id
+                return <div key={p.id} onClick={() => onSectionField({ bgPattern: p.id })} style={{ border: `2px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 7, padding: '7px 4px', cursor: 'pointer', textAlign: 'center', fontSize: 10, fontWeight: 600, color: '#555', background: active ? primary + '0d' : '#fff' }}>{p.label}</div>
+              })}
+            </div>
+          </Section>
+
+          {sectionContent?.bgImg && (
+            <Section title="Effekt">
+              <div onClick={() => { const p = !parallax; setParallax(p); applyOverlay(overlayColor, overlayOpacity, p) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${parallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: parallax ? primary + '0d' : '#fff' }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${parallax ? primary : '#ccc'}`, background: parallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{parallax ? '✓' : ''}</div>
+                <div><div style={{ fontSize: 13, fontWeight: 600 }}>Parallax-Effekt</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bleibt beim Scrollen fest</div></div>
+              </div>
+            </Section>
+          )}
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Klick auf einzelne Elemente (Text, Icons, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
         </>
+      ) : selected.isIcon ? (
+        <Section title="Icon">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '10px', border: '1px solid #e5e5e5', borderRadius: 8 }}>
+            <i className={`fa-solid ${selected.iconName || 'fa-star'}`} style={{ fontSize: 22, color: primary }} />
+            <span style={{ fontSize: 12, color: '#64748b' }}>{selectedIconName || 'Icon'}</span>
+          </div>
+          <button onClick={onIconClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Anderes Icon wählen</button>
+        </Section>
       ) : selected.isImg ? (
         <Section title="Bild">
           <button onClick={onImageClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>📁 Bild hochladen</button>
@@ -1037,6 +1178,9 @@ function buildDefaultContent(type) {
     'hero-full': { tag: 'Willkommen', headline: 'Deine Überschrift', subline: 'Beschreibe dein Angebot.', cta1: 'Kontakt', cta2: 'Mehr', stats: [{ num: '10+', label: 'Jahre' }, { num: '200+', label: 'Kunden' }, { num: '100%', label: 'Qualität' }] },
     'header-slim': { tag: 'Seite', headline: 'Seitentitel', subline: 'Beschreibung.' },
     services: { tag: 'Leistungen', title: 'Was wir bieten', subtitle: 'Überblick.', items: [{ icon: '⚡', title: 'Leistung 1', text: 'Beschreibung.' }, { icon: '🎯', title: 'Leistung 2', text: 'Beschreibung.' }, { icon: '🤝', title: 'Leistung 3', text: 'Beschreibung.' }] },
+    steps: { tag: 'Ablauf', title: 'So funktioniert es', subtitle: 'In wenigen Schritten zum Ziel.', steps: [{ icon: 'phone', title: 'Kontakt', text: 'Du meldest dich bei uns.' }, { icon: 'comments', title: 'Beratung', text: 'Wir besprechen dein Anliegen.' }, { icon: 'circle-check', title: 'Umsetzung', text: 'Wir erledigen den Rest.' }] },
+    pricing: { tag: 'Preise', title: 'Unsere Pakete', subtitle: 'Transparent und fair.', plans: [{ name: 'Basis', price: '49 €', period: '/ Monat', features: ['Leistung A', 'Leistung B', 'E-Mail Support'], cta: 'Auswählen', featured: false }, { name: 'Profi', price: '99 €', period: '/ Monat', badge: 'Beliebt', features: ['Alles aus Basis', 'Leistung C', 'Priorisierter Support', 'Monatlicher Report'], cta: 'Auswählen', featured: true }, { name: 'Premium', price: '199 €', period: '/ Monat', features: ['Alles aus Profi', 'Persönlicher Ansprechpartner', '24/7 Support'], cta: 'Auswählen', featured: false }] },
+    logos: { title: 'Vertraut von führenden Unternehmen', logos: ['Firma Eins', 'Beispiel GmbH', 'Muster AG', 'Partner Co', 'Acme'] },
     about: { tag: 'Über uns', title: 'Wer wir sind', text1: 'Absatz 1.', text2: 'Absatz 2.', stats: [{ num: '15+', label: 'Jahre' }, { num: '500+', label: 'Kunden' }, { num: '98%', label: 'Zufrieden' }, { num: '24/7', label: 'Support' }] },
     team: { tag: 'Team', title: 'Unser Team', members: [{ name: 'Max Mustermann', role: 'Geschäftsführer', bio: 'Bio.', img: '' }, { name: 'Lisa Schmidt', role: 'Beraterin', bio: 'Bio.', img: '' }, { name: 'Tom Berg', role: 'Experte', bio: 'Bio.', img: '' }] },
     testimonials: { title: 'Was Kunden sagen', items: [{ quote: 'Top!', name: 'Anna K.', role: 'Kundin' }, { quote: 'Sehr gut.', name: 'Peter M.', role: 'Kunde' }, { quote: 'Empfehlung.', name: 'Sara L.', role: 'Kundin' }] },

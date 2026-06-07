@@ -11,24 +11,70 @@ const esc = (s) => String(s ?? '')
 const ed = (key, val, tag = 'span', cls = '') =>
   `<${tag} data-edit="${key}" class="${cls}" style="outline:none;">${esc(val)}</${tag}>`
 
+// ── Font-Awesome-Icons (editierbar via data-icon) ──
+// Mappt alte Emojis auf FA-Namen, akzeptiert auch direkte FA-Namen ('bolt', 'fa-bolt')
+const FA_EMOJI = { '🎯':'bullseye','⚡':'bolt','🤝':'handshake','🔥':'fire','⭐':'star','🌟':'star','✅':'circle-check','✔️':'check','💡':'lightbulb','🛡️':'shield-halved','📞':'phone','✉️':'envelope','📧':'envelope','📍':'location-dot','🕐':'clock','⏰':'clock','💪':'dumbbell','🏆':'trophy','❤️':'heart','🚀':'rocket','🔧':'wrench','🛠️':'screwdriver-wrench','🎨':'palette','📈':'chart-line','📊':'chart-column','👥':'users','👤':'user','💼':'briefcase','🏠':'house','⚖️':'scale-balanced','🩺':'stethoscope','✂️':'scissors','🍽️':'utensils','🚗':'car','📱':'mobile-screen','💻':'laptop','🌍':'earth-europe','🔒':'lock','💬':'comments','🎁':'gift','📅':'calendar-days','💰':'sack-dollar','⭐️':'star' }
+function faName(v){ if(!v) return 'star'; v=String(v).trim(); if(FA_EMOJI[v]) return FA_EMOJI[v]; if(v.indexOf('fa-')===0) v=v.slice(3); v=v.replace(/[^a-z0-9-]/gi,''); return v || 'star' }
+const icon = (key, name, size = 24, color = 'var(--p600)') =>
+  `<i data-icon="${key}" class="fa-solid fa-${faName(name)}" style="font-size:${size}px;color:${color};line-height:1;cursor:pointer;"></i>`
+
+const STARS = `<span style="display:inline-flex;gap:3px;">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</span>`
+
 // Helper: Bild mit Upload-Funktion
 const img = (key, src, cls = '', fallbackGradient = true) => {
   if (src) return `<img data-img="${key}" src="${esc(src)}" class="${cls}" style="object-fit:cover;">`
   return `<div data-img="${key}" class="${cls}" style="background:linear-gradient(135deg,var(--p200),var(--p400));display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:200px;">
-    <span style="color:var(--p100);font-size:13px;font-weight:600;pointer-events:none;">📷 Bild hochladen</span>
+    <span style="color:var(--p100);font-size:13px;font-weight:600;pointer-events:none;"><i class="fa-solid fa-image" style="margin-right:6px;"></i>Bild hochladen</span>
   </div>`
 }
 
-// Section-Hintergrund: Bild + Overlay (steuerbar via content)
-// c.bgImg = Bild-URL, c.bgOverlay = Farbe (z.B. 'rgba(15,23,42,0.6)'), c.bgParallax = bool
-function sectionBgStyle(c, fallback = '') {
+// ── Hintergrund-Muster (Punkte/Raster/Linien) – unabhängig von Bild/Farbe ──
+function patternLayers(kind, col){
+  if(kind==='dots') return [{img:`radial-gradient(circle, ${col} 1.3px, transparent 1.3px)`, size:'18px 18px', repeat:'repeat', pos:'0 0'}]
+  if(kind==='grid') return [
+    {img:`linear-gradient(${col} 1px,transparent 1px)`, size:'100% 24px', repeat:'repeat', pos:'0 0'},
+    {img:`linear-gradient(90deg,${col} 1px,transparent 1px)`, size:'24px 100%', repeat:'repeat', pos:'0 0'},
+  ]
+  if(kind==='lines') return [{img:`repeating-linear-gradient(45deg,transparent,transparent 11px,${col} 11px,${col} 12px)`, size:'auto', repeat:'repeat', pos:'0 0'}]
+  return []
+}
+
+// Baut den kompletten Section-Hintergrund aus content – alle Ebenen unabhängig kombinierbar:
+//   bgColor | bgGradient (CSS-Gradient) | bgImg+bgOverlay+bgParallax | bgPattern ('dots'|'grid'|'lines')
+export function buildSectionBg(c = {}, fallback = '') {
+  const hasCustom = c.bgImg || c.bgGradient || c.bgColor || (c.bgPattern && c.bgPattern !== 'none')
+  if (!hasCustom) return fallback
+  const dark = !!(c.bgImg || c.bgGradient)
+  const patCol = dark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.06)'
+  const layers = [], sizes = [], repeats = [], positions = []
+  let baseColor = ''
+  // 1) Muster ganz oben
+  if (c.bgPattern && c.bgPattern !== 'none') {
+    patternLayers(c.bgPattern, patCol).forEach(pp => { layers.push(pp.img); sizes.push(pp.size); repeats.push(pp.repeat); positions.push(pp.pos) })
+  }
+  // 2) Bild+Overlay ODER Verlauf ODER Farbe (sonst Default aus fallback)
   if (c.bgImg) {
     const overlay = c.bgOverlay || 'rgba(15,23,42,0.55)'
-    const attach = c.bgParallax ? 'background-attachment:fixed;' : ''
-    return `background-image:linear-gradient(${overlay},${overlay}),url('${esc(c.bgImg)}');background-size:cover;background-position:center;${attach}`
+    layers.push(`linear-gradient(${overlay},${overlay})`, `url('${esc(c.bgImg)}')`)
+    sizes.push('cover','cover'); repeats.push('no-repeat','no-repeat'); positions.push('center','center')
+  } else if (c.bgGradient) {
+    layers.push(esc(c.bgGradient)); sizes.push('cover'); repeats.push('no-repeat'); positions.push('center')
+  } else if (c.bgColor) {
+    baseColor = c.bgColor
+  } else {
+    const fb = (fallback || '').replace(/^background:\s*/,'').replace(/;\s*$/,'').trim()
+    if (/gradient\(/i.test(fb)) { layers.push(fb); sizes.push('cover'); repeats.push('no-repeat'); positions.push('center') }
+    else baseColor = fb || '#ffffff'
   }
-  return fallback
+  let css = ''
+  if (layers.length) css += `background-image:${layers.join(',')};background-size:${sizes.join(',')};background-repeat:${repeats.join(',')};background-position:${positions.join(',')};`
+  if (baseColor) css += `background-color:${baseColor};`
+  if (c.bgParallax && c.bgImg) css += 'background-attachment:fixed;'
+  return css
 }
+
+// Rückwärtskompatibel
+function sectionBgStyle(c, fallback = '') { return buildSectionBg(c, fallback) }
 
 // ═══════════════════════════════════════════════════════════════
 // NAVIGATION (überall identisch)
@@ -49,7 +95,7 @@ export const NAV = {
       ${(c.navLinks || []).map(l => `<a href="${l.href}" style="font-size:14px;font-weight:500;color:#475569;text-decoration:none;padding:8px 14px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='var(--p50)';this.style.color='var(--p700)'" onmouseout="this.style.background='transparent';this.style.color='#475569'">${esc(l.label)}</a>`).join('')}
       <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-weight:600;font-size:14px;margin-left:8px;">Kontakt</a>
     </div>
-    <button class="nav-burger" onclick="this.nextElementSibling?this.parentElement.parentElement.querySelector('.nav-mobile').classList.toggle('hidden'):0" style="display:none;background:none;border:none;cursor:pointer;font-size:24px;">☰</button>
+    <button class="nav-burger" onclick="this.nextElementSibling?this.parentElement.parentElement.querySelector('.nav-mobile').classList.toggle('hidden'):0" style="display:none;background:none;border:none;cursor:pointer;font-size:22px;color:var(--p700);"><i class="fa-solid fa-bars"></i></button>
   </div>
   <div class="nav-mobile hidden" style="display:none;padding:12px 24px;border-top:1px solid #f0f0f0;flex-direction:column;gap:4px;">
     ${(c.navLinks || []).map(l => `<a href="${l.href}" style="font-size:15px;font-weight:500;color:#475569;text-decoration:none;padding:10px;">${esc(l.label)}</a>`).join('')}
@@ -132,6 +178,26 @@ export const HERO_FULL = {
   </div>
 </section>`
     },
+    {
+      id: 'hero-split', name: 'Text + Bild',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-split" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:90px 0;position:relative;overflow:hidden;">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="about-grid">
+    <div data-reveal>
+      <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 16px;border-radius:99px;margin-bottom:20px;">${ed('tag', c.tag, 'span')}</div>
+      <h1 style="font-size:clamp(34px,4.5vw,56px);font-weight:900;line-height:1.1;letter-spacing:-0.04em;color:#0f172a;margin-bottom:20px;">${ed('headline', c.headline, 'span')}</h1>
+      <p style="font-size:18px;color:#64748b;line-height:1.7;margin-bottom:32px;">${ed('subline', c.subline, 'span')}</p>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
+        <a href="#leistungen" style="background:#fff;color:var(--p700);text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid var(--p200);">${ed('cta2', c.cta2, 'span')}</a>
+      </div>
+    </div>
+    <div data-reveal>
+      ${img('hero_img', c.heroImg, 'border-radius:20px;width:100%;height:440px;box-shadow:0 24px 60px rgba(0,0,0,0.14);')}
+    </div>
+  </div>
+</section>`
+    },
   ]
 }
 
@@ -145,7 +211,7 @@ export const HEADER_SLIM = {
     {
       id: 'header-gradient', name: 'Gradient',
       render: (c) => `
-<section data-block="header-slim" data-variant="header-gradient" style="background:linear-gradient(135deg,var(--p800),var(--p600));padding:80px 0 64px;position:relative;overflow:hidden;">
+<section data-block="header-slim" data-variant="header-gradient" data-section="1" style="${sectionBgStyle(c,'background:linear-gradient(135deg,var(--p800),var(--p600));')}padding:80px 0 64px;position:relative;overflow:hidden;">
   <div style="position:absolute;top:-50px;right:10%;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.08),transparent 70%);"></div>
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
     <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.12);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
@@ -157,7 +223,7 @@ export const HEADER_SLIM = {
     {
       id: 'header-light', name: 'Hell',
       render: (c) => `
-<section data-block="header-slim" data-variant="header-light" style="background:var(--p50);padding:72px 0 56px;border-bottom:1px solid var(--p100);">
+<section data-block="header-slim" data-variant="header-light" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:72px 0 56px;border-bottom:1px solid var(--p100);">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;text-align:center;">
     <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
     <h1 data-reveal style="font-size:clamp(32px,4.5vw,52px);font-weight:900;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('headline', c.headline, 'span')}</h1>
@@ -178,7 +244,7 @@ export const SERVICES = {
     {
       id: 'services-cards', name: 'Cards 3-Spalten',
       render: (c) => `
-<section data-block="services" data-variant="services-cards" id="leistungen" style="background:#fff;padding:80px 0;">
+<section data-block="services" data-variant="services-cards" id="leistungen" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="margin-bottom:48px;max-width:560px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
@@ -188,7 +254,7 @@ export const SERVICES = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
       ${(c.items || []).map((it, i) => `
         <div data-reveal style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px;transition:all 0.3s;" onmouseover="this.style.boxShadow='0 12px 40px rgba(0,0,0,0.08)';this.style.transform='translateY(-4px)';this.style.borderColor='var(--p200)'" onmouseout="this.style.boxShadow='none';this.style.transform='none';this.style.borderColor='#e2e8f0'">
-          <div style="width:52px;height:52px;background:var(--p50);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px;">${esc(it.icon)}</div>
+          <div style="width:52px;height:52px;background:var(--p50);border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">${icon('svc_icon_'+i, it.icon, 24, 'var(--p600)')}</div>
           <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('svc_title_'+i, it.title, 'span')}</h3>
           <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('svc_text_'+i, it.text, 'span')}</p>
         </div>`).join('')}
@@ -199,7 +265,7 @@ export const SERVICES = {
     {
       id: 'services-list', name: 'Liste mit Nummern',
       render: (c) => `
-<section data-block="services" data-variant="services-list" id="leistungen" style="background:var(--p50);padding:80px 0;">
+<section data-block="services" data-variant="services-list" id="leistungen" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:48px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
@@ -218,7 +284,7 @@ export const SERVICES = {
     {
       id: 'services-icons', name: 'Icon-Grid',
       render: (c) => `
-<section data-block="services" data-variant="services-icons" id="leistungen" style="background:#fff;padding:80px 0;">
+<section data-block="services" data-variant="services-icons" id="leistungen" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto;">
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
@@ -227,7 +293,7 @@ export const SERVICES = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;">
       ${(c.items || []).map((it, i) => `
         <div data-reveal style="text-align:center;">
-          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--p400),var(--p600));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;">${esc(it.icon)}</div>
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--p400),var(--p600));border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">${icon('svc_icon_'+i, it.icon, 28, '#fff')}</div>
           <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('svc_title_'+i, it.title, 'span')}</h3>
           <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('svc_text_'+i, it.text, 'span')}</p>
         </div>`).join('')}
@@ -248,7 +314,7 @@ export const ABOUT = {
     {
       id: 'about-split', name: 'Text + Stats',
       render: (c) => `
-<section data-block="about" data-variant="about-split" id="about" style="background:var(--p50);padding:80px 0;">
+<section data-block="about" data-variant="about-split" id="about" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="about-grid">
     <div data-reveal>
       ${img('about_img', c.aboutImg, 'border-radius:20px;width:100%;height:400px;')}
@@ -266,7 +332,7 @@ export const ABOUT = {
     {
       id: 'about-stats', name: 'Text + Zahlen-Grid',
       render: (c) => `
-<section data-block="about" data-variant="about-stats" id="about" style="background:#fff;padding:80px 0;">
+<section data-block="about" data-variant="about-stats" id="about" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="about-grid">
     <div data-reveal>
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
@@ -293,7 +359,7 @@ export const TEAM = {
     {
       id: 'team-cards', name: 'Karten mit Foto',
       render: (c) => `
-<section data-block="team" data-variant="team-cards" id="team" style="background:#fff;padding:80px 0;">
+<section data-block="team" data-variant="team-cards" id="team" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:48px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
@@ -326,16 +392,16 @@ export const TESTIMONIALS = {
     {
       id: 'testi-cards', name: 'Karten',
       render: (c) => `
-<section data-block="testimonials" data-variant="testi-cards" style="background:var(--p50);padding:80px 0;">
+<section data-block="testimonials" data-variant="testi-cards" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:48px;">
-      <div style="color:#f59e0b;font-size:18px;margin-bottom:12px;letter-spacing:2px;">★★★★★</div>
+      <div style="color:#f59e0b;font-size:18px;margin-bottom:12px;">${STARS}</div>
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;">${ed('title', c.title, 'span')}</h2>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
       ${(c.items || []).map((t, i) => `
         <div data-reveal style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
-          <div style="color:#f59e0b;font-size:16px;margin-bottom:14px;letter-spacing:2px;">★★★★★</div>
+          <div style="color:#f59e0b;font-size:16px;margin-bottom:14px;">${STARS}</div>
           <p style="font-size:15px;color:#475569;line-height:1.7;font-style:italic;margin-bottom:20px;">"${ed('testi_quote_'+i, t.quote, 'span')}"</p>
           <div style="display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid #f1f5f9;">
             <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p400),var(--p600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;">${esc((t.name||'?').charAt(0))}</div>
@@ -358,7 +424,7 @@ export const STATS = {
   variants: [{
     id: 'stats-bar', name: 'Farbiger Balken',
     render: (c) => `
-<section data-block="stats" data-variant="stats-bar" style="background:linear-gradient(135deg,var(--p600),var(--p800));padding:60px 0;">
+<section data-block="stats" data-variant="stats-bar" data-section="1" style="${sectionBgStyle(c,'background:linear-gradient(135deg,var(--p600),var(--p800));')}padding:60px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:32px;">
     ${(c.items || []).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed('stat_'+i, s.num, 'span')}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${esc(s.label)}</div></div>`).join('')}
   </div>
@@ -376,7 +442,7 @@ export const CTA = {
     {
       id: 'cta-gradient', name: 'Gradient zentriert',
       render: (c) => `
-<section data-block="cta" data-variant="cta-gradient" style="background:linear-gradient(135deg,var(--p800),var(--p600));padding:80px 0;text-align:center;position:relative;overflow:hidden;">
+<section data-block="cta" data-variant="cta-gradient" data-section="1" style="${sectionBgStyle(c,'background:linear-gradient(135deg,var(--p800),var(--p600));')}padding:80px 0;text-align:center;position:relative;overflow:hidden;">
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(255,255,255,0.1),transparent 70%);"></div>
   <div style="max-width:600px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
     <h2 data-reveal style="font-size:clamp(28px,4.5vw,48px);font-weight:900;letter-spacing:-0.03em;color:#fff;margin-bottom:14px;">${ed('title', c.title, 'span')}</h2>
@@ -400,7 +466,7 @@ export const GALLERY = {
   variants: [{
     id: 'gallery-grid', name: 'Bilder-Grid',
     render: (c) => `
-<section data-block="gallery" data-variant="gallery-grid" id="galerie" style="background:#fff;padding:80px 0;">
+<section data-block="gallery" data-variant="gallery-grid" id="galerie" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:40px;">
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;">${ed('title', c.title, 'span')}</h2>
@@ -422,14 +488,14 @@ export const FAQ = {
   variants: [{
     id: 'faq-accordion', name: 'Accordion',
     render: (c) => `
-<section data-block="faq" data-variant="faq-accordion" style="background:var(--p50);padding:80px 0;">
+<section data-block="faq" data-variant="faq-accordion" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
   <div style="max-width:720px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:40px;">
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;">${ed('title', c.title, 'span')}</h2>
     </div>
     ${(c.items || []).map((f, i) => `
       <details data-reveal style="background:#fff;border-radius:12px;margin-bottom:10px;padding:0 20px;border:1px solid #e2e8f0;">
-        <summary style="padding:18px 0;cursor:pointer;font-weight:600;font-size:16px;color:#0f172a;list-style:none;display:flex;justify-content:space-between;align-items:center;">${ed('faq_q_'+i, f.q, 'span')}<span style="color:var(--p500);font-size:22px;">+</span></summary>
+        <summary style="padding:18px 0;cursor:pointer;font-weight:600;font-size:16px;color:#0f172a;list-style:none;display:flex;justify-content:space-between;align-items:center;">${ed('faq_q_'+i, f.q, 'span')}<span class="faq-ic" style="color:var(--p500);font-size:18px;">${'<i class="fa-solid fa-plus"></i>'}</span></summary>
         <p style="padding:0 0 18px;font-size:15px;color:#64748b;line-height:1.7;">${ed('faq_a_'+i, f.a, 'span')}</p>
       </details>`).join('')}
   </div>
@@ -446,7 +512,7 @@ export const CONTACT = {
   variants: [{
     id: 'contact-split', name: 'Formular + Infos',
     render: (c) => `
-<section data-block="contact" data-variant="contact-split" id="kontakt" style="background:#fff;padding:80px 0;">
+<section data-block="contact" data-variant="contact-split" id="kontakt" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="margin-bottom:48px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag || 'Kontakt', 'span')}</div>
@@ -461,12 +527,12 @@ export const CONTACT = {
         </div>
         <div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">Telefon</label><input type="tel" name="telefon" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
         <div style="margin-bottom:16px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">Nachricht *</label><textarea name="nachricht" rows="5" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></textarea></div>
-        <button type="submit" style="width:100%;background:var(--p500);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;">Nachricht senden →</button>
+        <button type="submit" style="width:100%;background:var(--p500);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;">Nachricht senden <i class="fa-solid fa-paper-plane" style="margin-left:6px;"></i></button>
       </form>
       <div style="display:flex;flex-direction:column;gap:14px;justify-content:center;">
-        ${[['📍','Adresse','adresse'],['📞','Telefon','telefon'],['✉️','E-Mail','email'],['🕐','Öffnungszeiten','oeffnung']].map(([ic,lb,k]) => `
+        ${[['location-dot','Adresse','adresse'],['phone','Telefon','telefon'],['envelope','E-Mail','email'],['clock','Öffnungszeiten','oeffnung']].map(([ic,lb,k]) => `
           <div style="background:var(--p50);border:1px solid var(--p100);border-radius:12px;padding:18px;display:flex;align-items:center;gap:14px;">
-            <div style="width:44px;height:44px;background:var(--p100);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${ic}</div>
+            <div style="width:44px;height:44px;background:var(--p100);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--p600);flex-shrink:0;"><i class="fa-solid fa-${ic}"></i></div>
             <div><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${lb}</div><div style="font-size:14px;font-weight:600;color:#0f172a;">${ed(k, c[k], 'span')}</div></div>
           </div>`).join('')}
       </div>
@@ -532,7 +598,7 @@ export const MENU = {
   variants: [{
     id: 'menu-cards', name: 'Karten mit Preisen',
     render: (c) => `
-<section data-block="menu" data-variant="menu-cards" id="speisekarte" style="background:var(--p50);padding:80px 0;">
+<section data-block="menu" data-variant="menu-cards" id="speisekarte" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
   <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:48px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag || 'Speisekarte', 'span')}</div>
@@ -575,6 +641,100 @@ export const CUSTOM = {
   }]
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PREISE / PAKETE
+// ═══════════════════════════════════════════════════════════════
+export const PRICING = {
+  type: 'pricing',
+  label: 'Preise / Pakete',
+  variants: [
+    {
+      id: 'pricing-cards', name: 'Karten 3-Spalten',
+      render: (c) => `
+<section data-block="pricing" data-variant="pricing-cards" id="preise" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+    <div data-reveal style="text-align:center;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto;">
+      <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
+      <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
+      <p style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;align-items:stretch;">
+      ${(c.plans || []).map((p, i) => `
+        <div data-reveal style="background:${p.featured ? 'linear-gradient(160deg,var(--p700),var(--p900))' : '#fff'};color:${p.featured ? '#fff' : '#0f172a'};border:1px solid ${p.featured ? 'transparent' : '#e2e8f0'};border-radius:18px;padding:32px 28px;display:flex;flex-direction:column;position:relative;${p.featured ? 'box-shadow:0 20px 50px rgba(0,0,0,0.18);transform:translateY(-6px);' : ''}">
+          ${p.featured ? `<div style="position:absolute;top:16px;right:16px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:0.05em;">${ed('plan_badge_'+i, p.badge || 'Beliebt', 'span')}</div>` : ''}
+          <h3 style="font-size:19px;font-weight:800;margin-bottom:8px;">${ed('plan_name_'+i, p.name, 'span')}</h3>
+          <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:18px;">
+            <span style="font-size:42px;font-weight:900;letter-spacing:-0.03em;">${ed('plan_price_'+i, p.price, 'span')}</span>
+            <span style="font-size:14px;opacity:0.7;">${ed('plan_period_'+i, p.period || '/ Monat', 'span')}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:28px;flex:1;">
+            ${(p.features || []).map((f, j) => `<div style="display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;"><i class="fa-solid fa-circle-check" style="color:${p.featured ? 'var(--accent)' : 'var(--p500)'};margin-top:3px;flex-shrink:0;"></i><span data-edit="plan_feat_${i}_${j}" style="outline:none;">${esc(f)}</span></div>`).join('')}
+          </div>
+          <a href="kontakt.html" style="background:${p.featured ? '#fff' : 'var(--p500)'};color:${p.featured ? 'var(--p800)' : '#fff'};text-decoration:none;padding:13px;border-radius:10px;font-weight:700;font-size:15px;text-align:center;">${ed('plan_cta_'+i, p.cta || 'Auswählen', 'span')}</a>
+        </div>`).join('')}
+    </div>
+  </div>
+</section>`
+    },
+  ]
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PARTNER-LOGOS / SOCIAL PROOF
+// ═══════════════════════════════════════════════════════════════
+export const LOGOS = {
+  type: 'logos',
+  label: 'Partner-Logos',
+  variants: [
+    {
+      id: 'logos-row', name: 'Logo-Leiste',
+      render: (c) => `
+<section data-block="logos" data-variant="logos-row" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:56px 0;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;text-align:center;">
+    <p data-reveal style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:28px;">${ed('title', c.title, 'span')}</p>
+    <div data-reveal style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:18px 40px;">
+      ${(c.logos || []).map((l, i) => `<span data-edit="logo_${i}" style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#cbd5e1;outline:none;">${esc(l)}</span>`).join('')}
+    </div>
+  </div>
+</section>`
+    },
+  ]
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ABLAUF / SO FUNKTIONIERT'S
+// ═══════════════════════════════════════════════════════════════
+export const STEPS = {
+  type: 'steps',
+  label: 'Ablauf / Schritte',
+  variants: [
+    {
+      id: 'steps-horizontal', name: 'Schritte mit Icons',
+      render: (c) => `
+<section data-block="steps" data-variant="steps-horizontal" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:80px 0;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+    <div data-reveal style="text-align:center;margin-bottom:52px;max-width:560px;margin-left:auto;margin-right:auto;">
+      <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
+      <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
+      <p style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px;">
+      ${(c.steps || []).map((s, i) => `
+        <div data-reveal style="text-align:center;position:relative;">
+          <div style="width:72px;height:72px;background:linear-gradient(135deg,var(--p500),var(--p700));border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;position:relative;">
+            ${icon('step_icon_'+i, s.icon, 28, '#fff')}
+            <span style="position:absolute;top:-8px;right:-8px;width:26px;height:26px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid #fff;">${i + 1}</span>
+          </div>
+          <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('step_title_'+i, s.title, 'span')}</h3>
+          <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('step_text_'+i, s.text, 'span')}</p>
+        </div>`).join('')}
+    </div>
+  </div>
+</section>`
+    },
+  ]
+}
+
 // ─────────────────────────────────────────────────────────────
 // REGISTRY
 // ─────────────────────────────────────────────────────────────
@@ -583,6 +743,9 @@ export const BLOCK_REGISTRY = {
   'hero-full': HERO_FULL,
   'header-slim': HEADER_SLIM,
   services: SERVICES,
+  steps: STEPS,
+  pricing: PRICING,
+  logos: LOGOS,
   about: ABOUT,
   team: TEAM,
   testimonials: TESTIMONIALS,
@@ -598,20 +761,26 @@ export const BLOCK_REGISTRY = {
 
 // Blöcke die der Nutzer im Editor hinzufügen kann
 export const ADDABLE_BLOCKS = [
-  { type: 'hero-full', label: 'Hero', emoji: '🦸' },
-  { type: 'header-slim', label: 'Seiten-Header', emoji: '📰' },
-  { type: 'services', label: 'Leistungen', emoji: '⚡' },
-  { type: 'about', label: 'Über uns', emoji: '👤' },
-  { type: 'team', label: 'Team', emoji: '👥' },
-  { type: 'testimonials', label: 'Kundenstimmen', emoji: '💬' },
-  { type: 'stats', label: 'Zahlen', emoji: '📊' },
-  { type: 'cta', label: 'Call to Action', emoji: '🎯' },
-  { type: 'gallery', label: 'Galerie', emoji: '🖼️' },
-  { type: 'faq', label: 'FAQ', emoji: '❓' },
-  { type: 'contact', label: 'Kontakt', emoji: '✉️' },
-  { type: 'menu', label: 'Speisekarte', emoji: '🍽️', nurBranche: ['restaurant'] },
-  { type: 'custom', label: 'Eigener Code', emoji: '💻' },
+  { type: 'hero-full', label: 'Hero', emoji: '🦸', cat: 'Kopf & Hero' },
+  { type: 'header-slim', label: 'Seiten-Header', emoji: '📰', cat: 'Kopf & Hero' },
+  { type: 'services', label: 'Leistungen', emoji: '⚡', cat: 'Inhalt' },
+  { type: 'steps', label: 'Ablauf / Schritte', emoji: '🪜', cat: 'Inhalt' },
+  { type: 'about', label: 'Über uns', emoji: '👤', cat: 'Inhalt' },
+  { type: 'team', label: 'Team', emoji: '👥', cat: 'Inhalt' },
+  { type: 'gallery', label: 'Galerie', emoji: '🖼️', cat: 'Inhalt' },
+  { type: 'faq', label: 'FAQ', emoji: '❓', cat: 'Inhalt' },
+  { type: 'testimonials', label: 'Kundenstimmen', emoji: '💬', cat: 'Vertrauen' },
+  { type: 'stats', label: 'Zahlen', emoji: '📊', cat: 'Vertrauen' },
+  { type: 'logos', label: 'Partner-Logos', emoji: '🏷️', cat: 'Vertrauen' },
+  { type: 'pricing', label: 'Preise / Pakete', emoji: '💶', cat: 'Konversion' },
+  { type: 'cta', label: 'Call to Action', emoji: '🎯', cat: 'Konversion' },
+  { type: 'contact', label: 'Kontakt', emoji: '✉️', cat: 'Konversion' },
+  { type: 'menu', label: 'Speisekarte', emoji: '🍽️', cat: 'Sonstiges', nurBranche: ['restaurant'] },
+  { type: 'custom', label: 'Eigener Code', emoji: '💻', cat: 'Sonstiges' },
 ]
+
+// Kategorien-Reihenfolge für die Editor-Bibliothek
+export const BLOCK_CATEGORIES = ['Kopf & Hero', 'Inhalt', 'Vertrauen', 'Konversion', 'Sonstiges']
 
 // Hole alle Varianten eines Block-Typs (für Editor-Auswahl)
 export function getVariants(type) {
