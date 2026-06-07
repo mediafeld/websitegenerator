@@ -61,12 +61,29 @@ function buildCSSVars(palette) {
   }`
 }
 
+// JS-Parallax (für Editor-Vorschau UND fertige Seite) – Geschwindigkeit über data-parallax
+const PARALLAX_JS = `<script>
+(function(){
+  function upd(){var els=document.querySelectorAll('[data-parallax]');var vh=window.innerHeight||800;for(var i=0;i<els.length;i++){var el=els[i];var sp=parseFloat(el.getAttribute('data-parallax'))||0;if(!sp){el.style.backgroundPositionY='';continue;}var r=el.getBoundingClientRect();var off=((r.top+r.height/2)-vh/2)*sp;var max=r.height*0.18;if(off>max)off=max;if(off<-max)off=-max;el.style.backgroundPositionY='calc(50% + '+off.toFixed(1)+'px)';}}
+  window.wgRunParallax=upd;
+  window.addEventListener('scroll',upd,{passive:true});window.addEventListener('resize',upd);
+  document.addEventListener('DOMContentLoaded',upd);setTimeout(upd,120);upd();
+})();
+</script>`
+
+// Fügt das data-parallax-Attribut an Sektionen mit aktiviertem Parallax
+function applyParallaxAttr(html, c) {
+  if (!c || !c.bgParallax || !c.bgImg) return html
+  const sp = (typeof c.bgParallaxSpeed === 'number') ? c.bgParallaxSpeed : 0.3
+  return html.replace(/(<section\b)/i, `$1 data-parallax="${sp}"`)
+}
+
 // Rendere eine komplette Seite aus Block-Array
 export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false }) {
   const fontParam = font.replace(/ /g, '+')
   const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@400;500;600;700;800;900` : ''
   const blocksHtml = (blocks || [])
-    .map(b => renderBlock(b.type, b.variant, b.content))
+    .map(b => applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content))
     .join('\n')
 
   return `<!DOCTYPE html>
@@ -90,6 +107,7 @@ ${forEditor ? '' : ANIM_CDN}
 </head>
 <body>
 ${blocksHtml}
+${PARALLAX_JS}
 ${forEditor ? '' : ANIM_INIT}
 </body>
 </html>`

@@ -78,7 +78,6 @@ export function buildSectionBg(c = {}, fallback = '') {
   let css = ''
   if (layers.length) css += `background-image:${layers.join(',')};background-size:${sizes.join(',')};background-repeat:${repeats.join(',')};background-position:${positions.join(',')};`
   if (baseColor) css += `background-color:${baseColor};`
-  if (c.bgParallax && c.bgImg) css += 'background-attachment:fixed;'
   return css
 }
 

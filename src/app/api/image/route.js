@@ -29,7 +29,6 @@ export async function POST(request) {
         n: 1,
         size: imgSize,
         quality: 'standard',
-        response_format: 'b64_json',
       }),
     })
 
@@ -38,13 +37,21 @@ export async function POST(request) {
       return Response.json({ error: data.error.message || 'Bildgenerierung fehlgeschlagen' }, { status: 500 })
     }
 
-    const b64 = data.data?.[0]?.b64_json
-    if (!b64) return Response.json({ error: 'Kein Bild erhalten' }, { status: 500 })
+    // Antwort kann b64_json ODER eine URL sein – beides unterstützen
+    const item = data.data?.[0] || {}
+    let pngBuffer
+    if (item.b64_json) {
+      pngBuffer = Buffer.from(item.b64_json, 'base64')
+    } else if (item.url) {
+      const imgRes = await fetch(item.url)
+      pngBuffer = Buffer.from(await imgRes.arrayBuffer())
+    } else {
+      return Response.json({ error: 'Kein Bild erhalten' }, { status: 500 })
+    }
 
     // PNG -> WebP umwandeln (kleiner, schneller)
     try {
       const sharp = (await import('sharp')).default
-      const pngBuffer = Buffer.from(b64, 'base64')
       const webpBuffer = await sharp(pngBuffer)
         .webp({ quality: 82 })
         .toBuffer()
@@ -53,7 +60,7 @@ export async function POST(request) {
     } catch (sharpErr) {
       // Falls sharp nicht verfügbar: PNG zurückgeben
       console.error('WebP conversion failed, returning PNG:', sharpErr)
-      return Response.json({ image: `data:image/png;base64,${b64}`, format: 'png' })
+      return Response.json({ image: `data:image/png;base64,${pngBuffer.toString('base64')}`, format: 'png' })
     }
   } catch (error) {
     console.error('Image error:', error)

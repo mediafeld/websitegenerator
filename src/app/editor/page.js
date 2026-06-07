@@ -197,6 +197,19 @@ export default function EditorPage() {
     next[activePage] = arr; applyPages(next, true, true)
   }
 
+  // Felder OHNE Neuaufbau speichern (für Live-Regler wie Parallax)
+  function setSectionFieldLive(blockIdx, fields) {
+    const next = { ...pages }; const arr = [...next[activePage]]
+    arr[blockIdx] = { ...arr[blockIdx], content: { ...arr[blockIdx].content, ...fields } }
+    next[activePage] = arr; applyPages(next, true, false)
+  }
+
+  // Parallax live im Vorschaufenster setzen + speichern
+  function applySectionParallax(blockIdx, on, speed) {
+    iframeRef.current?.contentWindow?.postMessage({ cmd: 'setParallax', block: blockIdx, on, speed }, '*')
+    setSectionFieldLive(blockIdx, { bgParallax: on, bgParallaxSpeed: speed })
+  }
+
   // Icon eines Elements ändern
   function setIconForBlock(blockIdx, key, faIconName) {
     updateContent(blockIdx, key, faIconName, true)
@@ -314,7 +327,7 @@ export default function EditorPage() {
         if(d.cmd==='bold'){toggleStyle(sel,'fontWeight','700','400');saveSel();}
         if(d.cmd==='italic'){toggleStyle(sel,'fontStyle','italic','normal');saveSel();}
         if(d.cmd==='underline'){toggleStyle(sel,'textDecoration','underline','none');saveSel();}
-        if(d.cmd==='sectionBg'){var s=sel.closest('[data-section]')||sel.closest('[data-block]');if(s){s.style.backgroundImage="linear-gradient("+d.overlay+","+d.overlay+"),url('"+d.img+"')";s.style.backgroundSize='cover';s.style.backgroundPosition='center';if(d.parallax)s.style.backgroundAttachment='fixed';else s.style.backgroundAttachment='scroll';}parent.postMessage({t:'sectionStyle',block:bIdx(sel),img:d.img,overlay:d.overlay,parallax:d.parallax},'*');}
+        if(d.cmd==='sectionBg'){var s=sel.closest('[data-section]')||sel.closest('[data-block]');if(s){s.style.backgroundImage="linear-gradient("+d.overlay+","+d.overlay+"),url('"+d.img+"')";s.style.backgroundSize='cover';s.style.backgroundPosition='center';}parent.postMessage({t:'sectionStyle',block:bIdx(sel),img:d.img,overlay:d.overlay,parallax:d.parallax},'*');}
         if(d.cmd==='dupEl'){var cl=sel.cloneNode(true);cl.classList.remove('wg-on');sel.parentNode.insertBefore(cl,sel.nextSibling);}
         if(d.cmd==='delEl'){var pn=sel.parentNode;sel.remove();sel=null;parent.postMessage({t:'deselect'},'*');}
         if(d.cmd==='deselect'){if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}}
@@ -380,7 +393,7 @@ export default function EditorPage() {
       }
       document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){} wgPlaceAt(e.clientY); });
       document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); var idx=window.__wgDropIndex||0; wgRemovePlace(); parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:idx},'*'); });
-      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd')wgRemovePlace(); if(dd.cmd==='gotoBlock'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.index]; if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); el.style.transition='outline 0.2s'; el.style.outline='3px solid ${primary}'; setTimeout(function(){el.style.outline='';},900); } } });
+      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd')wgRemovePlace(); if(dd.cmd==='setParallax'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.block]; if(el){ if(dd.on){el.setAttribute('data-parallax',dd.speed);}else{el.removeAttribute('data-parallax');el.style.backgroundPositionY='';} if(typeof window.wgRunParallax==='function')window.wgRunParallax(); } } if(dd.cmd==='gotoBlock'){ var bs2=document.querySelectorAll('[data-block]'); var el2=bs2[dd.index]; if(el2){ el2.scrollIntoView({behavior:'smooth',block:'start'}); el2.style.transition='outline 0.2s'; el2.style.outline='3px solid ${primary}'; setTimeout(function(){el2.style.outline='';},900); } } });
     })();</script>`
 
     return html.replace('</head>', css + '</head>').replace('</body>', js + '</body>')
@@ -733,7 +746,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -955,7 +968,7 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
   const pp = palette?.primary || {}
   const ac = palette?.accent?.base || primary
@@ -1025,6 +1038,18 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick
 
       {selected.isSection ? (
         <>
+          <Section title="Aktueller Hintergrund">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 46, height: 32, borderRadius: 7, flexShrink: 0, boxShadow: '0 0 0 1px #e5e5e5', background: sectionContent?.bgImg ? `center/cover url(${sectionContent.bgImg})` : (sectionContent?.bgGradient || sectionContent?.bgColor || '#f1f5f9') }} />
+              <div style={{ fontSize: 12, color: '#475569' }}>
+                <div style={{ fontWeight: 700 }}>{sectionContent?.bgImg ? 'Bild' : sectionContent?.bgGradient ? 'Farbverlauf' : sectionContent?.bgColor ? 'Farbe' : 'Standard'}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                  {sectionContent?.bgPattern && sectionContent.bgPattern !== 'none' ? `Muster: ${sectionContent.bgPattern}` : 'kein Muster'}
+                  {sectionContent?.bgParallax ? ' · Parallax an' : ''}
+                </div>
+              </div>
+            </div>
+          </Section>
           <Section title="Hintergrundbild">
             {sectionContent?.bgImg && <img src={sectionContent.bgImg} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
             <button onClick={onSectionImageUpload} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6, fontFamily: 'inherit' }}><i className="fa-solid fa-image" style={{ marginRight: 6 }} />Bild hochladen</button>
@@ -1080,16 +1105,23 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick
 
           {sectionContent?.bgImg && (
             <Section title="Bild-Darstellung">
-              <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
                 {[['cover', 'Füllend'], ['contain', 'Einpassen']].map(([v, l]) => {
                   const active = (sectionContent?.bgSize || 'cover') === v
                   return <div key={v} onClick={() => onSectionField({ bgSize: v })} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', border: `2px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#475569', background: active ? primary + '0d' : '#fff' }}>{l}</div>
                 })}
               </div>
-              <div onClick={() => { const p = !parallax; setParallax(p); applyOverlay(overlayColor, overlayOpacity, p) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${parallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: parallax ? primary + '0d' : '#fff' }}>
-                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${parallax ? primary : '#ccc'}`, background: parallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{parallax ? '✓' : ''}</div>
-                <div><div style={{ fontSize: 13, fontWeight: 600 }}>Scroll-fix (Parallax)</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bleibt beim Scrollen fest</div></div>
+              <div onClick={() => onParallax(!sectionContent?.bgParallax, sectionContent?.bgParallaxSpeed ?? 0.3)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${sectionContent?.bgParallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: sectionContent?.bgParallax ? primary + '0d' : '#fff', marginBottom: 10 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${sectionContent?.bgParallax ? primary : '#ccc'}`, background: sectionContent?.bgParallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{sectionContent?.bgParallax ? '✓' : ''}</div>
+                <div><div style={{ fontSize: 13, fontWeight: 600 }}>Parallax-Effekt</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bewegt sich beim Scrollen</div></div>
               </div>
+              {sectionContent?.bgParallax && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b', marginBottom: 4 }}><span>Geschwindigkeit</span><span style={{ fontWeight: 700, color: primary }}>{(sectionContent?.bgParallaxSpeed ?? 0.3).toFixed(1)}</span></div>
+                  <input type="range" min="-1" max="1" step="0.1" value={sectionContent?.bgParallaxSpeed ?? 0.3} onChange={e => onParallax(true, parseFloat(e.target.value))} style={{ width: '100%', accentColor: primary }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#cbd5e1' }}><span>−1.0</span><span>0</span><span>+1.0</span></div>
+                </div>
+              )}
             </Section>
           )}
           <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Klick auf einzelne Elemente (Text, Icons, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
