@@ -63,8 +63,9 @@ export function buildSectionBg(c = {}, fallback = '') {
   // 2) Bild+Overlay ODER Verlauf ODER Farbe (sonst Default aus fallback)
   if (c.bgImg) {
     const overlay = c.bgOverlay || 'rgba(15,23,42,0.55)'
+    const imgSize = c.bgSize === 'contain' ? 'contain' : 'cover'
     layers.push(`linear-gradient(${overlay},${overlay})`, `url('${esc(c.bgImg)}')`)
-    sizes.push('cover','cover'); repeats.push('no-repeat','no-repeat'); positions.push('center','center')
+    sizes.push('cover', imgSize); repeats.push('no-repeat', 'no-repeat'); positions.push('center', 'center')
   } else if (c.bgGradient) {
     layers.push(esc(c.bgGradient)); sizes.push('cover'); repeats.push('no-repeat'); positions.push('center')
   } else if (c.bgColor) {

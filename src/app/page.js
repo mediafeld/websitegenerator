@@ -442,6 +442,7 @@ export default function WizardPage() {
 
               <Panel>
                 <SectionTitle sub={`Empfehlung für ${branche.label}: ${pair.label}`}>Schrift-Kombination</SectionTitle>
+                <div style={{ fontSize: 11, color: '#64748b', background: '#f1f5f9', borderRadius: 8, padding: '8px 12px', marginBottom: 12 }}>Alle Schriften sind kostenlose <strong>Google Fonts</strong> und dürfen frei (auch kommerziell) verwendet werden.</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>
                   {FONT_PAIRS.map(p => {
                     const recommended = BRANCHEN_FONT[fd.branche] === p.id
@@ -451,7 +452,7 @@ export default function WizardPage() {
                         <div style={{ fontFamily: `'${p.headline}',serif`, fontSize: 26, fontWeight: 700, color: '#0f172a', marginBottom: 4, lineHeight: 1.1 }}>Überschrift</div>
                         <div style={{ fontFamily: `'${p.body}',sans-serif`, fontSize: 14, color: '#64748b', marginBottom: 12 }}>So sieht dein Fließtext aus. Klar und gut lesbar für deine Besucher.</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
-                          <div><div style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</div><div style={{ fontSize: 10, color: '#94a3b8' }}>{p.sub}</div></div>
+                          <div><div style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</div><div style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>{p.headline} + {p.body}</div><div style={{ fontSize: 10, color: '#94a3b8' }}>{p.sub}</div></div>
                           <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${fd.fontPair === p.id ? primary : '#ccc'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{fd.fontPair === p.id && <div style={{ width: 10, height: 10, borderRadius: '50%', background: primary }} />}</div>
                         </div>
                       </div>

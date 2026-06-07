@@ -231,6 +231,7 @@ export default function EditorPage() {
     const js = `<script>(function(){
       if(window.__wgE)return;window.__wgE=1;
       var sel=null;
+      var WG_NAMES=${JSON.stringify(Object.fromEntries(Object.entries(BLOCK_REGISTRY).map(([k, v]) => [k, v.label])))};
 
       // 1) ALLE Klicks abfangen - keine Navigation im Editor
       document.addEventListener('click',function(e){
@@ -359,19 +360,27 @@ export default function EditorPage() {
           if(e.target===this){
             e.stopPropagation();
             if(sel)sel.classList.remove('wg-on');
-            sel=this;this.classList.add('wg-on');this.setAttribute('data-label','Bereich');
+            sel=this;this.classList.add('wg-on');this.setAttribute('data-label',WG_NAMES[this.getAttribute('data-block')]||'Bereich');
             var cs=window.getComputedStyle(this);
             parent.postMessage({t:'selectSection',block:bIdx(this)},'*');
           }
         });
       });
-      // ── Drag & Drop: Block aus der Bibliothek einfuegen ──
-      var wgLine=null;
-      function wgEnsureLine(){ if(!wgLine){ wgLine=document.createElement('div'); wgLine.style.cssText='position:absolute;left:12px;right:12px;height:4px;background:${primary};border-radius:3px;z-index:99999;pointer-events:none;box-shadow:0 0 10px ${primary};display:none;'; document.body.appendChild(wgLine);} return wgLine; }
-      function wgDropInfo(y){ var bs=Array.prototype.slice.call(document.querySelectorAll('[data-block]')); for(var i=0;i<bs.length;i++){ var r=bs[i].getBoundingClientRect(); if(y < r.top + r.height/2){ return {index:i, top:r.top+window.scrollY}; } } var last=bs.length?bs[bs.length-1].getBoundingClientRect():{bottom:0}; return {index:bs.length, top:last.bottom+window.scrollY}; }
-      document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){} var d=wgDropInfo(e.clientY); var l=wgEnsureLine(); l.style.top=(d.top-2)+'px'; l.style.display='block'; });
-      document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); var d=wgDropInfo(e.clientY); if(wgLine)wgLine.style.display='none'; parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:d.index},'*'); });
-      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd'&&wgLine)wgLine.style.display='none'; if(dd.cmd==='gotoBlock'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.index]; if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); el.style.transition='outline 0.2s'; el.style.outline='3px solid ${primary}'; setTimeout(function(){el.style.outline='';},900); } } });
+      // ── Drag & Drop: Block aus der Bibliothek einfuegen (mit Platzhalter-Rahmen) ──
+      var wgPlace=null;
+      function wgRemovePlace(){ if(wgPlace&&wgPlace.parentNode)wgPlace.parentNode.removeChild(wgPlace); wgPlace=null; }
+      function wgMakePlace(){ var d=document.createElement('div'); d.className='wg-place'; d.style.cssText='height:84px;margin:10px 14px;border:3px dashed ${primary};border-radius:16px;background:${primary}14;display:flex;align-items:center;justify-content:center;color:${primary};font:700 14px sans-serif;box-shadow:0 0 0 4px ${primary}22;'; d.textContent='⬇ Hier einfügen'; return d; }
+      function wgPlaceAt(y){
+        var bs=Array.prototype.slice.call(document.querySelectorAll('[data-block]')).filter(function(b){return !b.classList.contains('wg-place');});
+        if(!wgPlace) wgPlace=wgMakePlace();
+        var target=null;
+        for(var i=0;i<bs.length;i++){ var r=bs[i].getBoundingClientRect(); if(y < r.top + r.height/2){ target=bs[i]; window.__wgDropIndex=i; break; } }
+        if(target){ target.parentNode.insertBefore(wgPlace, target); }
+        else { var last=bs[bs.length-1]; if(last)last.parentNode.insertBefore(wgPlace, last.nextSibling); window.__wgDropIndex=bs.length; }
+      }
+      document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){} wgPlaceAt(e.clientY); });
+      document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); var idx=window.__wgDropIndex||0; wgRemovePlace(); parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:idx},'*'); });
+      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd')wgRemovePlace(); if(dd.cmd==='gotoBlock'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.index]; if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); el.style.transition='outline 0.2s'; el.style.outline='3px solid ${primary}'; setTimeout(function(){el.style.outline='';},900); } } });
     })();</script>`
 
     return html.replace('</head>', css + '</head>').replace('</body>', js + '</body>')
@@ -724,7 +733,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -946,8 +955,23 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
+  const pp = palette?.primary || {}
+  const ac = palette?.accent?.base || primary
+  const gradPresets = [
+    { label: 'Marke', css: `linear-gradient(135deg,${pp[700] || primary},${pp[500] || primary})` },
+    { label: 'Marke dunkel', css: `linear-gradient(135deg,${pp[900] || '#0f172a'},${pp[700] || primary})` },
+    { label: 'Akzent', css: `linear-gradient(135deg,${pp[600] || primary},${ac})` },
+    { label: 'Sanft hell', css: `linear-gradient(135deg,${pp[50] || '#f8fafc'},${pp[200] || '#e2e8f0'})` },
+    { label: 'Nacht', css: `linear-gradient(135deg,#0f172a,${pp[800] || '#1e293b'})` },
+    { label: 'Sonnenuntergang', css: 'linear-gradient(135deg,#ff7e5f,#feb47b)' },
+    { label: 'Ozean', css: 'linear-gradient(135deg,#2193b0,#6dd5ed)' },
+    { label: 'Violett', css: 'linear-gradient(135deg,#7c3aed,#2563eb)' },
+  ]
+  const [g1, setG1] = useState(pp[700] || primary)
+  const [g2, setG2] = useState(pp[400] || pp[300] || primary)
+  const [gAngle, setGAngle] = useState(135)
   const [fontSize, setFontSize] = useState(selected.fontSize || 16)
   const [unit, setUnit] = useState('px')
   const [color, setColor] = useState(selected.color || '#000000')
@@ -972,7 +996,7 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
     onSectionBg({ overlay: hexToRgba(c, o), parallax: p })
   }
 
-  const label = selected.isSection ? `Bereich: ${selected.secName || ''}`.trim() : selected.isStars ? 'Bewertung (Sterne)' : selected.isIcon ? 'Icon' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
+  const label = selected.isSection ? (selected.secName || 'Bereich') : selected.isStars ? 'Bewertung (Sterne)' : selected.isIcon ? 'Icon' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
 
   function applyFontSize(val, u) {
     setFontSize(val)
@@ -1019,13 +1043,23 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
           )}
 
           <Section title="Farbverlauf">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 8 }}>
-              {GRADIENTS.map(g => (
-                <div key={g.id} title={g.label} onClick={() => onSectionField({ bgGradient: g.css, bgImg: '', bgColor: '' })} style={{ height: 34, borderRadius: 7, cursor: 'pointer', background: g.css, border: `2px solid ${sectionContent?.bgGradient === g.css ? primary : 'transparent'}`, boxShadow: '0 0 0 1px #e5e5e5' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 10 }}>
+              {gradPresets.map(g => (
+                <div key={g.label} title={g.label} onClick={() => onSectionField({ bgGradient: g.css, bgImg: '', bgColor: '' })} style={{ height: 34, borderRadius: 7, cursor: 'pointer', background: g.css, border: `2px solid ${sectionContent?.bgGradient === g.css ? primary : 'transparent'}`, boxShadow: '0 0 0 1px #e5e5e5' }} />
               ))}
             </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', marginBottom: 6 }}>Eigener Verlauf</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <input type="color" value={g1} onChange={e => setG1(e.target.value)} style={{ width: 36, height: 32, borderRadius: 6, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+              <input type="color" value={g2} onChange={e => setG2(e.target.value)} style={{ width: 36, height: 32, borderRadius: 6, border: '1px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+              <div style={{ flex: 1, height: 32, borderRadius: 6, background: `linear-gradient(${gAngle}deg,${g1},${g2})`, boxShadow: '0 0 0 1px #e5e5e5' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>Winkel {gAngle}°</span>
+              <input type="range" min="0" max="360" value={gAngle} onChange={e => setGAngle(parseInt(e.target.value))} style={{ flex: 1, accentColor: primary }} />
+            </div>
+            <button onClick={() => onSectionField({ bgGradient: `linear-gradient(${gAngle}deg,${g1},${g2})`, bgImg: '', bgColor: '' })} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6 }}>Verlauf anwenden</button>
             {sectionContent?.bgGradient && <button onClick={() => onSectionField({ bgGradient: '' })} style={{ width: '100%', background: '#fff', color: '#64748b', border: '1px solid #e5e5e5', borderRadius: 7, padding: '6px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Verlauf entfernen</button>}
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, lineHeight: 1.4 }}>Eigene Farben unten unter „Farbe" → der Verlauf nutzt automatisch deine CI-Farben.</div>
           </Section>
 
           <Section title="Farbe">
@@ -1045,10 +1079,16 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
           </Section>
 
           {sectionContent?.bgImg && (
-            <Section title="Effekt">
+            <Section title="Bild-Darstellung">
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                {[['cover', 'Füllend'], ['contain', 'Einpassen']].map(([v, l]) => {
+                  const active = (sectionContent?.bgSize || 'cover') === v
+                  return <div key={v} onClick={() => onSectionField({ bgSize: v })} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', border: `2px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#475569', background: active ? primary + '0d' : '#fff' }}>{l}</div>
+                })}
+              </div>
               <div onClick={() => { const p = !parallax; setParallax(p); applyOverlay(overlayColor, overlayOpacity, p) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${parallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: parallax ? primary + '0d' : '#fff' }}>
                 <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${parallax ? primary : '#ccc'}`, background: parallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{parallax ? '✓' : ''}</div>
-                <div><div style={{ fontSize: 13, fontWeight: 600 }}>Parallax-Effekt</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bleibt beim Scrollen fest</div></div>
+                <div><div style={{ fontSize: 13, fontWeight: 600 }}>Scroll-fix (Parallax)</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bleibt beim Scrollen fest</div></div>
               </div>
             </Section>
           )}

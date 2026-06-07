@@ -32,6 +32,7 @@ export const FONT_PAIRS = [
   { id: 'classic', label: 'Klassisch', headline: 'Fraunces', body: 'Merriweather', sub: 'Kanzlei, Immobilien, Tradition' },
   { id: 'friendly', label: 'Freundlich', headline: 'Poppins', body: 'Nunito', sub: 'Café, Salon, lokale Dienste' },
   { id: 'corporate', label: 'Corporate', headline: 'Raleway', body: 'Roboto', sub: 'Unternehmen, B2B, seriös' },
+  { id: 'luxus', label: 'Luxuriös', headline: 'Cormorant Garamond', body: 'Manrope', sub: 'Premium, Schmuck, Hotel' },
   { id: 'simple', label: 'Schlicht', headline: 'Inter Tight', body: 'Inter Tight', sub: 'Universell, neutral' },
 ]
 
