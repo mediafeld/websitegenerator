@@ -17,28 +17,34 @@ export async function POST(request) {
 
     const fullPrompt = `Professional high-quality photograph for a business website. ${prompt}. Clean, modern, well-lit, photorealistic, no text, no watermarks, no logos.`
 
-    const res = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: fullPrompt,
-        n: 1,
-        size: imgSize,
-        quality: 'standard',
-      }),
-    })
+    // Modell-Kette: zuerst modernes Modell, dann Rückfall – je nach Zugang des API-Keys
+    const sizeGpt = { square: '1024x1024', landscape: '1536x1024', portrait: '1024x1536' }
+    const attempts = [
+      { model: 'gpt-image-1', prompt: fullPrompt, n: 1, size: sizeGpt[size] || '1024x1024', quality: 'medium' },
+      { model: 'dall-e-3', prompt: fullPrompt, n: 1, size: imgSize, quality: 'standard' },
+      { model: 'dall-e-2', prompt: fullPrompt, n: 1, size: '1024x1024' },
+    ]
 
-    const data = await res.json()
-    if (data.error) {
-      return Response.json({ error: data.error.message || 'Bildgenerierung fehlgeschlagen' }, { status: 500 })
+    let item = null, lastError = 'Bildgenerierung fehlgeschlagen'
+    for (const body of attempts) {
+      try {
+        const res = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify(body),
+        })
+        const data = await res.json()
+        if (data.error) {
+          lastError = data.error.message || lastError
+          // Bei Modell-/Zugriffsfehler nächstes Modell versuchen, sonst abbrechen
+          if (/model|exist|access|not have|permission|unsupported|unknown|verif/i.test(lastError)) continue
+          return Response.json({ error: lastError }, { status: 500 })
+        }
+        if (data.data?.[0]) { item = data.data[0]; break }
+      } catch (e) { lastError = e.message }
     }
+    if (!item) return Response.json({ error: lastError }, { status: 500 })
 
-    // Antwort kann b64_json ODER eine URL sein – beides unterstützen
-    const item = data.data?.[0] || {}
     let pngBuffer
     if (item.b64_json) {
       pngBuffer = Buffer.from(item.b64_json, 'base64')

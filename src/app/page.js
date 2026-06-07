@@ -155,6 +155,37 @@ export default function WizardPage() {
     reader.readAsDataURL(file)
   }
 
+  // Eigene Bilder hochladen (max 20, nur webp/jpg/png, komprimiert)
+  function handleUserImages(e) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const allowed = ['image/webp', 'image/jpeg', 'image/jpg', 'image/png']
+    const room = 20 - (fd.userImages?.length || 0)
+    const valid = files.filter(f => allowed.includes(f.type))
+    if (valid.length !== files.length) alert('Es sind nur WebP, JPG und PNG erlaubt.')
+    valid.slice(0, room).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const img = new Image()
+        img.onload = () => {
+          const maxDim = 1600
+          let { width, height } = img
+          if (width > maxDim || height > maxDim) { if (width > height) { height = Math.round(height * maxDim / width); width = maxDim } else { width = Math.round(width * maxDim / height); height = maxDim } }
+          const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+          let out; try { out = canvas.toDataURL('image/webp', 0.82) } catch { out = ev.target.result }
+          setFd(prev => ({ ...prev, userImages: [...(prev.userImages || []), { data: out, desc: '' }] }))
+        }
+        img.onerror = () => setFd(prev => ({ ...prev, userImages: [...(prev.userImages || []), { data: ev.target.result, desc: '' }] }))
+        img.src = ev.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+  function updUserImageDesc(i, desc) { setFd(prev => { const arr = [...(prev.userImages || [])]; arr[i] = { ...arr[i], desc }; return { ...prev, userImages: arr } }) }
+  function removeUserImage(i) { setFd(prev => ({ ...prev, userImages: (prev.userImages || []).filter((_, j) => j !== i) })) }
+
   const palette = generateCIPalette(fd.farbe)
   const primary = palette?.primary?.[500] || fd.farbe
   const branche = getBranche(fd.branche)
@@ -349,6 +380,34 @@ export default function WizardPage() {
                 </div>
                 <input id="wizLogo" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
               </Panel>
+
+              <Panel>
+                <SectionTitle sub="Optional – werden automatisch sinnvoll auf der Seite platziert (Hero, Über uns, Galerie …)">Eigene Bilder ({fd.userImages?.length || 0}/20)</SectionTitle>
+                <div onClick={() => (fd.userImages?.length || 0) < 20 && document.getElementById('wizImgs')?.click()} style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: 24, textAlign: 'center', cursor: (fd.userImages?.length || 0) < 20 ? 'pointer' : 'not-allowed', background: '#fafbff', marginBottom: 12 }}>
+                  <div style={{ fontSize: 26, marginBottom: 6 }}>📷</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#475569' }}>Bilder hochladen (max. 20)</div>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>Nur WebP, JPG oder PNG</div>
+                </div>
+                <input id="wizImgs" type="file" accept="image/webp,image/jpeg,image/png" multiple style={{ display: 'none' }} onChange={handleUserImages} />
+                {!!(fd.userImages?.length) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                    {fd.userImages.map((im, i) => (
+                      <div key={i} style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: 8, position: 'relative' }}>
+                        <img src={im.data} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6, marginBottom: 6 }} />
+                        <button onClick={() => removeUserImage(i)} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(220,38,38,0.9)', color: '#fff', cursor: 'pointer', fontSize: 12, lineHeight: 1 }}>×</button>
+                        <input value={im.desc} onChange={e => updUserImageDesc(i, e.target.value)} placeholder="Beschreibung (z. B. Team, Ladenlokal …)" style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 6, padding: '6px 8px', fontSize: 11, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!!(fd.userImages?.length) && (
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', background: fd.imgLicense ? primary + '0a' : '#fff7ed', border: `1px solid ${fd.imgLicense ? primary + '55' : '#fed7aa'}`, borderRadius: 10, padding: 12 }}>
+                    <input type="checkbox" checked={!!fd.imgLicense} onChange={e => upd('imgLicense', e.target.checked)} style={{ marginTop: 2, accentColor: primary, width: 16, height: 16, flexShrink: 0 }} />
+                    <span style={{ fontSize: 11.5, color: '#475569', lineHeight: 1.5 }}>Ich bestätige, dass ich die <strong>Nutzungsrechte/Lizenzen</strong> für alle hochgeladenen Bilder besitze und sie auf meiner Website verwenden darf. Die Bilder werden ausschließlich zur Erstellung dieser Website genutzt und nach Fertigstellung &amp; Download vom Server gelöscht.</span>
+                  </label>
+                )}
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 10, lineHeight: 1.5 }}>Zusätzlich erzeugt der Generator bei Bedarf weiterhin passende KI-Bilder.</div>
+              </Panel>
             </>
           )}
 
@@ -513,7 +572,7 @@ export default function WizardPage() {
       <div style={{ borderTop: '1px solid #e5e5e5', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', position: 'sticky', bottom: 0, flexShrink: 0 }}>
         <button onClick={back} disabled={step === 1} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', opacity: step === 1 ? 0.4 : 1, fontFamily: 'inherit' }}>← Zurück</button>
         {step < TOTAL_STEPS ? (
-          <button onClick={next} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Weiter →</button>
+          <button onClick={next} disabled={step === 3 && !!(fd.userImages?.length) && !fd.imgLicense} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: (step === 3 && !!(fd.userImages?.length) && !fd.imgLicense) ? 'not-allowed' : 'pointer', opacity: (step === 3 && !!(fd.userImages?.length) && !fd.imgLicense) ? 0.5 : 1, fontFamily: 'inherit' }}>Weiter →</button>
         ) : (
           <button onClick={finish} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 32px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>✨ Website generieren →</button>
         )}

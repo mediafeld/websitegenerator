@@ -52,15 +52,43 @@ export default function GeneratingPage() {
 
   async function generate(formData, pal) {
     try {
-      const res = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formData }) })
+      const { userImages, ...fdForApi } = formData
+      const res = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formData: fdForApi }) })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      sessionStorage.setItem('wg24_pages', JSON.stringify(data.pages))
+      const pagesWithImgs = injectUserImages(data.pages, userImages)
+      try {
+        sessionStorage.setItem('wg24_pages', JSON.stringify(pagesWithImgs))
+      } catch (quota) {
+        // Zu viele/große Bilder für den Browser-Speicher → ohne eigene Bilder speichern
+        sessionStorage.setItem('wg24_pages', JSON.stringify(data.pages))
+        alert('Die hochgeladenen Bilder sind zusammen zu groß für den Zwischenspeicher. Die Seite wird ohne sie erstellt – du kannst sie im Editor einzeln einfügen.')
+      }
+      sessionStorage.setItem('wg24_formData', JSON.stringify(fdForApi))
       sessionStorage.setItem('wg24_palette', JSON.stringify(data.palette || pal))
       sessionStorage.setItem('wg24_font', data.font || 'Inter Tight')
       setDone(true); setProgress(100); setStepIdx(STEPS.length - 1)
       setTimeout(() => router.push('/editor'), 800)
     } catch (err) { setError(err.message) }
+  }
+
+  // Eigene Bilder sinnvoll in die generierten Seiten einbauen (Hero → Über uns → Bild → Galerie)
+  function injectUserImages(pages, userImages) {
+    const imgs = (userImages || []).map(u => u?.data).filter(Boolean)
+    if (!imgs.length || !pages) return pages
+    const next = JSON.parse(JSON.stringify(pages))
+    let i = 0
+    const take = () => (i < imgs.length ? imgs[i++] : null)
+    for (const pg of Object.values(next)) { for (const b of pg) { if (i >= imgs.length) break
+      const c = b.content || (b.content = {})
+      if (b.type === 'hero-full') { const v = take(); if (v) { c.heroImg = v; c.bgImg = v } }
+      else if (b.type === 'about') { const v = take(); if (v) c.aboutImg = v }
+      else if (b.type === 'image') { const v = take(); if (v) c.image = v; const v2 = take(); if (v2) c.image2 = v2 }
+    } }
+    for (const pg of Object.values(next)) { for (const b of pg) { if (i >= imgs.length) break
+      if (b.type === 'gallery') { const c = b.content || (b.content = {}); if (!Array.isArray(c.images)) c.images = ['', '', '', '', '', '']; for (let g = 0; g < c.images.length && i < imgs.length; g++) c.images[g] = take() }
+    } }
+    return next
   }
 
   const primary = palette?.primary?.[500] || '#3b82f6'
