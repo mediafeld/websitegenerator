@@ -20,6 +20,14 @@ const icon = (key, name, size = 24, color = 'var(--p600)') =>
 
 const STARS = `<span style="display:inline-flex;gap:3px;">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</span>`
 
+// Editierbare Sterne-Bewertung (anklickbar im Editor via data-stars)
+const stars = (key, rating = 5) => {
+  const r = Math.max(0, Math.min(5, parseInt(rating) || 5))
+  let out = ''
+  for (let i = 1; i <= 5; i++) out += `<i class="fa-${i <= r ? 'solid' : 'regular'} fa-star"></i>`
+  return `<span data-stars="${key}" data-rating="${r}" style="display:inline-flex;gap:3px;cursor:pointer;">${out}</span>`
+}
+
 // Helper: Bild mit Upload-Funktion
 const img = (key, src, cls = '', fallbackGradient = true) => {
   if (src) return `<img data-img="${key}" src="${esc(src)}" class="${cls}" style="object-fit:cover;">`
@@ -152,7 +160,7 @@ export const HERO_FULL = {
       </div>
     </div>
     <div data-reveal style="position:relative;">
-      ${img('hero_img', c.heroImg, 'border-radius:20px;width:100%;height:480px;')}
+      ${img('heroImg', c.heroImg, 'border-radius:20px;width:100%;height:480px;')}
       <div style="position:absolute;bottom:20px;left:20px;background:#fff;border-radius:12px;padding:14px 18px;box-shadow:0 8px 32px rgba(0,0,0,0.12);display:flex;align-items:center;gap:10px;">
         <div style="width:10px;height:10px;background:#22c55e;border-radius:50%;"></div>
         <span style="font-size:13px;font-weight:600;color:#0f172a;">${ed('badge', c.badge || c.tag, 'span')}</span>
@@ -174,7 +182,7 @@ export const HERO_FULL = {
       <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
       <a href="#leistungen" style="background:${c.bgImg ? 'rgba(255,255,255,0.15)' : '#fff'};color:${c.bgImg ? '#fff' : 'var(--p700)'};text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid ${c.bgImg ? 'rgba(255,255,255,0.4)' : 'var(--p200)'};">${ed('cta2', c.cta2, 'span')}</a>
     </div>
-    ${c.bgImg ? '' : `<div data-reveal>${img('hero_img', c.heroImg, 'border-radius:20px;width:100%;height:400px;box-shadow:0 20px 60px rgba(0,0,0,0.15);')}</div>`}
+    ${c.bgImg ? '' : `<div data-reveal>${img('heroImg', c.heroImg, 'border-radius:20px;width:100%;height:400px;box-shadow:0 20px 60px rgba(0,0,0,0.15);')}</div>`}
   </div>
 </section>`
     },
@@ -193,7 +201,7 @@ export const HERO_FULL = {
       </div>
     </div>
     <div data-reveal>
-      ${img('hero_img', c.heroImg, 'border-radius:20px;width:100%;height:440px;box-shadow:0 24px 60px rgba(0,0,0,0.14);')}
+      ${img('heroImg', c.heroImg, 'border-radius:20px;width:100%;height:440px;box-shadow:0 24px 60px rgba(0,0,0,0.14);')}
     </div>
   </div>
 </section>`
@@ -317,7 +325,7 @@ export const ABOUT = {
 <section data-block="about" data-variant="about-split" id="about" data-section="1" style="${sectionBgStyle(c,'background:var(--p50);')}padding:80px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="about-grid">
     <div data-reveal>
-      ${img('about_img', c.aboutImg, 'border-radius:20px;width:100%;height:400px;')}
+      ${img('aboutImg', c.aboutImg, 'border-radius:20px;width:100%;height:400px;')}
     </div>
     <div data-reveal>
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
@@ -401,7 +409,7 @@ export const TESTIMONIALS = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
       ${(c.items || []).map((t, i) => `
         <div data-reveal style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
-          <div style="color:#f59e0b;font-size:16px;margin-bottom:14px;">${STARS}</div>
+          <div style="color:#f59e0b;font-size:16px;margin-bottom:14px;">${stars('testi_rating_'+i, t.rating || 5)}</div>
           <p style="font-size:15px;color:#475569;line-height:1.7;font-style:italic;margin-bottom:20px;">"${ed('testi_quote_'+i, t.quote, 'span')}"</p>
           <div style="display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid #f1f5f9;">
             <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p400),var(--p600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;">${esc((t.name||'?').charAt(0))}</div>
@@ -472,7 +480,7 @@ export const GALLERY = {
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;">${ed('title', c.title, 'span')}</h2>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
-      ${(c.images || [1,2,3,4,5,6]).map((im, i) => `<div data-reveal>${img('gallery_'+i, typeof im==='string'?im:'', 'border-radius:14px;width:100%;height:240px;')}</div>`).join('')}
+      ${(c.images || [1,2,3,4,5,6]).map((im, i) => `<div data-reveal>${img('img_'+i, typeof im==='string'?im:'', 'border-radius:14px;width:100%;height:240px;')}</div>`).join('')}
     </div>
   </div>
 </section>`
@@ -735,6 +743,38 @@ export const STEPS = {
   ]
 }
 
+// ═══════════════════════════════════════════════════════════════
+// BILD (einzeln / Duo)
+// ═══════════════════════════════════════════════════════════════
+export const IMAGE = {
+  type: 'image',
+  label: 'Bild',
+  variants: [
+    {
+      id: 'image-full', name: 'Großes Bild',
+      render: (c) => `
+<section data-block="image" data-variant="image-full" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:48px 0;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
+    <div data-reveal style="border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,0.10);">
+      ${img('image', c.image, 'width:100%;height:auto;min-height:280px;display:block;')}
+    </div>
+    ${c.caption ? `<p style="text-align:center;font-size:13px;color:#94a3b8;margin-top:12px;">${ed('caption', c.caption, 'span')}</p>` : ''}
+  </div>
+</section>`
+    },
+    {
+      id: 'image-duo', name: 'Zwei Bilder',
+      render: (c) => `
+<section data-block="image" data-variant="image-duo" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:48px 0;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;" class="about-grid">
+    <div data-reveal style="border-radius:16px;overflow:hidden;">${img('image', c.image, 'width:100%;height:320px;')}</div>
+    <div data-reveal style="border-radius:16px;overflow:hidden;">${img('image2', c.image2, 'width:100%;height:320px;')}</div>
+  </div>
+</section>`
+    },
+  ]
+}
+
 // ─────────────────────────────────────────────────────────────
 // REGISTRY
 // ─────────────────────────────────────────────────────────────
@@ -752,6 +792,7 @@ export const BLOCK_REGISTRY = {
   stats: STATS,
   cta: CTA,
   gallery: GALLERY,
+  image: IMAGE,
   faq: FAQ,
   contact: CONTACT,
   footer: FOOTER,
@@ -761,22 +802,23 @@ export const BLOCK_REGISTRY = {
 
 // Blöcke die der Nutzer im Editor hinzufügen kann
 export const ADDABLE_BLOCKS = [
-  { type: 'hero-full', label: 'Hero', emoji: '🦸', cat: 'Kopf & Hero' },
-  { type: 'header-slim', label: 'Seiten-Header', emoji: '📰', cat: 'Kopf & Hero' },
-  { type: 'services', label: 'Leistungen', emoji: '⚡', cat: 'Inhalt' },
-  { type: 'steps', label: 'Ablauf / Schritte', emoji: '🪜', cat: 'Inhalt' },
-  { type: 'about', label: 'Über uns', emoji: '👤', cat: 'Inhalt' },
-  { type: 'team', label: 'Team', emoji: '👥', cat: 'Inhalt' },
-  { type: 'gallery', label: 'Galerie', emoji: '🖼️', cat: 'Inhalt' },
-  { type: 'faq', label: 'FAQ', emoji: '❓', cat: 'Inhalt' },
-  { type: 'testimonials', label: 'Kundenstimmen', emoji: '💬', cat: 'Vertrauen' },
-  { type: 'stats', label: 'Zahlen', emoji: '📊', cat: 'Vertrauen' },
-  { type: 'logos', label: 'Partner-Logos', emoji: '🏷️', cat: 'Vertrauen' },
-  { type: 'pricing', label: 'Preise / Pakete', emoji: '💶', cat: 'Konversion' },
-  { type: 'cta', label: 'Call to Action', emoji: '🎯', cat: 'Konversion' },
-  { type: 'contact', label: 'Kontakt', emoji: '✉️', cat: 'Konversion' },
-  { type: 'menu', label: 'Speisekarte', emoji: '🍽️', cat: 'Sonstiges', nurBranche: ['restaurant'] },
-  { type: 'custom', label: 'Eigener Code', emoji: '💻', cat: 'Sonstiges' },
+  { type: 'hero-full', label: 'Hero', emoji: '🦸', fa: 'rectangle-ad', cat: 'Kopf & Hero' },
+  { type: 'header-slim', label: 'Seiten-Header', emoji: '📰', fa: 'window-minimize', cat: 'Kopf & Hero' },
+  { type: 'services', label: 'Leistungen', emoji: '⚡', fa: 'bolt', cat: 'Inhalt' },
+  { type: 'steps', label: 'Ablauf / Schritte', emoji: '🪜', fa: 'list-ol', cat: 'Inhalt' },
+  { type: 'about', label: 'Über uns', emoji: '👤', fa: 'circle-info', cat: 'Inhalt' },
+  { type: 'team', label: 'Team', emoji: '👥', fa: 'users', cat: 'Inhalt' },
+  { type: 'image', label: 'Bild', emoji: '🖼️', fa: 'image', cat: 'Inhalt' },
+  { type: 'gallery', label: 'Galerie', emoji: '🖼️', fa: 'images', cat: 'Inhalt' },
+  { type: 'faq', label: 'FAQ', emoji: '❓', fa: 'circle-question', cat: 'Inhalt' },
+  { type: 'testimonials', label: 'Kundenstimmen', emoji: '💬', fa: 'comment', cat: 'Vertrauen' },
+  { type: 'stats', label: 'Zahlen', emoji: '📊', fa: 'chart-simple', cat: 'Vertrauen' },
+  { type: 'logos', label: 'Partner-Logos', emoji: '🏷️', fa: 'handshake-angle', cat: 'Vertrauen' },
+  { type: 'pricing', label: 'Preise / Pakete', emoji: '💶', fa: 'tags', cat: 'Konversion' },
+  { type: 'cta', label: 'Call to Action', emoji: '🎯', fa: 'bullhorn', cat: 'Konversion' },
+  { type: 'contact', label: 'Kontakt', emoji: '✉️', fa: 'envelope', cat: 'Konversion' },
+  { type: 'menu', label: 'Speisekarte', emoji: '🍽️', fa: 'utensils', cat: 'Sonstiges', nurBranche: ['restaurant'] },
+  { type: 'custom', label: 'Eigener Code', emoji: '💻', fa: 'code', cat: 'Sonstiges' },
 ]
 
 // Kategorien-Reihenfolge für die Editor-Bibliothek

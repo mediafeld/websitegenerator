@@ -168,8 +168,13 @@ export default function EditorPage() {
   // ── Render in iframe – NUR bei strukturellen Änderungen (renderKey) ──
   useEffect(() => {
     if (!iframeRef.current || !palette || !activePage || !blocks.length) return
+    const iframe = iframeRef.current
+    // Scroll-Position merken, damit der Editor beim Neuaufbau nicht nach oben springt
+    let sy = 0
+    try { sy = iframe.contentWindow?.scrollY || 0 } catch { sy = 0 }
     const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true })
-    iframeRef.current.srcdoc = injectEditor(injectPattern(html))
+    iframe.onload = () => { try { iframe.contentWindow?.scrollTo(0, sy) } catch {} }
+    iframe.srcdoc = injectEditor(injectPattern(html))
   }, [renderKey, activePage, palette, font, fontHeadline, pagePattern])
 
   function applyPattern(pat) {
@@ -236,7 +241,7 @@ export default function EditorPage() {
       },true);
 
       // 2) Wählbare Elemente markieren: Überschriften, Absätze, Buttons, Links, Bilder, Icons
-      var SEL='h1,h2,h3,h4,p,a,button,[data-img],[data-icon],[data-edit],span[style],.wg-btn,li';
+      var SEL='h1,h2,h3,h4,p,a,button,[data-img],[data-icon],[data-stars],[data-edit],span[style],.wg-btn,li';
       function labelFor(el){
         var t=el.tagName.toLowerCase();
         if(el.hasAttribute('data-img'))return 'Bild';
@@ -259,8 +264,10 @@ export default function EditorPage() {
           tag:el.tagName.toLowerCase(),
           isImg:el.hasAttribute('data-img'),
           isIcon:el.hasAttribute('data-icon'),
+          isStars:el.hasAttribute('data-stars'),
+          rating:el.hasAttribute('data-stars')?(parseInt(el.getAttribute('data-rating'))||5):0,
           isText:el.hasAttribute('data-edit'),
-          key:el.getAttribute('data-edit')||el.getAttribute('data-img')||el.getAttribute('data-icon')||'',
+          key:el.getAttribute('data-edit')||el.getAttribute('data-img')||el.getAttribute('data-icon')||el.getAttribute('data-stars')||'',
           iconName:el.hasAttribute('data-icon')?(((el.getAttribute('class')||'').match(/fa-(?!solid|regular|brands)[a-z0-9-]+/)||[''])[0]):'',
           align:cs.textAlign,
           color:rgbToHex(cs.color),
@@ -358,6 +365,13 @@ export default function EditorPage() {
           }
         });
       });
+      // ── Drag & Drop: Block aus der Bibliothek einfuegen ──
+      var wgLine=null;
+      function wgEnsureLine(){ if(!wgLine){ wgLine=document.createElement('div'); wgLine.style.cssText='position:absolute;left:12px;right:12px;height:4px;background:${primary};border-radius:3px;z-index:99999;pointer-events:none;box-shadow:0 0 10px ${primary};display:none;'; document.body.appendChild(wgLine);} return wgLine; }
+      function wgDropInfo(y){ var bs=Array.prototype.slice.call(document.querySelectorAll('[data-block]')); for(var i=0;i<bs.length;i++){ var r=bs[i].getBoundingClientRect(); if(y < r.top + r.height/2){ return {index:i, top:r.top+window.scrollY}; } } var last=bs.length?bs[bs.length-1].getBoundingClientRect():{bottom:0}; return {index:bs.length, top:last.bottom+window.scrollY}; }
+      document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){} var d=wgDropInfo(e.clientY); var l=wgEnsureLine(); l.style.top=(d.top-2)+'px'; l.style.display='block'; });
+      document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); var d=wgDropInfo(e.clientY); if(wgLine)wgLine.style.display='none'; parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:d.index},'*'); });
+      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd'&&wgLine)wgLine.style.display='none'; if(dd.cmd==='gotoBlock'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.index]; if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); el.style.transition='outline 0.2s'; el.style.outline='3px solid ${primary}'; setTimeout(function(){el.style.outline='';},900); } } });
     })();</script>`
 
     return html.replace('</head>', css + '</head>').replace('</body>', js + '</body>')
@@ -369,10 +383,10 @@ export default function EditorPage() {
       const d = e.data
       if (!d?.t) return
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
-      if (d.t === 'imgClick') { setImgTarget({ blockIdx: d.block, key: d.key }); setLastImgClick({ blockIdx: d.block, key: d.key }); fileRef.current?.click() }
+      if (d.t === 'imgClick') { setLastImgClick({ blockIdx: d.block, key: d.key }) }
       if (d.t === 'iconClick') setIconPicker({ blockIdx: d.block, key: d.key })
       if (d.t === 'select') setSelected(d)
-      if (d.t === 'selectSection') setSelected({ isSection: true, block: d.block })
+      if (d.t === 'selectSection') { const t = pages[activePage]?.[d.block]?.type; setSelected({ isSection: true, block: d.block, secName: BLOCK_REGISTRY[t]?.label || 'Bereich' }) }
       if (d.t === 'sectionStyle') saveSectionStyle(d.block, d.img, d.overlay, d.parallax)
       if (d.t === 'deselect') setSelected(null)
       if (d.t === 'style') { /* live im iframe, kein extra Speichern nötig */ }
@@ -380,6 +394,7 @@ export default function EditorPage() {
       if (d.t === 'move') moveBlock(d.block, d.dir)
       if (d.t === 'del') delBlock(d.block)
       if (d.t === 'dup') dupBlock(d.block)
+      if (d.t === 'dropBlock') addBlockAt(d.index, d.blockType)
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
@@ -488,6 +503,15 @@ export default function EditorPage() {
     arr.splice(arr.length - 1, 0, { type, variant: variantId || variants[0].id, content: buildDefaultContent(type) })
     next[activePage] = arr; applyPages(next)
     setExpandedBlock(null)
+  }
+
+  // Block per Drag & Drop an bestimmter Position einfügen (nicht vor nav, nicht nach footer)
+  function addBlockAt(index, type) {
+    const variants = getVariants(type); if (!variants.length) return
+    const next = { ...pages }; const arr = [...next[activePage]]
+    const i = Math.max(1, Math.min(index, arr.length - 1))
+    arr.splice(i, 0, { type, variant: variants[0].id, content: buildDefaultContent(type) })
+    next[activePage] = arr; applyPages(next)
   }
 
   function onFile(e) {
@@ -623,7 +647,7 @@ export default function EditorPage() {
         {/* LEFT PANEL */}
         <div style={{ width: 240, borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#fff' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid #e5e5e5' }}>
-            {[['Blöcke', 'blocks'], ['Seiten', 'pages']].map(([l, id]) => (
+            {[['Blöcke', 'blocks'], ['Bereiche', 'sections'], ['Seiten', 'pages']].map(([l, id]) => (
               <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: '9px 0', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: 'none', border: 'none', borderBottom: `2px solid ${tab === id ? primary : 'transparent'}`, color: tab === id ? '#111' : '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</button>
             ))}
           </div>
@@ -641,10 +665,10 @@ export default function EditorPage() {
                         {items.map(b => {
                           const n = getVariants(b.type).length
                           return (
-                            <div key={b.type} onClick={() => setBlockPicker(b.type)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '13px 6px 9px', border: '1px solid #e5e5e5', borderRadius: 10, cursor: 'pointer', background: '#fff', transition: 'all 0.12s', textAlign: 'center', position: 'relative' }}
+                            <div key={b.type} draggable onDragStart={e => { window.__wgDrag = b.type; e.dataTransfer.effectAllowed = 'copy'; try { e.dataTransfer.setData('text/plain', b.type) } catch {} }} onDragEnd={() => { window.__wgDrag = null; iframeRef.current?.contentWindow?.postMessage({ cmd: 'wgDragEnd' }, '*') }} onClick={() => setBlockPicker(b.type)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '13px 6px 9px', border: '1px solid #e5e5e5', borderRadius: 10, cursor: 'grab', background: '#fff', transition: 'all 0.12s', textAlign: 'center', position: 'relative' }}
                               onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.background = primary + '08'; e.currentTarget.style.transform = 'translateY(-1px)' }}
                               onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'none' }}>
-                              <span style={{ fontSize: 21 }}>{b.emoji}</span>
+                              <i className={`fa-solid fa-${b.fa || 'cube'}`} style={{ fontSize: 19, color: primary }} />
                               <span style={{ fontSize: 10.5, fontWeight: 600, color: '#334155', lineHeight: 1.2 }}>{b.label}</span>
                               <span style={{ fontSize: 8.5, fontWeight: 700, color: '#94a3b8', background: '#f1f5f9', borderRadius: 99, padding: '1px 7px' }}>{n} {n === 1 ? 'Vorlage' : 'Vorlagen'}</span>
                             </div>
@@ -655,6 +679,25 @@ export default function EditorPage() {
                   )
                 })}
                 <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Block → wähle aus mehreren Design-Vorlagen mit Live-Vorschau.</div>
+              </>
+            )}
+            {tab === 'sections' && (
+              <>
+                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 6 }}>Bereiche dieser Seite</div>
+                {blocks.map((b, i) => {
+                  if (b.type === 'nav' || b.type === 'footer') return null
+                  const meta = ADDABLE_BLOCKS.find(a => a.type === b.type)
+                  const name = BLOCK_REGISTRY[b.type]?.label || b.type
+                  const active = selected?.isSection && selected.block === i
+                  return (
+                    <div key={i} onClick={() => { setSelected({ isSection: true, block: i, secName: name }); iframeRef.current?.contentWindow?.postMessage({ cmd: 'gotoBlock', index: i }, '*') }} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', border: `1px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 8, marginBottom: 5, cursor: 'pointer', background: active ? primary + '12' : '#fff' }}>
+                      <i className={`fa-solid fa-${meta?.fa || 'cube'}`} style={{ fontSize: 13, color: primary, width: 16, textAlign: 'center' }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#334155', flex: 1 }}>{name}</span>
+                      <span style={{ fontSize: 10, color: '#cbd5e1', fontWeight: 700 }}>{i}</span>
+                    </div>
+                  )
+                })}
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 8, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Bereich → springt in der Vorschau dorthin und öffnet die Bearbeitung rechts.</div>
               </>
             )}
             {tab === 'pages' && (
@@ -681,7 +724,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} />
+            <PropsPanel selected={selected} primary={primary} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -903,7 +946,8 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onIconClick }) {
+function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
+  const imgRest = Math.max(0, imageQuota - imagesUsed)
   const [fontSize, setFontSize] = useState(selected.fontSize || 16)
   const [unit, setUnit] = useState('px')
   const [color, setColor] = useState(selected.color || '#000000')
@@ -928,7 +972,7 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
     onSectionBg({ overlay: hexToRgba(c, o), parallax: p })
   }
 
-  const label = selected.isSection ? 'Bereich / Section' : selected.isIcon ? 'Icon' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
+  const label = selected.isSection ? `Bereich: ${selected.secName || ''}`.trim() : selected.isStars ? 'Bewertung (Sterne)' : selected.isIcon ? 'Icon' : selected.isImg ? 'Bild' : selected.tag === 'h1' ? 'Überschrift H1' : selected.tag === 'a' || selected.tag === 'button' ? 'Button' : selected.tag?.startsWith('h') ? 'Überschrift' : selected.tag === 'p' ? 'Text' : 'Element'
 
   function applyFontSize(val, u) {
     setFontSize(val)
@@ -1010,6 +1054,17 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
           )}
           <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Klick auf einzelne Elemente (Text, Icons, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
         </>
+      ) : selected.isStars ? (
+        <Section title="Sterne-Bewertung">
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} onClick={() => onSetRating(n)} title={`${n} Sterne`} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, color: n <= (selected.rating || 5) ? '#f59e0b' : '#cbd5e1', padding: 0 }}>
+                <i className="fa-solid fa-star" />
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{selected.rating || 5} von 5 Sternen</div>
+        </Section>
       ) : selected.isIcon ? (
         <Section title="Icon">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '10px', border: '1px solid #e5e5e5', borderRadius: 8 }}>
@@ -1020,8 +1075,9 @@ function PropsPanel({ selected, primary, sendCmd, onClose, onImageClick, onAIIma
         </Section>
       ) : selected.isImg ? (
         <Section title="Bild">
-          <button onClick={onImageClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>📁 Bild hochladen</button>
-          <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✨ KI-Bild generieren</button>
+          <button onClick={onImageClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}><i className="fa-solid fa-arrow-up-from-bracket" style={{ marginRight: 6 }} />Bild hochladen</button>
+          <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />KI-Bild generieren</button>
+          <div style={{ fontSize: 11, color: imgRest > 0 ? '#16a34a' : '#f59e0b', fontWeight: 700, textAlign: 'center', marginTop: 8 }}>{imgRest} von {imageQuota} KI-Bildern frei</div>
         </Section>
       ) : (
         <>
@@ -1187,6 +1243,7 @@ function buildDefaultContent(type) {
     stats: { items: [{ num: '15+', label: 'Jahre' }, { num: '500+', label: 'Kunden' }, { num: '98%', label: 'Zufrieden' }, { num: '24/7', label: 'Support' }] },
     cta: { title: 'Bereit loszulegen?', subtitle: 'Kontaktiere uns.', cta1: 'Jetzt anfragen', telefon: '+49 30 1234567' },
     gallery: { title: 'Galerie', images: ['', '', '', '', '', ''] },
+    image: { image: '', image2: '', caption: '' },
     faq: { title: 'Häufige Fragen', items: [{ q: 'Frage 1?', a: 'Antwort.' }, { q: 'Frage 2?', a: 'Antwort.' }, { q: 'Frage 3?', a: 'Antwort.' }] },
     contact: { tag: 'Kontakt', title: 'Sprich uns an', subtitle: 'Wir freuen uns.', adresse: 'Musterstr. 1, Berlin', telefon: '+49 30 1234567', email: 'info@beispiel.de', oeffnung: 'Mo-Fr: 9-18 Uhr' },
     menu: { tag: 'Speisekarte', title: 'Unsere Speisekarte', kategorien: [{ name: 'Vorspeisen', items: [{ name: 'Bruschetta', desc: 'Geröstetes Brot mit Tomaten', preis: '6,90 €' }, { name: 'Caprese', desc: 'Tomate, Mozzarella, Basilikum', preis: '8,50 €' }] }, { name: 'Hauptgerichte', items: [{ name: 'Pasta Carbonara', desc: 'Mit Speck und Ei', preis: '12,90 €' }, { name: 'Pizza Margherita', desc: 'Klassisch italienisch', preis: '9,90 €' }] }] },

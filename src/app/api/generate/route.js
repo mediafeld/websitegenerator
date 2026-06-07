@@ -104,6 +104,7 @@ WICHTIG bei Restaurant: Fuege auf der Startseite ODER einer Speisekarte-Seite ei
 
 ICONS: Bei "services" ist jedes "icon" ein gueltiger Font-Awesome-6-Solid-Name OHNE "fa-" Prefix (z.B. "bolt","bullseye","handshake","shield-halved","clock","phone","star","heart","screwdriver-wrench","scale-balanced","stethoscope","scissors","dumbbell","house","chart-line","users","gem","leaf","truck","wrench","graduation-cap","utensils","car","camera","palette","lightbulb","rocket","lock","gift","calendar-days"). NIEMALS Emojis. Waehle pro Leistung ein thematisch passendes Icon.
 Format menu-Block content: {"tag":"Speisekarte","title":"...","kategorien":[{"name":"Vorspeisen","items":[{"name":"...","desc":"...","preis":"9,90 EUR"}]},{"name":"Hauptgerichte","items":[...]}]}
+FAQ: Jeder "faq"-Block braucht 4-5 ECHTE, branchenspezifische Fragen mit ausfuehrlichen Antworten (2-3 Saetze, ${anrede}). Niemals leer lassen. Format: {"title":"Haeufige Fragen","items":[{"q":"...","a":"..."},{"q":"...","a":"..."}]}
 
 REGELN:
 1. STARTSEITE: Verwende GENAU diese Block-Reihenfolge und Varianten: ${layoutBeschreibung}
@@ -176,6 +177,21 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
         }
         if (b.type === 'team' && Array.isArray(c.members)) {
           c.members = c.members.map((m, i) => ({ ...m, img: m.img || stock.gallery[i % stock.gallery.length] }))
+        }
+        if (b.type === 'faq') {
+          const valid = Array.isArray(c.items) ? c.items.filter(it => (it && ((it.q || '').trim() || (it.a || '').trim()))) : []
+          if (valid.length < 3) {
+            const fn = formData.firmenname || 'unser Team'
+            const ort = formData.stadt || formData.ort || 'unserer Region'
+            const tel = formData.telefon || 'telefonisch'
+            c.items = [
+              { q: 'Wie kann ich einen Termin vereinbaren?', a: `Am einfachsten erreichen Sie uns ${formData.telefon ? `unter ${tel}` : 'telefonisch'} oder über das Kontaktformular. Wir melden uns schnellstmöglich bei Ihnen zurück.` },
+              { q: `Welche Leistungen bietet ${fn} an?`, a: 'Einen Überblick über unser komplettes Angebot finden Sie im Bereich Leistungen. Bei individuellen Fragen beraten wir Sie gerne persönlich.' },
+              { q: 'Wo finde ich Sie?', a: `Sie finden uns in ${ort}${formData.adresse ? ` (${formData.adresse})` : ''}. Die genaue Anfahrt sehen Sie im Kontaktbereich.` },
+              { q: 'Was kostet ein Erstgespräch?', a: 'Ein erstes Kennenlernen ist unverbindlich. Die genauen Kosten richten sich nach Ihrem individuellen Anliegen – sprechen Sie uns einfach an.' },
+            ]
+          } else { c.items = valid }
+          if (!c.title) c.title = 'Häufige Fragen'
         }
         return { ...b, content: c }
       })
