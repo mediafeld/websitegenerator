@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { getBranche, getBranchenFelder } from '@/lib/branchen'
 import { getStockImages } from '@/lib/stockImages'
+import { createMessage } from '@/lib/claudeModel'
 
 export async function POST(request) {
   try {
@@ -135,8 +136,7 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
   ${seiten.filter(s => s !== 'Startseite').map(s => `,"${s}":{"blocks":[...]}`).join('')}
 }`
 
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const message = await createMessage(client, {
       max_tokens: 8000,
       messages: [{ role: 'user', content: prompt }],
     })
