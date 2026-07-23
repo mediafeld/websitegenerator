@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
+import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
+import { Fuss } from '@/components/Fuss'
 
 export default function LoginSeite() {
   const router = useRouter()
@@ -122,10 +124,43 @@ export default function LoginSeite() {
 
 function Rahmen({ children }) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafbff', fontFamily: '"Inter Tight",system-ui,sans-serif', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420, background: '#fff', border: '1px solid #e8ecf3', borderRadius: 16, padding: 32, boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-        {children}
-      </div>
+    <div style={{ background: D.paper, minHeight: '100vh', fontFamily: '"Inter Tight",system-ui,sans-serif', color: D.dunkel, display: 'flex', flexDirection: 'column' }}>
+      <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + '@media(max-width:860px){.wrap>div{grid-template-columns:1fr !important}.nutzen{display:none}}' }} />
+      <Kopf />
+      <section style={{ flex: 1, padding: '52px 0 70px' }}>
+        <div className="wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 44, alignItems: 'start', maxWidth: 980 }}>
+          <div className="nutzen">
+            <a href="/" className="link-u" style={{ fontSize: 13, color: D.grau, display: 'inline-block', marginBottom: 20 }}>← Zurück zur Startseite</a>
+            <h2 className="display" style={{ fontSize: 'clamp(25px,3.4vw,34px)', marginBottom: 14 }}>
+              Dein Konto — <span className="leicht" style={{ color: D.grau }}>alles an einem Ort.</span>
+            </h2>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 26 }}>
+              {[
+                ['Websites wiederfinden', 'Deine Entwürfe bleiben gespeichert – auch nach dem Schließen des Browsers.'],
+                ['Weiterarbeiten, wo du warst', 'Jede Änderung im Editor wird automatisch gesichert.'],
+                ['Domain und Rechnungen', 'Verträge, Rechnungen und Kündigung an einer Stelle.'],
+              ].map(([t, u]) => (
+                <li key={t} style={{ display: 'flex', gap: 11 }}>
+                  <span aria-hidden="true" style={{ color: D.blau, fontWeight: 800, marginTop: 1 }}>✓</span>
+                  <span>
+                    <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 2 }}>{t}</strong>
+                    <span style={{ fontSize: 13.5, color: D.grau, lineHeight: 1.6 }}>{u}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="karte" style={{ padding: '16px 18px', fontSize: 13.5, color: D.grau, lineHeight: 1.65 }}>
+              Noch nichts erstellt? Du kannst den Wizard auch ohne Konto ausprobieren —
+              angemeldet sein musst du erst beim Erzeugen der Website.
+              <div style={{ marginTop: 12 }}><a href="/start" className="btnleer" style={{ display: 'inline-block' }}>Wizard ansehen</a></div>
+            </div>
+          </div>
+
+          <div className="karte" style={{ padding: 30 }}>{children}</div>
+        </div>
+      </section>
+      <Fuss />
     </div>
   )
 }
