@@ -5,6 +5,7 @@ import { renderPage } from '@/lib/blockRenderer'
 import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY } from '@/lib/blocks'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
+import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer } from '@/lib/projekte'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -74,9 +75,38 @@ export default function EditorPage() {
 
   const iframeRef = useRef(null)
   const fileRef = useRef(null)
+  const projektIdRef = useRef(null)
+  const [speicherStatus, setSpeicherStatus] = useState('')   // '' | 'speichert' | 'gespeichert' | 'fehler'
 
   // ── Laden ──
   useEffect(() => {
+    const id = projektIdAusUrl()
+
+    // Fall A: Projekt aus der Datenbank laden
+    if (id) {
+      projektIdRef.current = id
+      projektLaden(id).then(p => {
+        if (!p || !p.pages) { router.push('/dashboard'); return }
+        setPages(p.pages)
+        setActivePage(Object.keys(p.pages)[0])
+        const palObj = p.palette || generateCIPalette('#1d4ed8')
+        setPalette(palObj)
+        setColor(palObj.primary?.[500] || '#1d4ed8')
+        if (p.font) setFont(p.font)
+        if (p.form_data) {
+          const data = p.form_data
+          if (data.fontHeadline) setFontHeadline(data.fontHeadline)
+          formDataRef.current = data
+          setImageQuota(data.paket === 'business' ? 12 : data.paket === 'onepager' ? 6 : 8)
+        }
+        initialRef.current = JSON.stringify(p.pages)
+        setHistory([JSON.stringify(p.pages)])
+        setHistIdx(0)
+      })
+      return
+    }
+
+    // Fall B: wie bisher aus dem Browser-Zwischenspeicher
     const p = sessionStorage.getItem('wg24_pages')
     const pal = sessionStorage.getItem('wg24_palette')
     const f = sessionStorage.getItem('wg24_font')
@@ -135,6 +165,34 @@ export default function EditorPage() {
     } catch (err) {
       console.warn('Speicher voll – Bilder werden komprimiert gehalten', err)
     }
+    datenbankSpeichernVerzoegert(newPages)
+  }
+
+  // In die Datenbank speichern – gebündelt, damit nicht bei jedem Klick gespeichert wird
+  const saveTimerRef = useRef(null)
+  function datenbankSpeichernVerzoegert(newPages) {
+    if (!projektIdRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    setSpeicherStatus('speichert')
+    saveTimerRef.current = setTimeout(async () => {
+      const ok = await projektSpeichern(projektIdRef.current, {
+        pages: newPages,
+        palette,
+        font,
+      })
+      setSpeicherStatus(ok ? 'gespeichert' : 'fehler')
+      if (ok) setTimeout(() => setSpeicherStatus(''), 2500)
+    }, 2500)
+  }
+
+  // Sofort speichern (Knopf)
+  async function jetztSpeichern() {
+    if (!projektIdRef.current) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    setSpeicherStatus('speichert')
+    const ok = await projektSpeichern(projektIdRef.current, { pages, palette, font })
+    setSpeicherStatus(ok ? 'gespeichert' : 'fehler')
+    if (ok) setTimeout(() => setSpeicherStatus(''), 2500)
   }
 
   function undo() {
@@ -592,6 +650,7 @@ export default function EditorPage() {
   function updateColor(c) {
     setColor(c); const pal = generateCIPalette(c); setPalette(pal)
     sessionStorage.setItem('wg24_palette', JSON.stringify(pal))
+    if (projektIdRef.current) projektSpeichern(projektIdRef.current, { palette: pal })
   }
 
   function saveCustom(blockIdx, htmlCode) {
@@ -767,7 +826,7 @@ export default function EditorPage() {
           {/* Schrift live wechseln */}
           <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, marginBottom: 10 }}>
             <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Schrift</div>
-            <select value={font} onChange={e => { setFont(e.target.value); sessionStorage.setItem('wg24_font', e.target.value) }} style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>
+            <select value={font} onChange={e => { setFont(e.target.value); sessionStorage.setItem('wg24_font', e.target.value); if (projektIdRef.current) projektSpeichern(projektIdRef.current, { font: e.target.value }) }} style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>
               {FONT_PAIRS.map(p => <option key={p.id} value={p.body}>{p.label} ({p.headline})</option>)}
             </select>
           </div>
@@ -789,6 +848,20 @@ export default function EditorPage() {
             ))}
           </div>
 
+          {projektIdRef.current && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
+              <button onClick={jetztSpeichern} style={{ width: '100%', border: 'none', background: primary, color: '#fff', padding: 9, borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {speicherStatus === 'speichert' ? 'Speichert…' : 'Jetzt speichern'}
+              </button>
+              <div style={{ fontSize: 9.5, textAlign: 'center', marginTop: 6, minHeight: 13, color: speicherStatus === 'fehler' ? '#dc2626' : '#94a3b8', fontWeight: 600 }}>
+                {speicherStatus === 'gespeichert' && '✓ In deinem Konto gespeichert'}
+                {speicherStatus === 'speichert' && 'Änderungen werden gesichert…'}
+                {speicherStatus === 'fehler' && 'Speichern fehlgeschlagen'}
+                {speicherStatus === '' && 'Änderungen werden automatisch gesichert'}
+              </div>
+              <button onClick={() => router.push('/dashboard')} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 8 }}>← Meine Websites</button>
+            </div>
+          )}
           <button onClick={() => { if (confirm('Neu starten? Aktuelle Website geht verloren.')) { sessionStorage.clear(); router.push('/') } }} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 12 }}>← Neu starten</button>
           </div>
           )}

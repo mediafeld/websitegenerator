@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateCIPalette } from '@/lib/colorSystem'
+import { aktuellerNutzer, projektAnlegen } from '@/lib/projekte'
 
 const FACTS = [
   { icon: '⚡', text: 'Schnelle Websites laden in unter 2 Sekunden – das verbessert dein Google-Ranking deutlich.' },
@@ -67,8 +68,28 @@ export default function GeneratingPage() {
       sessionStorage.setItem('wg24_formData', JSON.stringify(fdForApi))
       sessionStorage.setItem('wg24_palette', JSON.stringify(data.palette || pal))
       sessionStorage.setItem('wg24_font', data.font || 'Inter Tight')
+
+      // Wenn angemeldet: Projekt in der Datenbank anlegen
+      let projektId = null
+      try {
+        const nutzer = await aktuellerNutzer()
+        if (nutzer) {
+          projektId = await projektAnlegen({
+            name: fdForApi.firmenname || 'Neue Website',
+            firma: fdForApi.firmenname,
+            branche: fdForApi.branche,
+            form_data: fdForApi,
+            pages: pagesWithImgs,
+            palette: data.palette || pal,
+            font: data.font || 'Inter Tight',
+          })
+        }
+      } catch (e) {
+        console.warn('Projekt konnte nicht gespeichert werden:', e?.message)
+      }
+
       setDone(true); setProgress(100); setStepIdx(STEPS.length - 1)
-      setTimeout(() => router.push('/editor'), 800)
+      setTimeout(() => router.push(projektId ? `/editor?projekt=${projektId}` : '/editor'), 800)
     } catch (err) { setError(err.message) }
   }
 
