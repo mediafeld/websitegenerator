@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { getBranche, getBranchenFelder } from '@/lib/branchen'
 import { getStockImages } from '@/lib/stockImages'
-import { createMessage } from '@/lib/claudeModel'
+import { createMessage, extractText } from '@/lib/claudeModel'
 
 export async function POST(request) {
   try {
@@ -137,16 +137,30 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
 }`
 
     const message = await createMessage(client, {
-      max_tokens: 8000,
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     })
 
-    let jsonText = message.content[0]?.text || ''
+    let jsonText = extractText(message)
     jsonText = jsonText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').replace(/\n?```$/i, '').trim()
+
+    if (!jsonText) {
+      return Response.json({ error: 'Die KI hat keinen Text geliefert. Bitte nochmal versuchen.' }, { status: 500 })
+    }
 
     let pageData
     try { pageData = JSON.parse(jsonText) }
-    catch (e) { return Response.json({ error: 'Verarbeitungsfehler: ' + e.message }, { status: 500 }) }
+    catch (e) {
+      // Antwort war vermutlich abgeschnitten -> retten, was vollständig ist
+      const repaired = repairJson(jsonText)
+      if (repaired) {
+        pageData = repaired
+      } else if (message?.stop_reason === 'max_tokens') {
+        return Response.json({ error: 'Die Antwort war zu lang und wurde abgeschnitten. Bitte mit weniger Unterseiten erneut versuchen.' }, { status: 500 })
+      } else {
+        return Response.json({ error: 'Verarbeitungsfehler: ' + e.message }, { status: 500 })
+      }
+    }
 
     const globalContent = {
       firmenname: formData.firmenname || 'Muster GmbH',
@@ -213,4 +227,43 @@ function pageFile(seite) {
   if (seite === 'Startseite') return 'index.html'
   const map = { 'Ueber uns': 'ueber-uns.html', 'Über uns': 'ueber-uns.html', 'Leistungen': 'leistungen.html', 'Kontakt': 'kontakt.html', 'Team': 'team.html', 'Portfolio': 'portfolio.html', 'Galerie': 'galerie.html', 'Preise': 'preise.html', 'Blog': 'blog.html' }
   return map[seite] || seite.toLowerCase().replace(/\s+/g, '-').replace(/ü/g,'ue').replace(/ä/g,'ae').replace(/ö/g,'oe') + '.html'
+}
+
+// Rettet abgeschnittenes JSON: schneidet an der letzten vollstaendigen Stelle ab
+// und schliesst offene Klammern in der richtigen Reihenfolge.
+// Ein Durchlauf (schnell auch bei sehr langen Antworten).
+function repairJson(text) {
+  const stack = []
+  const points = []
+  let inStr = false, esc = false
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (esc) { esc = false; continue }
+    if (c === '\\') { esc = true; continue }
+    if (c === '"') { inStr = !inStr; continue }
+    if (inStr) continue
+
+    if (c === '{' || c === '[') stack.push(c)
+    else if (c === '}' || c === ']') {
+      stack.pop()
+      // moeglicher Schnittpunkt: hier endet ein vollstaendiges Element
+      points.push({ end: i + 1, open: stack.join('') })
+    }
+  }
+
+  // von hinten nach vorne versuchen (max. 400 Versuche)
+  const tries = Math.min(points.length, 400)
+  for (let k = 0; k < tries; k++) {
+    const p = points[points.length - 1 - k]
+    if (p.end < 30) break
+    let candidate = text.slice(0, p.end).replace(/,\s*$/, '')
+    let close = ''
+    for (let j = p.open.length - 1; j >= 0; j--) close += p.open[j] === '{' ? '}' : ']'
+    try {
+      const parsed = JSON.parse(candidate + close)
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length) return parsed
+    } catch { /* naechster Schnittpunkt */ }
+  }
+  return null
 }
