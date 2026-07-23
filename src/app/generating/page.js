@@ -30,7 +30,7 @@ export default function GeneratingPage() {
 
   useEffect(() => {
     const f = sessionStorage.getItem('wg24_formData')
-    if (!f) { router.push('/'); return }
+    if (!f) { router.push('/start'); return }
     const fd = JSON.parse(f)
     const pal = generateCIPalette(fd.farbe || '#1d4ed8')
     setPalette(pal)
@@ -121,7 +121,7 @@ export default function GeneratingPage() {
       <div style={{ fontSize: 48, marginBottom: 16 }}>😕</div>
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Da ging etwas schief</h2>
       <p style={{ color: '#888', fontSize: 14, marginBottom: 24, textAlign: 'center', maxWidth: 400 }}>{error}</p>
-      <button onClick={() => router.push('/')} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>← Nochmal versuchen</button>
+      <button onClick={() => router.push('/start')} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>← Nochmal versuchen</button>
     </div>
   )
 

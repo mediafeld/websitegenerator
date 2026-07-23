@@ -22,7 +22,11 @@ export async function POST(request) {
       ergebnisse,
     })
   } catch (error) {
+    // Technisches Detail nur ins Server-Protokoll (für Vercel -> Logs)
     console.error('Domain-Check Fehler:', error?.message)
-    return Response.json({ error: error?.message || 'Domainprüfung nicht möglich.' }, { status: 500 })
+    return Response.json({
+      error: 'Die Domainprüfung ist gerade nicht verfügbar. Du kannst trotzdem starten und die Domain später wählen.',
+      technisch: error?.message || 'unbekannt',
+    }, { status: 500 })
   }
 }

@@ -40,7 +40,7 @@ export default function DesignAuswahlPage() {
 
   useEffect(() => {
     const f = sessionStorage.getItem('wg24_formData')
-    if (!f) { router.push('/'); return }
+    if (!f) { router.push('/start'); return }
     const fd = JSON.parse(f)
     setFormData(fd)
     setPalette(generateCIPalette(fd.farbe || '#1d4ed8'))
@@ -137,7 +137,7 @@ export default function DesignAuswahlPage() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => router.push('/')} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>← Zurück</button>
+          <button onClick={() => router.push('/start')} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>← Zurück</button>
           <button onClick={weiter} style={{ background: primary, color: '#fff', border: 'none', padding: '13px 32px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>Website generieren →</button>
         </div>
       </div>

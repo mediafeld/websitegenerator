@@ -17,7 +17,7 @@ export default function DomainTest() {
         body: JSON.stringify({ name }),
       })
       const json = await res.json()
-      if (json.error) setFehler(json.error)
+      if (json.error) setFehler(json.error + (json.technisch ? ' — technisch: ' + json.technisch : ''))
       else setDaten(json)
     } catch (e) {
       setFehler('Verbindung fehlgeschlagen: ' + e.message)

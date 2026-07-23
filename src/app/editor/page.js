@@ -117,7 +117,7 @@ export default function EditorPage() {
     const pal = sessionStorage.getItem('wg24_palette')
     const f = sessionStorage.getItem('wg24_font')
     const fd = sessionStorage.getItem('wg24_formData')
-    if (!p) { router.push('/'); return }
+    if (!p) { router.push('/start'); return }
     const parsed = JSON.parse(p)
     setPages(parsed)
     setActivePage(Object.keys(parsed)[0])
@@ -731,7 +731,7 @@ export default function EditorPage() {
               <div style={{ position: 'absolute', right: 0, top: 36, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, boxShadow: '0 8px 28px rgba(15,23,42,0.12)', minWidth: 190, zIndex: 9999, overflow: 'hidden' }}>
                 <div style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 11, color: '#94a3b8', wordBreak: 'break-all' }}>{nutzer.email}</div>
                 <button onClick={() => router.push('/dashboard')} style={menuBtn}>Meine Websites</button>
-                <button onClick={() => router.push('/')} style={menuBtn}>Neue Website</button>
+                <button onClick={() => router.push('/start')} style={menuBtn}>Neue Website</button>
                 <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} style={{ ...menuBtn, color: '#dc2626', borderTop: '1px solid #f1f5f9' }}>Abmelden</button>
               </div>
             )}
@@ -888,7 +888,7 @@ export default function EditorPage() {
               <button onClick={() => router.push('/dashboard')} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 8 }}>← Meine Websites</button>
             </div>
           )}
-          <button onClick={() => { if (confirm('Neu starten? Aktuelle Website geht verloren.')) { sessionStorage.clear(); router.push('/') } }} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 12 }}>← Neu starten</button>
+          <button onClick={() => { if (confirm('Neu starten? Aktuelle Website geht verloren.')) { sessionStorage.clear(); router.push('/start') } }} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 12 }}>← Neu starten</button>
           </div>
           )}
         </div>

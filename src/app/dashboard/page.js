@@ -70,7 +70,7 @@ export default function Dashboard() {
               {projekte.length === 0 ? 'Noch keine Website angelegt.' : `${projekte.length} ${projekte.length === 1 ? 'Website' : 'Websites'}`}
             </p>
           </div>
-          <button onClick={() => router.push('/')} style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => router.push('/start')} style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             + Neue Website
           </button>
         </div>
@@ -86,7 +86,7 @@ export default function Dashboard() {
             <div style={{ fontSize: 34, marginBottom: 12 }}>🌐</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Noch keine Website</div>
             <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>Leg deine erste Website an – dauert nur ein paar Minuten.</p>
-            <button onClick={() => router.push('/')} style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={() => router.push('/start')} style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               Jetzt starten
             </button>
           </div>

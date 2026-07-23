@@ -13,11 +13,18 @@ export default function LoginSeite() {
   const [fehler, setFehler] = useState('')
   const [hinweis, setHinweis] = useState('')
 
+  // Wohin nach dem Anmelden? (?next=/design-auswahl)
+  const ziel = () => {
+    if (typeof window === 'undefined') return '/dashboard'
+    const n = new URLSearchParams(window.location.search).get('next')
+    return n && n.startsWith('/') ? n : '/dashboard'
+  }
+
   // Schon eingeloggt? Dann direkt ins Dashboard.
   useEffect(() => {
     if (!supabaseBereit) return
     supabase.auth.getSession().then(({ data }) => {
-      if (data?.session) router.replace('/dashboard')
+      if (data?.session) router.replace(ziel())
     })
   }, [router])
 
@@ -31,7 +38,7 @@ export default function LoginSeite() {
       if (modus === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: passwort })
         if (error) throw error
-        router.replace('/dashboard')
+        router.replace(ziel())
 
       } else if (modus === 'registrieren') {
         const { data, error } = await supabase.auth.signUp({
@@ -40,7 +47,7 @@ export default function LoginSeite() {
           options: { data: { firma: firma.trim() } },
         })
         if (error) throw error
-        if (data?.session) router.replace('/dashboard')
+        if (data?.session) router.replace(ziel())
         else setHinweis('Fast fertig! Wir haben dir eine Bestätigungs-Mail geschickt. Bitte den Link darin anklicken.')
 
       } else {
