@@ -5,7 +5,7 @@
 // Zugangsdaten kommen aus den Umgebungsvariablen INWX_USER / INWX_PASSWORD.
 
 const ENDPOINTS = {
-  ote: 'https://api.ote.inwx.de/jsonrpc/',
+  ote: 'https://api.ote.domrobot.com/jsonrpc/',
   live: 'https://api.domrobot.com/jsonrpc/',
 }
 
@@ -44,14 +44,21 @@ export function toDomainLabel(text = '') {
 
 // Ein JSON-RPC-Aufruf. cookie wird für die Sitzung mitgegeben.
 async function rpc(method, params = {}, cookie = '') {
-  const res = await fetch(ENDPOINTS[inwxEnv()], {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(cookie ? { Cookie: cookie } : {}),
-    },
-    body: JSON.stringify({ method, params }),
-  })
+  const url = ENDPOINTS[inwxEnv()]
+
+  let res
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      body: JSON.stringify({ method, params }),
+    })
+  } catch (e) {
+    throw new Error(`INWX ist nicht erreichbar (${url}). Technisch: ${e?.message || 'Verbindungsfehler'}`)
+  }
 
   const setCookies = typeof res.headers.getSetCookie === 'function'
     ? res.headers.getSetCookie()
@@ -79,6 +86,9 @@ export async function inwxLogin() {
 
   const out = await rpc('account.login', { user, pass, lang: 'de' })
   if (!out.ok) {
+    if (out.code === 2200) {
+      throw new Error('INWX-Zugangsdaten stimmen nicht. Prüfe INWX_USER und INWX_PASSWORD bei Vercel – der Benutzername ist das, womit du sich bei ote.inwx.de einloggst (E-Mail, Kundennummer oder Benutzername).')
+    }
     throw new Error(`INWX-Anmeldung fehlgeschlagen (${out.code || '-'}): ${out.msg}`)
   }
 
