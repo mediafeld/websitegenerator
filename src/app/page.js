@@ -5,6 +5,7 @@ import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
 import MenuBuilder from '@/components/MenuBuilder'
+import { aktuellerNutzer } from '@/lib/projekte'
 
 // ── Konstanten ──────────────────────────────────────────────
 const PRESET_COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
@@ -126,6 +127,9 @@ export default function WizardPage() {
     ],
   })
 
+  const [nutzer, setNutzer] = useState(null)
+  useEffect(() => { aktuellerNutzer().then(setNutzer).catch(() => {}) }, [])
+
   const upd = (k, v) => setFd(prev => ({ ...prev, [k]: v }))
   const updDetail = (k, v) => setFd(prev => ({ ...prev, brancheDetails: { ...prev.brancheDetails, [k]: v } }))
 
@@ -234,7 +238,12 @@ export default function WizardPage() {
       {/* Topbar */}
       <div style={{ height: 56, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', background: '#fff', flexShrink: 0, position: 'sticky', top: 0, zIndex: 100 }}>
         <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.5 }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></span>
-        <span style={{ fontWeight: 700, fontSize: 14, color: primary }}>{fd.preis} €</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: primary }}>{fd.preis} €</span>
+          <button onClick={() => router.push(nutzer ? '/dashboard' : '/login')} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, color: '#475569', cursor: 'pointer', fontFamily: 'inherit' }}>
+            {nutzer ? 'Meine Websites' : 'Anmelden'}
+          </button>
+        </div>
       </div>
 
       {/* Steps */}

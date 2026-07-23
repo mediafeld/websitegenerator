@@ -6,6 +6,7 @@ import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY } from '@
 import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
 import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer } from '@/lib/projekte'
+import { supabase } from '@/lib/supabaseClient'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -77,6 +78,11 @@ export default function EditorPage() {
   const fileRef = useRef(null)
   const projektIdRef = useRef(null)
   const [speicherStatus, setSpeicherStatus] = useState('')   // '' | 'speichert' | 'gespeichert' | 'fehler'
+  const [nutzer, setNutzer] = useState(null)
+  const [kontoMenu, setKontoMenu] = useState(false)
+
+  // Angemeldeten Nutzer holen (für Kopfzeile / Konto-Menü)
+  useEffect(() => { aktuellerNutzer().then(setNutzer).catch(() => {}) }, [])
 
   // ── Laden ──
   useEffect(() => {
@@ -695,7 +701,7 @@ export default function EditorPage() {
 
       {/* TOPBAR */}
       <div style={{ height: 50, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8, flexShrink: 0, background: '#fff' }}>
-        <b style={{ fontSize: 14, letterSpacing: -0.5 }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></b>
+        <b onClick={() => router.push(nutzer ? '/dashboard' : '/')} title={nutzer ? 'Zu meinen Websites' : 'Zur Startseite'} style={{ fontSize: 14, letterSpacing: -0.5, cursor: 'pointer' }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></b>
         <span style={{ color: '#ddd' }}>|</span>
         <span style={{ color: '#666', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocks.find(b => b.type === 'nav')?.content?.firmenname}</span>
 
@@ -713,6 +719,26 @@ export default function EditorPage() {
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>✨ AI Designer</button>
         <button onClick={() => alert('Checkout kommt bald!')} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Kaufen & Download →</button>
+
+        {/* Konto */}
+        <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
+        {nutzer ? (
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setKontoMenu(o => !o)} title={nutzer.email} style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
+              {(nutzer.email || '?')[0].toUpperCase()}
+            </button>
+            {kontoMenu && (
+              <div style={{ position: 'absolute', right: 0, top: 36, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, boxShadow: '0 8px 28px rgba(15,23,42,0.12)', minWidth: 190, zIndex: 9999, overflow: 'hidden' }}>
+                <div style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 11, color: '#94a3b8', wordBreak: 'break-all' }}>{nutzer.email}</div>
+                <button onClick={() => router.push('/dashboard')} style={menuBtn}>Meine Websites</button>
+                <button onClick={() => router.push('/')} style={menuBtn}>Neue Website</button>
+                <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} style={{ ...menuBtn, color: '#dc2626', borderTop: '1px solid #f1f5f9' }}>Abmelden</button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button onClick={() => router.push('/login')} style={{ border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 11.5, fontWeight: 700, color: '#475569', padding: '7px 12px' }}>Anmelden</button>
+        )}
       </div>
 
       {/* PAGE TABS */}
@@ -948,6 +974,8 @@ export default function EditorPage() {
 }
 
 // ── Modal ──
+const menuBtn = { display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#334155', fontFamily: 'inherit' }
+
 function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
