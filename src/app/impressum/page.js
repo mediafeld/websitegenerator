@@ -6,7 +6,7 @@ export default function Impressum() {
     <Rechtsseite titel="Impressum" stand="Juli 2026" kinder={<>
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>
-        <L>Vor- und Nachname</L> — mediafeld<br />
+        <L>Vor- und Nachname</L> — <L>Firmenbezeichnung</L><br />
         <L>Straße und Hausnummer</L><br />
         <L>PLZ</L> Berlin<br />
         Deutschland
@@ -16,8 +16,8 @@ export default function Impressum() {
       <h2>Kontakt</h2>
       <p>
         Telefon: <a href="tel:+493057702366">+49 (0)30 57 70 23 66</a><br />
-        E-Mail: <a href="mailto:info@mediafeld.de">info@mediafeld.de</a><br />
-        Website: <a href="https://www.mediafeld.de">www.mediafeld.de</a>
+        E-Mail: <a href="mailto:info@websitegenerator24.de">info@websitegenerator24.de</a><br />
+        Website: <a href="https://www.websitegenerator24.de">www.websitegenerator24.de</a>
       </p>
 
       <h2>Umsatzsteuer-Identifikationsnummer</h2>
@@ -44,7 +44,7 @@ export default function Impressum() {
         diese selbst verantwortlich – insbesondere für Texte, Bilder, Preisangaben, Impressum und
         Datenschutzerklärung der jeweiligen Website. Werden wir auf rechtswidrige Inhalte
         hingewiesen, entfernen wir diese unverzüglich. Hinweise bitte an
-        <a href="mailto:info@mediafeld.de"> info@mediafeld.de</a>.
+        <a href="mailto:info@websitegenerator24.de"> info@websitegenerator24.de</a>.
       </p>
 
       <h2>Haftung für Links</h2>

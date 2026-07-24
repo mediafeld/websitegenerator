@@ -12,7 +12,7 @@ export default function PreiseSeite() {
 
   return (
     <div style={{ background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
-      <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
         .tabelle{width:100%;border-collapse:collapse;font-size:14px}
         .tabelle th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${D.grauHell};padding:12px 14px;border-bottom:1px solid ${D.linie};font-weight:700}
@@ -133,7 +133,7 @@ export default function PreiseSeite() {
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <a href="/dashboard" className="btnfest" style={{ display: 'inline-block' }}>Im Konto kündigen</a>
-              <a href="mailto:info@mediafeld.de?subject=Kündigung%20websitegenerator24" className="btnleer" style={{ display: 'inline-block' }}>Per E-Mail kündigen</a>
+              <a href="mailto:info@websitegenerator24.de?subject=Kündigung%20websitegenerator24" className="btnleer" style={{ display: 'inline-block' }}>Per E-Mail kündigen</a>
             </div>
           </div>
         </div>

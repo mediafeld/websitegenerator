@@ -251,7 +251,12 @@ export default function WizardPage() {
       <div style={{ height: 56, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', background: '#fff', flexShrink: 0, position: 'sticky', top: 0, zIndex: 100 }}>
         <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.5 }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: primary }}>{fd.preis} €</span>
+          {fd.domain && (
+            <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: '#15803D', background: '#EBF8F0', border: '1px solid #A7E3BC', borderRadius: 99, padding: '5px 12px' }}>
+              {fd.domain}
+            </span>
+          )}
+          <span style={{ fontWeight: 700, fontSize: 14, color: primary }}>{fd.preis} € <span style={{ fontWeight: 500, fontSize: 11, color: '#8493AC' }}>inkl. MwSt.</span></span>
           <button onClick={() => router.push(nutzer ? '/dashboard' : '/login')} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, color: '#475569', cursor: 'pointer', fontFamily: 'inherit' }}>
             {nutzer ? 'Meine Websites' : 'Anmelden'}
           </button>
@@ -292,7 +297,7 @@ export default function WizardPage() {
                     <div style={{ fontSize: 26, marginBottom: 10 }}>{p.icon}</div>
                     <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>{p.name}</div>
                     <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 2 }}>{p.price} <span style={{ fontSize: 14, fontWeight: 400, color: '#888' }}>€</span></div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>inkl. MwSt · einmalig</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>inkl. MwSt. · einmalig</div>
                     <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
                       <Feat primary={primary} bold>{p.seiten}</Feat>
                       <Feat primary={primary} bold>{p.bilder}</Feat>
@@ -381,6 +386,12 @@ export default function WizardPage() {
                 <Field label="Geschichte & Meilensteine" value={fd.geschichte} onChange={v => upd('geschichte', v)} type="textarea" rows={2} placeholder="z.B. Wie alles begann, wichtige Entwicklungen... (optional)" primary={primary} />
                 <Field label="Auszeichnungen & Zertifikate" value={fd.auszeichnungen} onChange={v => upd('auszeichnungen', v)} placeholder="z.B. TÜV-zertifiziert, Top-Arbeitgeber 2024 (optional)" primary={primary} />
                 <Field label="Referenzkunden / Projekte" value={fd.referenzen} onChange={v => upd('referenzen', v)} placeholder="z.B. Zusammenarbeit mit ... (optional)" primary={primary} />
+              </Panel>
+
+              <Panel>
+                <SectionTitle sub="Wird für Impressum, Kontakt und später für die Veröffentlichung verwendet">Wunsch-Domain</SectionTitle>
+                <Field label="Domain" value={fd.domain || ''} onChange={v => upd('domain', v)} placeholder="z. B. mueller-sanitaer.de" primary={primary}
+                  hint="Auf der Startseite geprüft und übernommen. Du kannst sie hier ändern oder später festlegen." />
               </Panel>
 
               <Panel>

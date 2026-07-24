@@ -125,7 +125,7 @@ export default function LoginSeite() {
 function Rahmen({ children }) {
   return (
     <div style={{ background: D.paper, minHeight: '100vh', fontFamily: '"Inter Tight",system-ui,sans-serif', color: D.dunkel, display: 'flex', flexDirection: 'column' }}>
-      <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + '@media(max-width:860px){.wrap>div{grid-template-columns:1fr !important}.nutzen{display:none}}' }} />
       <Kopf />
       <section style={{ flex: 1, padding: '52px 0 70px' }}>

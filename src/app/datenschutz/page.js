@@ -6,8 +6,8 @@ export default function Datenschutz() {
     <Rechtsseite titel="Datenschutzerklärung" stand="Juli 2026" kinder={<>
       <h2>1. Verantwortlicher</h2>
       <p>
-        <L>Vor- und Nachname</L> — mediafeld, <L>Straße</L>, <L>PLZ</L> Berlin.
-        E-Mail: <a href="mailto:info@mediafeld.de">info@mediafeld.de</a>,
+        <L>Vor- und Nachname</L> — <L>Firmenbezeichnung</L>, <L>Straße</L>, <L>PLZ</L> Berlin.
+        E-Mail: <a href="mailto:info@websitegenerator24.de">info@websitegenerator24.de</a>,
         Telefon: <a href="tel:+493057702366">+49 (0)30 57 70 23 66</a>.
       </p>
 
@@ -80,7 +80,7 @@ export default function Datenschutz() {
         Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17),
         Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch
         (Art. 21 DSGVO). Wende dich dafür an
-        <a href="mailto:info@mediafeld.de"> info@mediafeld.de</a>.
+        <a href="mailto:info@websitegenerator24.de"> info@websitegenerator24.de</a>.
       </p>
       <p>
         Außerdem kannst du dich bei einer Aufsichtsbehörde beschweren, für Berlin:

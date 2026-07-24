@@ -6,7 +6,7 @@ export default function AGB() {
     <Rechtsseite titel="Allgemeine Geschäftsbedingungen" stand="Juli 2026" kinder={<>
       <h2>1. Anbieter und Geltungsbereich</h2>
       <p>
-        Anbieter ist <L>Vor- und Nachname</L> — mediafeld, <L>Anschrift</L>, Berlin
+        Anbieter ist <L>Vor- und Nachname</L> — <L>Firmenbezeichnung</L>, <L>Anschrift</L>, Berlin
         (im Folgenden „wir"). Diese Bedingungen gelten für alle Leistungen von
         websitegenerator24.de gegenüber Verbrauchern und Unternehmern.
       </p>
@@ -62,7 +62,7 @@ export default function AGB() {
         Verbraucher haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag
         zu widerrufen. Die Widerrufsfrist beginnt mit dem Tag des Vertragsabschlusses.
         Zur Ausübung genügt eine eindeutige Erklärung an
-        <a href="mailto:info@mediafeld.de"> info@mediafeld.de</a>.
+        <a href="mailto:info@websitegenerator24.de"> info@websitegenerator24.de</a>.
       </p>
       <h3>Vorzeitiges Erlöschen</h3>
       <p>

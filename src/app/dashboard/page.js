@@ -2,6 +2,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
+import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
+import { Fuss } from '@/components/Fuss'
+import { FONT_LINK } from '@/components/Seite'
+import { KontoNav } from '@/components/KontoNav'
 
 const STATUS = {
   entwurf: { text: 'Entwurf', farbe: '#92400e', bg: '#fffbeb', rand: '#fde68a' },
@@ -53,16 +57,14 @@ export default function Dashboard() {
   if (laedt) return <Mitte>Lade…</Mitte>
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafbff', fontFamily: '"Inter Tight",system-ui,sans-serif' }}>
-      {/* Kopfzeile */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8ecf3', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <strong style={{ fontSize: 15, color: '#0f172a' }}>websitegenerator<span style={{ color: '#1d4ed8' }}>24</span></strong>
-        <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>{user?.email}</span>
-        <button onClick={abmelden} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#475569' }}>Abmelden</button>
-      </div>
+    <div style={{ minHeight: '100vh', background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
+      <link href={FONT_LINK} rel="stylesheet" />
+      <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
+      <Kopf />
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="wrap" style={{ maxWidth: 1000, padding: '30px 22px 60px', flex: 1 }}>
+        <KontoNav aktiv="dashboard" />
+
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>Meine Websites</h1>
@@ -121,6 +123,7 @@ function Mitte({ children }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafbff', fontFamily: '"Inter Tight",system-ui,sans-serif', color: '#64748b', fontSize: 14, padding: 24, textAlign: 'center' }}>
       {children}
+      <Fuss />
     </div>
   )
 }
