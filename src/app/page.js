@@ -48,7 +48,8 @@ export default function Startseite() {
 
   return (
     <div style={{ background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif' }}>
-      <link href={FONT_LINK} rel="stylesheet" />
+      <link href="/schrift/schrift.css" rel="stylesheet" />
+      <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + CSS }} />
       <Kopf />
 
@@ -57,8 +58,8 @@ export default function Startseite() {
         <div aria-hidden="true" className="glanz" />
         <div className="wrap" style={{ position: 'relative', maxWidth: 900, textAlign: 'center' }}>
           <p className="eyebrow" style={{ color: D.blauHell, marginBottom: 18 }}>Website-Baukasten mit KI · Berlin</p>
-          <h1 className="display" style={{ fontSize: 'clamp(38px,6.6vw,72px)', marginBottom: 20 }}>
-            In 10 Minuten zur<br /><span style={{ color: D.blauHell }}>eigenen Website.</span>
+          <h1 className="display" style={{ fontSize: 'clamp(40px,7vw,82px)', marginBottom: 20 }}>
+            Einfach Website.<br /><span style={{ color: D.blauHell }}>In wenigen Schritten online.</span>
           </h1>
           <p style={{ fontSize: 18, color: '#B7C4D9', lineHeight: 1.65, maxWidth: 600, margin: '0 auto 40px' }}>
             Für Handwerk, Gastronomie, Praxen und Dienstleister. Du machst die Angaben —
@@ -106,9 +107,9 @@ export default function Startseite() {
           )}
 
           <div style={{ display: 'flex', gap: 22, justifyContent: 'center', flexWrap: 'wrap', marginTop: 42, fontSize: 13, color: '#8496AE' }}>
-            {['Kein Abo beim Kauf', 'Änderungen jederzeit kostenlos', 'Erst sehen, dann zahlen'].map(t => (
-              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span aria-hidden="true" style={{ color: D.blauHell, fontWeight: 800 }}>✓</span>{t}
+            {[['ban', 'Kein Abo beim Kauf'], ['pen-to-square', 'Änderungen jederzeit kostenlos'], ['eye', 'Erst sehen, dann zahlen']].map(([ic, t]) => (
+              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className={`fa-solid fa-${ic}`} style={{ color: D.blauHell }} aria-hidden="true" />{t}
               </span>
             ))}
           </div>
@@ -147,6 +148,25 @@ export default function Startseite() {
         </div>
       </section>
 
+      {/* ══ BILDSTREIFEN ══ */}
+      <section style={{ padding: '0 0 8px', background: D.weiss }}>
+        <div className="wrap" style={{ paddingTop: 0, paddingBottom: 60 }}>
+          <div className="bildstreifen">
+            {[
+              ['photo-1573497019940-1c28c88b4f3e', 'Beratung am Telefon'],
+              ['photo-1521737711867-e3b97375f902', 'Team im Gespräch'],
+              ['photo-1600880292089-90a7e086ee0c', 'Zusammenarbeit im Büro'],
+              ['photo-1556761175-b413da4baf72', 'Arbeit am Laptop'],
+            ].map(([id, alt], i) => (
+              <div key={id} className="bstreif" style={{ gridArea: `b${i + 1}` }}>
+                <div className="bstreif-bild" role="img" aria-label={alt}
+                  style={{ background: `#E6EBF4 center/cover url(${BILD(id, 800)})` }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ══ VOLLE KONTROLLE ══ */}
       <section style={{ padding: '72px 0' }}>
         <div className="wrap">
@@ -161,12 +181,13 @@ export default function Startseite() {
           </p>
           <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
             {[
-              ['Keine Stundensätze', 'Du zahlst nie für Textänderungen, neue Bilder oder zusätzliche Bereiche.'],
-              ['Kein Warten', 'Keine E-Mail an die Agentur, keine Rückfrage, kein Termin. Änderung ist sofort live.'],
-              ['Volle Kontrolle', 'Es ist deine Website. Du entscheidest, was drinsteht — und wann.'],
-            ].map(([t, u]) => (
-              <div key={t} className="karte karte-hover" style={{ padding: '24px 22px' }}>
-                <h3 className="display" style={{ fontSize: 17.5, marginBottom: 8 }}>{t}</h3>
+              ['euro-sign', 'Keine Stundensätze', 'Du zahlst nie für Textänderungen, neue Bilder oder zusätzliche Bereiche.'],
+              ['bolt', 'Kein Warten', 'Keine E-Mail an die Agentur, keine Rückfrage, kein Termin. Änderung ist sofort live.'],
+              ['key', 'Volle Kontrolle', 'Es ist deine Website. Du entscheidest, was drinsteht — und wann.'],
+            ].map(([ic, t, u]) => (
+              <div key={t} className="karte karte-hover ikarte" style={{ padding: '26px 24px' }}>
+                <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
+                <h3 className="display" style={{ fontSize: 18.5, marginBottom: 8 }}>{t}</h3>
                 <p style={{ fontSize: 14.2, color: D.grau, lineHeight: 1.68 }}>{u}</p>
               </div>
             ))}
@@ -351,6 +372,8 @@ const CSS = `
 .frage[open]{border-color:${D.blau}}
 .frage[open] .plus{transform:rotate(45deg)}
 .plus{transition:transform .2s;display:inline-block}
+.ikarte i{font-size:20px;color:${D.blau};background:${D.blauZart};width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;transition:transform .22s cubic-bezier(.2,.7,.3,1),background .18s}
+.ikarte:hover i{transform:scale(1.1) rotate(-6deg);background:${D.blau};color:#fff}
 .badge{position:absolute;top:-11px;left:22px;background:${D.blau};color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 11px;border-radius:99px}
 .umschalter{display:inline-flex;background:${D.weiss};border:1px solid ${D.linie};border-radius:11px;padding:4px;margin-bottom:30px}
 .um-an,.um-aus{border:none;border-radius:8px;padding:10px 19px;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .16s}
@@ -372,4 +395,9 @@ const CSS = `
   .zweispalt{grid-template-columns:1fr !important}
 }
 @media(max-width:760px){.adresszeile{flex-wrap:wrap}}
+.bildstreifen{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-template-rows:150px 150px;gap:14px;grid-template-areas:'b1 b2 b3' 'b1 b4 b4'}
+.bstreif{border-radius:16px;overflow:hidden}
+.bstreif-bild{width:100%;height:100%;transition:transform .6s cubic-bezier(.2,.7,.3,1);filter:saturate(.95)}
+.bstreif:hover .bstreif-bild{transform:scale(1.06);filter:saturate(1.05)}
+@media(max-width:760px){.bildstreifen{grid-template-columns:1fr 1fr;grid-template-rows:130px 130px;grid-template-areas:'b1 b2' 'b3 b4'}}
 `

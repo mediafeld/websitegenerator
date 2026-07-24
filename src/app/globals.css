@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800;900&display=swap');
+/* Schriften werden lokal ausgeliefert – siehe /public/schrift/schrift.css */
+@import url('/schrift/schrift.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

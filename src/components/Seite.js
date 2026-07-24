@@ -2,13 +2,14 @@
 import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 
-export const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap'
+export const FONT_LINK = '/schrift/schrift.css'
 
 // Gemeinsames Gerüst für alle Unterseiten
 export function Seite({ eyebrow, titel, titelLeicht, einleitung, children, css = '' }) {
   return (
     <div style={{ background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <link href={FONT_LINK} rel="stylesheet" />
+      <link href="/schrift/schrift.css" rel="stylesheet" />
+      <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + css }} />
       <Kopf />
 

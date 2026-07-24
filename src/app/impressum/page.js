@@ -6,25 +6,25 @@ export default function Impressum() {
     <Rechtsseite titel="Impressum" stand="Juli 2026" kinder={<>
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>
-        <L>Vor- und Nachname</L> — <L>Firmenbezeichnung</L><br />
-        <L>Straße und Hausnummer</L><br />
-        <L>PLZ</L> Berlin<br />
+        Erkan Terzoglou<br />
+        websitegenerator24.de<br />
+        Kolonnenstraße 8<br />
+        10827 Berlin<br />
         Deutschland
       </p>
-      <p>Einzelunternehmen</p>
+      <p>Rechtsform: Gewerbetreibender / Freiberufler (kein Registereintrag)</p>
 
       <h2>Kontakt</h2>
       <p>
         Telefon: <a href="tel:+493057702366">+49 (0)30 57 70 23 66</a><br />
-        E-Mail: <a href="mailto:info@websitegenerator24.de">info@websitegenerator24.de</a><br />
-        Website: <a href="https://www.websitegenerator24.de">www.websitegenerator24.de</a>
+        E-Mail: <a href="mailto:info@websitegenerator24.de">info@websitegenerator24.de</a>
       </p>
 
       <h2>Umsatzsteuer-Identifikationsnummer</h2>
-      <p>Gemäß § 27 a Umsatzsteuergesetz: <L>USt-IdNr. eintragen</L></p>
+      <p>Gemäß § 27 a Umsatzsteuergesetz: DE285640600</p>
 
       <h2>Verantwortlich für den Inhalt</h2>
-      <p><L>Vor- und Nachname</L>, Anschrift wie oben</p>
+      <p>Erkan Terzoglou, Anschrift wie oben</p>
 
       <h2>Verbraucherstreitbeilegung</h2>
       <p>

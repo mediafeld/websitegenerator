@@ -32,4 +32,5 @@ export const BRANCHEN_INFO = [
     bereiche: ['Leistungen frei benennbar', 'Über uns', 'Galerie', 'Kontakt'] },
 ]
 
-export const BILD = (id, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=75`
+// Bilder liegen lokal unter /public/bilder – keine Verbindung zu Dritten
+export const BILD = (id) => `/bilder/${id}.webp`

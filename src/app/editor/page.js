@@ -250,7 +250,7 @@ export default function EditorPage() {
     if (typeof document === 'undefined' || document.getElementById('wg-fa')) return
     const l = document.createElement('link')
     l.id = 'wg-fa'; l.rel = 'stylesheet'
-    l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
+    l.href = '/fa/css/all.min.css'
     document.head.appendChild(l)
   }, [])
 

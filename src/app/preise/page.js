@@ -12,7 +12,8 @@ export default function PreiseSeite() {
 
   return (
     <div style={{ background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
-      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+      <link href="/schrift/schrift.css" rel="stylesheet" />
+      <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
         .tabelle{width:100%;border-collapse:collapse;font-size:14px}
         .tabelle th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${D.grauHell};padding:12px 14px;border-bottom:1px solid ${D.linie};font-weight:700}

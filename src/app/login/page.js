@@ -2,12 +2,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
-import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
-import { Fuss } from '@/components/Fuss'
+import { D, BASIS_CSS, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 
 export default function LoginSeite() {
   const router = useRouter()
-  const [modus, setModus] = useState('login')   // login | registrieren | reset
+  const [modus, setModus] = useState('login')
   const [email, setEmail] = useState('')
   const [passwort, setPasswort] = useState('')
   const [firma, setFirma] = useState('')
@@ -15,176 +14,155 @@ export default function LoginSeite() {
   const [fehler, setFehler] = useState('')
   const [hinweis, setHinweis] = useState('')
 
-  // Wohin nach dem Anmelden? (?next=/design-auswahl)
   const ziel = () => {
     if (typeof window === 'undefined') return '/dashboard'
     const n = new URLSearchParams(window.location.search).get('next')
     return n && n.startsWith('/') ? n : '/dashboard'
   }
 
-  // Schon eingeloggt? Dann direkt ins Dashboard.
   useEffect(() => {
     if (!supabaseBereit) return
-    supabase.auth.getSession().then(({ data }) => {
-      if (data?.session) router.replace(ziel())
-    })
+    supabase.auth.getSession().then(({ data }) => { if (data?.session) router.replace(ziel()) })
   }, [router])
 
   async function absenden() {
     setFehler(''); setHinweis('')
-    if (!email.trim()) return setFehler('Bitte E-Mail eingeben.')
-    if (modus !== 'reset' && passwort.length < 6) return setFehler('Das Passwort muss mindestens 6 Zeichen haben.')
-
+    if (!email.trim()) return setFehler('Bitte E-Mail-Adresse eingeben.')
+    if (modus !== 'reset' && passwort.length < 8) return setFehler('Das Passwort muss mindestens 8 Zeichen haben.')
     setLaedt(true)
     try {
       if (modus === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: passwort })
         if (error) throw error
         router.replace(ziel())
-
       } else if (modus === 'registrieren') {
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: passwort,
-          options: { data: { firma: firma.trim() } },
+          email: email.trim(), password: passwort,
+          options: { data: { firma: firma.trim() }, emailRedirectTo: `${window.location.origin}/dashboard` },
         })
         if (error) throw error
         if (data?.session) router.replace(ziel())
-        else setHinweis('Fast fertig! Wir haben dir eine Bestätigungs-Mail geschickt. Bitte den Link darin anklicken.')
-
+        else setHinweis('Fast fertig. Wir haben dir eine Bestätigungs-Mail geschickt — bitte den Link darin anklicken. Schau auch im Spam-Ordner.')
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/login`,
+          redirectTo: `${window.location.origin}/passwort-neu`,
         })
         if (error) throw error
-        setHinweis('Wir haben dir eine E-Mail zum Zurücksetzen des Passworts geschickt.')
+        setHinweis('Wir haben dir eine E-Mail geschickt. Über den Link darin kannst du ein neues Passwort setzen. Der Link ist eine Stunde gültig.')
       }
-    } catch (e) {
-      setFehler(fehlerText(e))
-    }
+    } catch (e) { setFehler(fehlerText(e)) }
     setLaedt(false)
   }
 
-  if (!supabaseBereit) {
-    return (
-      <Rahmen>
-        <h1 style={S.h1}>Login noch nicht eingerichtet</h1>
-        <p style={S.p}>
-          Die Verbindung zur Datenbank fehlt. Bitte bei Vercel die Variablen{' '}
-          <code>NEXT_PUBLIC_SUPABASE_URL</code> und <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> eintragen
-          und neu bereitstellen.
-        </p>
-      </Rahmen>
-    )
-  }
-
-  const titel = modus === 'login' ? 'Anmelden' : modus === 'registrieren' ? 'Konto erstellen' : 'Passwort zurücksetzen'
+  const titel = modus === 'login' ? 'Anmeldung' : modus === 'registrieren' ? 'Konto erstellen' : 'Passwort zurücksetzen'
+  const unter = modus === 'login' ? 'zu Ihrem Kundenbereich' : modus === 'registrieren' ? 'kostenlos und in einer Minute' : 'Wir senden Ihnen einen Link'
 
   return (
-    <Rahmen>
-      <h1 style={S.h1}>{titel}</h1>
-      <p style={S.p}>
-        {modus === 'login' && 'Melde dich an, um deine Websites zu verwalten.'}
-        {modus === 'registrieren' && 'Erstelle ein Konto – danach findest du alle deine Websites wieder.'}
-        {modus === 'reset' && 'Wir schicken dir einen Link per E-Mail.'}
-      </p>
+    <div style={{ minHeight: '100vh', background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
+      <link href="/schrift/schrift.css" rel="stylesheet" />
+      <link href="/fa/css/all.min.css" rel="stylesheet" />
+      <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
+        .lfeld{width:100%;padding:14px 16px 14px 44px;font-size:15px;border:2px solid ${D.linie};border-radius:11px;outline:none;transition:border-color .16s,box-shadow .16s;background:#fff}
+        .lfeld:focus{border-color:${D.blau};box-shadow:0 0 0 4px ${D.blau}18}
+        .lwrap{position:relative}
+        .lwrap i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:${D.grauHell};font-size:14px;pointer-events:none;transition:color .16s}
+        .lwrap:focus-within i{color:${D.blau}}
+        .lknopf{width:100%;background:${D.blau};color:#fff;border:none;border-radius:11px;padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;transition:background .16s,transform .16s,box-shadow .16s}
+        .lknopf:hover{background:${D.blauHell};transform:translateY(-1px);box-shadow:0 10px 26px rgba(29,78,216,.3)}
+        .lknopf:disabled{opacity:.6;cursor:wait;transform:none}
+        .llink{background:none;border:none;color:${D.blau};font-size:13.5px;font-weight:600;cursor:pointer;padding:3px}
+        .llink:hover{text-decoration:underline}
+      ` }} />
 
-      {modus === 'registrieren' && (
-        <Feld label="Firma (optional)" value={firma} onChange={setFirma} placeholder="z. B. Müller Sanitär" />
-      )}
-
-      <Feld label="E-Mail" type="email" value={email} onChange={setEmail} placeholder="name@firma.de" />
-
-      {modus !== 'reset' && (
-        <Feld label="Passwort" type="password" value={passwort} onChange={setPasswort}
-              placeholder="mindestens 6 Zeichen" onEnter={absenden} />
-      )}
-
-      {fehler && <div style={S.fehler}>{fehler}</div>}
-      {hinweis && <div style={S.hinweis}>{hinweis}</div>}
-
-      <button onClick={absenden} disabled={laedt} style={{ ...S.btn, opacity: laedt ? 0.6 : 1 }}>
-        {laedt ? 'Bitte warten…' : titel}
-      </button>
-
-      <div style={S.links}>
-        {modus === 'login' && (
-          <>
-            <button style={S.link} onClick={() => { setModus('registrieren'); setFehler(''); setHinweis('') }}>Noch kein Konto? Registrieren</button>
-            <button style={S.link} onClick={() => { setModus('reset'); setFehler(''); setHinweis('') }}>Passwort vergessen?</button>
-          </>
-        )}
-        {modus !== 'login' && (
-          <button style={S.link} onClick={() => { setModus('login'); setFehler(''); setHinweis('') }}>← Zurück zum Anmelden</button>
-        )}
+      {/* Schmale Kopfzeile */}
+      <div style={{ background: D.dunkel, color: '#9FB0C8', fontSize: 12.5 }}>
+        <div className="wrap" style={{ height: 40, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <a href="/" style={{ fontWeight: 600 }}><i className="fa-solid fa-arrow-left" style={{ marginRight: 8 }} aria-hidden="true" />Zurück zur Website</a>
+          <div style={{ flex: 1 }} />
+          <a href={TELEFON_LINK} className="link-u"><i className="fa-solid fa-phone" style={{ marginRight: 7 }} aria-hidden="true" />{TELEFON}</a>
+        </div>
       </div>
-    </Rahmen>
-  )
-}
 
-function Rahmen({ children }) {
-  return (
-    <div style={{ background: D.paper, minHeight: '100vh', fontFamily: '"Inter Tight",system-ui,sans-serif', color: D.dunkel, display: 'flex', flexDirection: 'column' }}>
-      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-      <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + '@media(max-width:860px){.wrap>div{grid-template-columns:1fr !important}.nutzen{display:none}}' }} />
-      <Kopf />
-      <section style={{ flex: 1, padding: '52px 0 70px' }}>
-        <div className="wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 44, alignItems: 'start', maxWidth: 980 }}>
-          <div className="nutzen">
-            <a href="/" className="link-u" style={{ fontSize: 13, color: D.grau, display: 'inline-block', marginBottom: 20 }}>← Zurück zur Startseite</a>
-            <h2 className="display" style={{ fontSize: 'clamp(25px,3.4vw,34px)', marginBottom: 14 }}>
-              Dein Konto — <span className="leicht" style={{ color: D.grau }}>alles an einem Ort.</span>
-            </h2>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 26 }}>
-              {[
-                ['Websites wiederfinden', 'Deine Entwürfe bleiben gespeichert – auch nach dem Schließen des Browsers.'],
-                ['Weiterarbeiten, wo du warst', 'Jede Änderung im Editor wird automatisch gesichert.'],
-                ['Domain und Rechnungen', 'Verträge, Rechnungen und Kündigung an einer Stelle.'],
-              ].map(([t, u]) => (
-                <li key={t} style={{ display: 'flex', gap: 11 }}>
-                  <span aria-hidden="true" style={{ color: D.blau, fontWeight: 800, marginTop: 1 }}>✓</span>
-                  <span>
-                    <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 2 }}>{t}</strong>
-                    <span style={{ fontSize: 13.5, color: D.grau, lineHeight: 1.6 }}>{u}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="karte" style={{ padding: '16px 18px', fontSize: 13.5, color: D.grau, lineHeight: 1.65 }}>
-              Noch nichts erstellt? Du kannst den Wizard auch ohne Konto ausprobieren —
-              angemeldet sein musst du erst beim Erzeugen der Website.
-              <div style={{ marginTop: 12 }}><a href="/start" className="btnleer" style={{ display: 'inline-block' }}>Wizard ansehen</a></div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '44px 22px' }}>
+        <div style={{ width: '100%', maxWidth: 430 }}>
+          <div style={{ background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 18, padding: '38px 36px', boxShadow: '0 14px 44px rgba(10,24,36,.08)' }}>
+            {/* Logo */}
+            <div style={{ textAlign: 'center', marginBottom: 26 }}>
+              <a href="/" className="display" style={{ fontSize: 21, letterSpacing: '-.045em' }}>
+                websitegenerator<span style={{ color: D.blau }}>24</span>
+              </a>
+              <h1 className="display" style={{ fontSize: 25, marginTop: 20, letterSpacing: '-.03em' }}>{titel}</h1>
+              <p style={{ fontSize: 14, color: D.grau, marginTop: 5 }}>{unter}</p>
+            </div>
+
+            {modus === 'registrieren' && (
+              <div className="lwrap" style={{ marginBottom: 13 }}>
+                <i className="fa-solid fa-building" aria-hidden="true" />
+                <input className="lfeld" placeholder="Firma (optional)" value={firma} onChange={e => setFirma(e.target.value)} />
+              </div>
+            )}
+
+            <div className="lwrap" style={{ marginBottom: 13 }}>
+              <i className="fa-solid fa-envelope" aria-hidden="true" />
+              <input className="lfeld" type="email" placeholder="E-Mail-Adresse" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && absenden()} autoComplete="email" />
+            </div>
+
+            {modus !== 'reset' && (
+              <div className="lwrap" style={{ marginBottom: 13 }}>
+                <i className="fa-solid fa-lock" aria-hidden="true" />
+                <input className="lfeld" type="password" placeholder="Passwort" value={passwort} onChange={e => setPasswort(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && absenden()} autoComplete={modus === 'login' ? 'current-password' : 'new-password'} />
+              </div>
+            )}
+
+            {fehler && (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', borderRadius: 10, padding: '12px 14px', fontSize: 13.5, marginBottom: 14, lineHeight: 1.55 }}>
+                <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 8 }} aria-hidden="true" />{fehler}
+              </div>
+            )}
+            {hinweis && (
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D', borderRadius: 10, padding: '12px 14px', fontSize: 13.5, marginBottom: 14, lineHeight: 1.55 }}>
+                <i className="fa-solid fa-circle-check" style={{ marginRight: 8 }} aria-hidden="true" />{hinweis}
+              </div>
+            )}
+
+            <button className="lknopf" onClick={absenden} disabled={laedt} style={{ marginTop: 6 }}>
+              {laedt ? 'Bitte warten…' : modus === 'login' ? 'Jetzt anmelden' : modus === 'registrieren' ? 'Konto erstellen' : 'Link senden'}
+            </button>
+
+            {modus === 'login' && (
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <button className="llink" onClick={() => { setModus('reset'); setFehler(''); setHinweis('') }}>Passwort vergessen?</button>
+                <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 3 }}>Wir senden Ihnen einen Link zum Zurücksetzen.</p>
+              </div>
+            )}
+
+            <div style={{ borderTop: `1px solid ${D.linie}`, marginTop: 22, paddingTop: 20, textAlign: 'center' }}>
+              {modus === 'login' ? (
+                <>
+                  <p style={{ fontSize: 13.5, color: D.grau, marginBottom: 8 }}>Neu hier?</p>
+                  <button className="llink" style={{ fontSize: 14.5, fontWeight: 700 }} onClick={() => { setModus('registrieren'); setFehler(''); setHinweis('') }}>
+                    Kostenlos Konto erstellen
+                  </button>
+                </>
+              ) : (
+                <button className="llink" onClick={() => { setModus('login'); setFehler(''); setHinweis('') }}>
+                  <i className="fa-solid fa-arrow-left" style={{ marginRight: 7 }} aria-hidden="true" />Zurück zur Anmeldung
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="karte" style={{ padding: 30 }}>{children}</div>
+          {/* Hilfe darunter */}
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: D.grau, lineHeight: 1.8 }}>
+            Probleme beim Anmelden?{' '}
+            <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.blau, fontWeight: 600 }}>{EMAIL}</a>
+            <br />
+            <a className="link-u" href="/hilfe">Hilfe &amp; FAQ</a> · <a className="link-u" href="/datenschutz">Datenschutz</a> · <a className="link-u" href="/impressum">Impressum</a>
+          </div>
         </div>
-      </section>
-      <Fuss />
+      </div>
     </div>
   )
-}
-
-function Feld({ label, value, onChange, type = 'text', placeholder, onEnter }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>{label}</label>
-      <input
-        type={type} value={value} placeholder={placeholder}
-        onChange={e => onChange(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && onEnter && onEnter()}
-        style={{ width: '100%', padding: '12px 14px', fontSize: 14, border: '2px solid #e2e8f0', borderRadius: 10, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-      />
-    </div>
-  )
-}
-
-const S = {
-  h1: { fontSize: 24, fontWeight: 800, color: '#0f172a', marginBottom: 6 },
-  p: { fontSize: 13, color: '#64748b', marginBottom: 22, lineHeight: 1.5 },
-  btn: { width: '100%', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
-  fehler: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, marginBottom: 12, lineHeight: 1.5 },
-  hinweis: { background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, marginBottom: 12, lineHeight: 1.5 },
-  links: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, alignItems: 'center' },
-  link: { background: 'none', border: 'none', color: '#1d4ed8', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', padding: 2 },
 }

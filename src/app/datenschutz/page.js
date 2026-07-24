@@ -6,7 +6,7 @@ export default function Datenschutz() {
     <Rechtsseite titel="Datenschutzerklärung" stand="Juli 2026" kinder={<>
       <h2>1. Verantwortlicher</h2>
       <p>
-        <L>Vor- und Nachname</L> — <L>Firmenbezeichnung</L>, <L>Straße</L>, <L>PLZ</L> Berlin.
+        Erkan Terzoglou, websitegenerator24.de, Kolonnenstraße 8, 10827 Berlin.
         E-Mail: <a href="mailto:info@websitegenerator24.de">info@websitegenerator24.de</a>,
         Telefon: <a href="tel:+493057702366">+49 (0)30 57 70 23 66</a>.
       </p>

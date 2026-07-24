@@ -6,7 +6,7 @@ export default function AGB() {
     <Rechtsseite titel="Allgemeine Geschäftsbedingungen" stand="Juli 2026" kinder={<>
       <h2>1. Anbieter und Geltungsbereich</h2>
       <p>
-        Anbieter ist <L>Vor- und Nachname</L> — <L>Firmenbezeichnung</L>, <L>Anschrift</L>, Berlin
+        Anbieter ist Erkan Terzoglou, websitegenerator24.de, Kolonnenstraße 8, 10827 Berlin
         (im Folgenden „wir"). Diese Bedingungen gelten für alle Leistungen von
         websitegenerator24.de gegenüber Verbrauchern und Unternehmern.
       </p>
