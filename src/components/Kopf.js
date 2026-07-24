@@ -5,45 +5,38 @@ import { aktuellerNutzer } from '@/lib/projekte'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 
 // ══ CI websitegenerator24 ══
-// Verlauf: Blau → Violett → Türkis. Anker: Indigo-Schwarz. Dazu Weiß und Grau.
-// Es werden AUSSCHLIESSLICH diese Farben verwendet.
+// Nur diese Farben werden verwendet.
 export const CI = {
-  blau: '#2B62F0',
-  violett: '#7B3FE4',
-  tuerkis: '#12C8C8',
-  anker: '#0D0A2B',
-  ankerHell: '#191446',
+  petrol: '#0A1823',      // Grundfarbe dunkel
+  petrol2: '#0F2233',     // dunkel, eine Stufe heller
+  blau: '#1B93D2',        // Signalblau – Akzent
+  blauDunkel: '#157AB0',  // Akzent gedrückt
+  stahl: '#2D5A7B',       // Zwischenton
   weiss: '#FFFFFF',
-  grau: '#F5F5FC',
-  grauLinie: '#E6E5F4',
-  textStark: '#14113A',
-  textMatt: '#67658C',
-  textZart: '#9694B4',
+  grau: '#F2F5F8',        // helle Fläche
+  linie: '#DFE6ED',
+  text: '#0A1823',
+  textMatt: '#5A6B7A',
+  textZart: '#8A99A6',
+  geist: '#EDF1F5',       // Geister-Überschrift
 }
-export const VERLAUF = `linear-gradient(100deg, ${CI.blau}, ${CI.violett} 52%, ${CI.tuerkis})`
-export const VERLAUF_WEICH = `linear-gradient(100deg, ${CI.blau}22, ${CI.violett}1C 52%, ${CI.tuerkis}20)`
 
 export const D = {
-  // CI
-  blau: CI.blau, violett: CI.violett, tuerkis: CI.tuerkis,
-  anker: CI.anker, ankerHell: CI.ankerHell,
-  verlauf: VERLAUF,
-  // Flächen
+  petrol: CI.petrol, blau: CI.blau, stahl: CI.stahl,
   weiss: CI.weiss, grau: CI.grau, hellgrau: CI.grau, paper: CI.weiss, karte: CI.weiss,
-  dunkel: CI.anker, dunkel2: CI.ankerHell,
-  // Text
-  text: CI.textStark, textHell: '#FFFFFF', textMatt: CI.textMatt, textZart: CI.textZart,
-  textMattDunkel: '#A9A6D0', grauHell: CI.textZart,
-  // Linien
-  linie: CI.grauLinie, linieDunkel: 'rgba(255,255,255,.13)',
-  // Kompatible Namen
-  akzent: CI.violett, akzentHell: CI.blau, akzentZart: '#F0EDFE',
-  tuerkisZart: '#E4F8F8', magenta: CI.violett, gold: CI.tuerkis, lila: CI.violett,
-  gruen: CI.tuerkis, gruenZart: '#E4F8F8',
-  blauHell: CI.blau, blauZart: '#F0EDFE',
-  hellGrund: CI.grau, hellKarte: CI.weiss, hellText: CI.textStark,
-  hellGrau: CI.textMatt, hellLinie: CI.grauLinie,
+  dunkel: CI.petrol, dunkel2: CI.petrol2, anker: CI.petrol, ankerHell: CI.petrol2,
+  text: CI.text, textHell: '#FFFFFF', textMatt: CI.textMatt, textZart: CI.textZart,
+  textMattDunkel: '#9FB2C0', grauHell: CI.textZart,
+  linie: CI.linie, linieDunkel: 'rgba(255,255,255,.14)',
+  akzent: CI.blau, akzentHell: CI.blauDunkel, akzentZart: '#E8F4FB',
+  tuerkis: CI.blau, tuerkisZart: '#E8F4FB', violett: CI.stahl, magenta: CI.blau,
+  gruen: CI.blau, gruenZart: '#E8F4FB', gold: CI.blau, lila: CI.stahl,
+  blauHell: CI.blauDunkel, blauZart: '#E8F4FB',
+  hellGrund: CI.grau, hellKarte: CI.weiss, hellText: CI.text,
+  hellGrau: CI.textMatt, hellLinie: CI.linie,
+  verlauf: `linear-gradient(100deg, ${CI.blau}, ${CI.stahl})`,
 }
+export const VERLAUF = `linear-gradient(100deg, ${CI.blau}, ${CI.stahl})`
 
 export const TELEFON = '+49 (0)30 57 70 23 66'
 export const TELEFON_LINK = 'tel:+493057702366'
@@ -51,116 +44,107 @@ export const EMAIL = 'info@websitegenerator24.de'
 
 export const BASIS_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:${CI.weiss};color:${CI.textStark}}
-.display{font-family:'Inter Tight',system-ui,sans-serif;font-weight:800;letter-spacing:-0.05em;line-height:1.0}
-.haar{font-weight:100}
-.duenn{font-weight:200}
-.leicht{font-weight:300;color:${CI.textMatt}}
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
-.wrap{max-width:1200px;margin:0 auto;padding:0 22px}
+body{background:#fff;color:${CI.text}}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 button{font-family:inherit}
 input,select,textarea{font-family:inherit}
 a{color:inherit;text-decoration:none}
 .link-u{transition:color .15s}
-.link-u:hover{text-decoration:underline;color:${CI.violett}}
-:focus-visible{outline:2px solid ${CI.violett};outline-offset:3px}
-::selection{background:${CI.violett};color:#fff}
+.link-u:hover{text-decoration:underline;color:${CI.blau}}
+:focus-visible{outline:2px solid ${CI.blau};outline-offset:3px}
+::selection{background:${CI.blau};color:#fff}
 
-/* ── Verlaufsschrift ── */
-.verlauf{background:${VERLAUF};-webkit-background-clip:text;background-clip:text;color:transparent}
-.verlauf-bewegt{background:linear-gradient(100deg,${CI.blau},${CI.violett},${CI.tuerkis},${CI.violett},${CI.blau});
-  background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:wandern 11s ease-in-out infinite}
-@keyframes wandern{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+/* ── Typografie: Kontrast über Gewicht 400 gegen 800 ── */
+.t1{font-size:clamp(34px,5vw,62px);line-height:1.06;letter-spacing:-.035em;font-weight:400}
+.t1 b{font-weight:800}
+.t2{font-size:clamp(28px,4vw,46px);line-height:1.1;letter-spacing:-.032em;font-weight:400}
+.t2 b{font-weight:800}
+.t3{font-size:21px;font-weight:700;letter-spacing:-.022em;line-height:1.25}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;color:${CI.blau}}
+.lauf{font-size:16.5px;line-height:1.75;color:${CI.textMatt};font-weight:400}
+.klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Flächen & weiche Übergänge ── */
-.grauflaeche{background:${CI.grau}}
-.weich-oben{position:relative}
-.weich-oben:before{content:'';position:absolute;left:0;right:0;top:0;height:90px;
-  background:linear-gradient(180deg,${CI.weiss},transparent);pointer-events:none}
-.weich-unten:after{content:'';position:absolute;left:0;right:0;bottom:0;height:90px;
-  background:linear-gradient(0deg,${CI.weiss},transparent);pointer-events:none}
-.mesh{position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(680px 420px at 12% 8%, ${CI.blau}26, transparent 62%),
-             radial-gradient(720px 460px at 88% 18%, ${CI.violett}24, transparent 64%),
-             radial-gradient(600px 380px at 62% 92%, ${CI.tuerkis}22, transparent 62%)}
-.punkte{position:absolute;inset:0;pointer-events:none;
-  background-image:radial-gradient(${CI.violett}2E 1px, transparent 1px);background-size:24px 24px;
-  mask-image:linear-gradient(180deg,#000 10%,transparent 78%);-webkit-mask-image:linear-gradient(180deg,#000 10%,transparent 78%)}
-.wolke{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;animation:treiben 20s ease-in-out infinite}
-@keyframes treiben{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(34px,-26px) scale(1.1)}66%{transform:translate(-26px,22px) scale(.94)}}
+/* ── Geister-Überschrift ── */
+.geistkopf{position:relative;padding-top:34px}
+.geist{position:absolute;top:-8px;left:-4px;font-size:clamp(52px,9vw,124px);font-weight:800;
+  letter-spacing:-.055em;line-height:.82;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none}
+.dunkelzone .geist{color:rgba(255,255,255,.055)}
+.geistinhalt{position:relative;z-index:1}
+.mitte .geist{left:50%;transform:translateX(-50%)}
+
+/* ── Bänder über volle Breite ── */
+.band{width:100%}
+.band-hell{background:#fff}
+.band-grau{background:${CI.grau}}
+.band-dunkel{background:${CI.petrol};color:#fff}
+.band-foto{position:relative;color:#fff;background-size:cover;background-position:center}
+.band-foto:before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,24,35,.95) 0%,rgba(10,24,35,.78) 52%,rgba(10,24,35,.5) 100%)}
+.band-foto>*{position:relative;z-index:1}
+.dunkelzone{background:${CI.petrol};color:#fff}
+.dunkelzone .lauf,.dunkelzone .klein{color:#9FB2C0}
+.dunkelzone .karte{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.14)}
+.dunkelzone .eyebrow{color:#6FC3EF}
+.dunkelzone .btnleer{background:transparent;color:#fff;border-color:rgba(255,255,255,.34)}
+.dunkelzone .btnleer:hover{border-color:#fff;background:rgba(255,255,255,.09)}
 
 /* ── Karten ── */
-.karte{background:#fff;border:1px solid ${CI.grauLinie};border-radius:20px}
-.karte-hover{transition:transform .3s cubic-bezier(.2,.7,.3,1),box-shadow .3s,border-color .3s}
-.karte-hover:hover{transform:translateY(-7px) rotate(-.5deg);box-shadow:0 26px 60px rgba(43,98,240,.16);border-color:${CI.violett}55}
-.rahmen-verlauf{position:relative;background:#fff;border-radius:20px}
-.rahmen-verlauf:before{content:'';position:absolute;inset:-1.5px;border-radius:21px;background:${VERLAUF};z-index:-1}
+.karte{background:#fff;border:1px solid ${CI.linie};border-radius:14px}
+.karte-hover{transition:transform .26s cubic-bezier(.2,.7,.3,1),box-shadow .26s,border-color .26s}
+.karte-hover:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(10,24,35,.13);border-color:${CI.blau}66}
 
 /* ── Knöpfe ── */
-.btnfest{background:${VERLAUF};background-size:200% 100%;color:#fff;border:none;border-radius:12px;padding:14px 24px;
-  font-size:15px;font-weight:700;cursor:pointer;display:inline-block;transition:background-position .5s,transform .2s,box-shadow .2s}
-.btnfest:hover{background-position:100% 50%;transform:translateY(-3px);box-shadow:0 16px 34px rgba(123,63,228,.34)}
-.btnleer{background:#fff;color:${CI.textStark};border:1.5px solid ${CI.grauLinie};border-radius:12px;padding:13px 22px;
-  font-size:15px;font-weight:700;cursor:pointer;display:inline-block;transition:border-color .2s,color .2s,transform .2s,box-shadow .2s}
-.btnleer:hover{border-color:${CI.violett};color:${CI.violett};transform:translateY(-3px);box-shadow:0 12px 28px rgba(123,63,228,.14)}
-.btnhell{background:#fff;color:${CI.anker};border:none;border-radius:12px;padding:15px 28px;font-size:15.5px;font-weight:800;
-  cursor:pointer;display:inline-block;transition:transform .2s,box-shadow .2s}
-.btnhell:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,.22)}
-.btntuerkis{background:linear-gradient(100deg,${CI.tuerkis},${CI.blau});color:#fff;border:none;border-radius:12px;
-  padding:14px 24px;font-size:15px;font-weight:700;cursor:pointer;display:inline-block;transition:transform .2s,box-shadow .2s}
-.btntuerkis:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(18,200,200,.34)}
-
-/* ── Dunkle Anker-Bereiche ── */
-.dunkelzone{background:${CI.anker};color:#fff}
-.dunkelzone .karte{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
-.dunkelzone .leicht{color:#A9A6D0}
-.dunkelzone .btnleer{background:transparent;color:#fff;border-color:rgba(255,255,255,.32)}
-.dunkelzone .btnleer:hover{border-color:#fff;background:rgba(255,255,255,.09);color:#fff}
+.btnfest{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s,box-shadow .18s}
+.btnfest:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 28px rgba(27,147,210,.34)}
+.btnleer{background:#fff;color:${CI.text};border:1.5px solid ${CI.linie};border-radius:8px;padding:14px 24px;
+  font-size:15px;font-weight:700;cursor:pointer;display:inline-block;transition:all .18s}
+.btnleer:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
+.btnhell{background:#fff;color:${CI.petrol};border:none;border-radius:8px;padding:15px 28px;font-size:15px;
+  font-weight:800;cursor:pointer;display:inline-block;transition:transform .18s,box-shadow .18s}
+.btnhell:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.24)}
+.btntuerkis{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
+.btntuerkis:hover{background:${CI.blauDunkel};transform:translateY(-2px)}
 
 /* ── Bewegung ── */
-.reveal{opacity:0;transform:translateY(30px) scale(.985);transition:opacity .8s cubic-bezier(.2,.7,.3,1),transform .8s cubic-bezier(.2,.7,.3,1)}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
 .reveal.an{opacity:1;transform:none}
-.dreh:hover{transform:rotate(6deg) scale(1.1)}
-.schwebe{animation:schweben 8s ease-in-out infinite}
-@keyframes schweben{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-18px) rotate(1.5deg)}}
-.puls{animation:pulsen 3.4s ease-in-out infinite}
-@keyframes pulsen{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
 
 /* ── Lauftext ── */
-.laufband{overflow:hidden;padding:16px 0;background:${CI.grau}}
-.laufband-inhalt{display:flex;gap:46px;white-space:nowrap;animation:laufen 40s linear infinite;
-  font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.laufband{overflow:hidden;padding:15px 0;background:${CI.petrol};color:#9FB2C0}
+.laufband-inhalt{display:flex;gap:46px;white-space:nowrap;animation:laufen 44s linear infinite;
+  font-size:12.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase}
 @keyframes laufen{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ── Navigation ── */
-.minileiste{background:${CI.anker};color:#A9A6D0;font-size:12.5px}
+.minileiste{background:${CI.petrol};color:#9FB2C0;font-size:12.5px}
 .minileiste a:hover{color:#fff}
 .navroot{position:relative}
-.navtrigger{display:flex;align-items:center;gap:5px;font-size:14.5px;font-weight:600;color:${CI.textStark};
+.navtrigger{display:flex;align-items:center;gap:5px;font-size:14.5px;font-weight:600;color:${CI.text};
   background:none;border:none;cursor:pointer;padding:9px 2px;transition:color .16s}
-.navroot:hover .navtrigger{color:${CI.violett}}
+.navroot:hover .navtrigger{color:${CI.blau}}
 .navroot:hover .pfeil{transform:rotate(180deg)}
-.pfeil{transition:transform .25s;font-size:9px;opacity:.5;display:inline-block}
-.navdrop{position:absolute;top:100%;left:-14px;min-width:296px;background:#fff;border:1px solid ${CI.grauLinie};
-  border-radius:16px;box-shadow:0 24px 56px rgba(20,17,58,.16);padding:9px;opacity:0;visibility:hidden;
-  transform:translateY(12px) scale(.98);transition:all .24s cubic-bezier(.2,.7,.3,1);z-index:95}
+.pfeil{transition:transform .22s;font-size:9px;opacity:.5;display:inline-block}
+.navdrop{position:absolute;top:100%;left:-14px;min-width:296px;background:#fff;border:1px solid ${CI.linie};
+  border-radius:12px;box-shadow:0 22px 50px rgba(10,24,35,.16);padding:9px;opacity:0;visibility:hidden;
+  transform:translateY(10px);transition:all .22s cubic-bezier(.2,.7,.3,1);z-index:95}
 .navroot:hover .navdrop{opacity:1;visibility:visible;transform:none}
 .navdrop.rechts{left:auto;right:-6px}
-.navitem{display:block;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:${CI.textStark};
+.navitem{display:block;padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:${CI.text};
   transition:background .16s,padding-left .16s,color .16s}
-.navitem:hover{background:#F3F0FE;color:${CI.violett};padding-left:18px}
+.navitem:hover{background:#EAF4FB;color:${CI.blau};padding-left:18px}
 .navitem span{display:block;font-size:11.5px;font-weight:400;color:${CI.textZart};margin-top:2px}
 .navgroup{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${CI.textZart};padding:10px 12px 5px}
-.navtrenner{height:1px;background:${CI.grauLinie};margin:6px 9px}
-.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid ${CI.grauLinie};background:#F3F0FE;
-  color:${CI.violett};font-size:14px;font-weight:800;cursor:pointer;transition:all .2s}
-.avatar:hover{border-color:${CI.violett};transform:translateY(-2px) rotate(-6deg)}
+.navtrenner{height:1px;background:${CI.linie};margin:6px 9px}
+.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid ${CI.linie};background:#EAF4FB;
+  color:${CI.blau};font-size:14px;font-weight:800;cursor:pointer;transition:all .18s}
+.avatar:hover{border-color:${CI.blau};transform:translateY(-2px)}
 
-.arbeit{background:${CI.grau};color:${CI.textStark}}
+.arbeit{background:${CI.grau};color:${CI.text}}
 
 @media (max-width:980px){.navmitte{display:none}}
 @media (max-width:700px){.minihide{display:none}}
-@media (max-width:780px){.spalten3{grid-template-columns:1fr !important}.spalten2{grid-template-columns:1fr !important}}
+@media (max-width:820px){.spalten3{grid-template-columns:1fr !important}.spalten2{grid-template-columns:1fr !important}.geist{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none !important}.reveal{opacity:1;transform:none;transition:none}}
 `
 
@@ -241,8 +225,8 @@ export function Kopf() {
 
       <header style={{ background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${D.linie}`, position: 'sticky', top: 0, zIndex: 80 }}>
         <div className="wrap" style={{ height: 70, display: 'flex', alignItems: 'center', gap: 22 }}>
-          <a href="/" className="display" style={{ fontSize: 18.5, whiteSpace: 'nowrap' }}>
-            websitegenerator<span className="verlauf">24</span>
+          <a href="/" style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.04em', whiteSpace: 'nowrap' }}>
+            websitegenerator<span style={{ color: CI.blau }}>24</span>
           </a>
 
           <nav className="navmitte" style={{ display: 'flex', gap: 16, marginLeft: 8 }}>

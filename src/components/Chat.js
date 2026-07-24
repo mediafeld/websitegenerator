@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { D, CI, VERLAUF, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
+import { D, CI, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 
 // Chatfenster unten rechts. Noch ohne Inhalte – verweist auf Telefon, E-Mail und Hilfe.
 export function Chat() {
@@ -10,16 +10,16 @@ export function Chat() {
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         .chatknopf{position:fixed;right:22px;bottom:22px;z-index:200;width:58px;height:58px;border-radius:50%;
-          background:${VERLAUF};background-size:200% 100%;color:#fff;border:none;cursor:pointer;font-size:21px;
-          box-shadow:0 12px 30px rgba(123,63,228,.42);transition:transform .2s cubic-bezier(.2,.7,.3,1),background .18s}
-        .chatknopf:hover{transform:translateY(-4px) scale(1.06) rotate(-6deg);background-position:100% 50%}
+          background:${CI.blau};color:#fff;border:none;cursor:pointer;font-size:21px;
+          box-shadow:0 12px 28px rgba(27,147,210,.4);transition:transform .2s cubic-bezier(.2,.7,.3,1),background .18s}
+        .chatknopf:hover{transform:translateY(-3px) scale(1.04);background:${CI.blauDunkel}}
         .chatpunkt{position:absolute;top:-2px;right:-2px;width:15px;height:15px;border-radius:50%;
           background:#22C55E;border:2.5px solid #fff}
         .chatfenster{position:fixed;right:22px;bottom:92px;z-index:200;width:340px;max-width:calc(100vw - 44px);
           background:#fff;border:1px solid ${D.linie};border-radius:18px;overflow:hidden;
           box-shadow:0 20px 54px rgba(16,26,51,.2);animation:chatauf .22s cubic-bezier(.2,.7,.3,1)}
         @keyframes chatauf{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
-        .chatkopf{background:linear-gradient(120deg,${CI.anker},#1B1150);color:#fff;padding:18px 19px;display:flex;align-items:center;gap:12px}
+        .chatkopf{background:${CI.petrol};color:#fff;padding:18px 19px;display:flex;align-items:center;gap:12px}
         .chatzeile{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid ${D.linie};
           font-size:14px;font-weight:600;color:${D.text};transition:background .14s,padding-left .14s}
         .chatzeile:hover{background:${D.blauZart};color:${D.magenta};padding-left:20px}
@@ -33,7 +33,7 @@ export function Chat() {
       {offen && (
         <div className="chatfenster" role="dialog" aria-label="Hilfe und Kontakt">
           <div className="chatkopf">
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: VERLAUF, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: CI.blau, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className="fa-solid fa-headset" aria-hidden="true" />
             </div>
             <div style={{ flex: 1 }}>
