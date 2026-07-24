@@ -1,4 +1,8 @@
-import { checkDomains, toDomainLabel, inwxEnv, STANDARD_TLDS } from '@/lib/inwx'
+import { pruefeDomains } from '@/lib/domainpruefung'
+import { toDomainLabel } from '@/lib/inwx'
+import { TLD_PREISE, STANDARD_TLDS } from '@/lib/preise'
+
+export const runtime = 'nodejs'
 
 export async function POST(request) {
   try {
@@ -13,19 +17,21 @@ export async function POST(request) {
       return Response.json({ error: 'Der Name ist zu kurz für eine Domain (mindestens 3 Zeichen).' }, { status: 400 })
     }
 
-    const gewuenscht = Array.isArray(tlds) && tlds.length ? tlds : STANDARD_TLDS
-    const ergebnisse = await checkDomains(label, gewuenscht)
+    const gewuenscht = (Array.isArray(tlds) && tlds.length ? tlds : STANDARD_TLDS).slice(0, 8)
+    const namen = gewuenscht.map(t => `${label}.${t}`)
 
-    return Response.json({
-      label,
-      testmodus: inwxEnv() === 'ote',
-      ergebnisse,
-    })
+    const geprueft = await pruefeDomains(namen)
+
+    const ergebnisse = geprueft.map(e => ({
+      ...e,
+      preis: TLD_PREISE[e.tld] ?? null,
+    }))
+
+    return Response.json({ label, ergebnisse })
   } catch (error) {
-    // Technisches Detail nur ins Server-Protokoll (für Vercel -> Logs)
     console.error('Domain-Check Fehler:', error?.message)
     return Response.json({
-      error: 'Die Domainprüfung ist gerade nicht verfügbar. Du kannst trotzdem starten und die Domain später wählen.',
+      error: 'Die Domainprüfung ist gerade nicht erreichbar. Du kannst trotzdem starten und die Domain später festlegen.',
       technisch: error?.message || 'unbekannt',
     }, { status: 500 })
   }

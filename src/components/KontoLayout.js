@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
+import { Chat } from '@/components/Chat'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 
 const BEREICHE = [
@@ -67,6 +68,7 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
       <Kopf />
       <div style={{ flex: 1 }}>{inhalt}</div>
       <Fuss />
+      <Chat />
     </div>
   )
 

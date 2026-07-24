@@ -1,6 +1,7 @@
 'use client'
 import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
+import { Chat } from '@/components/Chat'
 
 export const FONT_LINK = '/schrift/schrift.css'
 
@@ -27,6 +28,7 @@ export function Seite({ eyebrow, titel, titelLeicht, einleitung, children, css =
 
       <div style={{ flex: 1 }}>{children}</div>
       <Fuss />
+      <Chat />
     </div>
   )
 }

@@ -58,11 +58,9 @@ export default function DomainTest() {
 
         {daten && (
           <>
-            {daten.testmodus && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 10, padding: '10px 14px', fontSize: 12, marginBottom: 14 }}>
-                Testsystem (OTE) – es wird nichts registriert und nichts berechnet.
-              </div>
-            )}
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: 10, padding: '10px 14px', fontSize: 12, marginBottom: 14, lineHeight: 1.5 }}>
+              Geprüft über DNS und amtliche Registry-Abfrage (RDAP). Unabhängig von INWX – es wird nichts registriert.
+            </div>
             <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>
               Geprüfter Name: <strong style={{ color: '#475569' }}>{daten.label}</strong>
             </div>
@@ -71,6 +69,9 @@ export default function DomainTest() {
                 <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: `1px solid ${e.frei ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '14px 16px' }}>
                   <span style={{ fontSize: 18 }}>{e.frei ? '✅' : '❌'}</span>
                   <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#0f172a' }}>{e.domain}</span>
+                  <span style={{ fontSize: 11, color: '#94a3b8', background: '#f1f5f9', borderRadius: 99, padding: '2px 9px', fontWeight: 600 }}>
+                    Quelle: {e.quelle}{e.sicher ? '' : ' (ohne amtliche Auskunft)'}
+                  </span>
                   {e.frei ? (
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#16a34a' }}>
                       {e.preis ? `${e.preis.toFixed(2).replace('.', ',')} € / Jahr` : 'frei'}

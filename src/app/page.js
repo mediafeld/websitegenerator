@@ -7,6 +7,7 @@ import { FONT_LINK } from '@/components/Seite'
 import { KAUF, MIETE, MIETE_BEDINGUNGEN } from '@/lib/preise'
 import { BRANCHEN_INFO, BILD } from '@/lib/branchenSeite'
 import { FRAGEN } from '@/lib/fragen'
+import { Chat } from '@/components/Chat'
 
 const SCHRITTE = [
   { nr: '01', dauer: 'ca. 10 Min.', t: 'Angaben machen', u: 'Branche wählen, Firmendaten eintragen, Stil festlegen. Acht kurze Schritte, keine Technik.' },
@@ -59,12 +60,13 @@ export default function Startseite() {
         <div className="wrap" style={{ position: 'relative', maxWidth: 900, textAlign: 'center' }}>
           <p className="eyebrow" style={{ color: D.blauHell, marginBottom: 18 }}>Website-Baukasten mit KI · Berlin</p>
           <h1 className="display" style={{ fontSize: 'clamp(40px,7vw,82px)', marginBottom: 20 }}>
-            Einfach Website.<br /><span style={{ color: D.blauHell }}>In wenigen Schritten online.</span>
+            Websiteerstellung<br /><span style={{ color: D.blauHell }}>kostenlos.</span>
           </h1>
           <p style={{ fontSize: 18, color: '#B7C4D9', lineHeight: 1.65, maxWidth: 600, margin: '0 auto 40px' }}>
-            Für Handwerk, Gastronomie, Praxen und Dienstleister. Du machst die Angaben —
-            Texte, Bilder und Aufbau entstehen automatisch. Kaufen ab 89 € inkl. MwSt. oder
-            mieten ab 19,90 € inkl. MwSt. im Monat.
+            Erstellen kostet nichts — bezahlt wird erst, wenn deine Website online geht.
+            Für Handwerk, Gastronomie, Praxen und Dienstleister: Angaben machen, Ergebnis ansehen,
+            entscheiden. Miete ab 19,90 € im Monat inkl. MwSt., <strong style={{ color: '#fff' }}>Domain inklusive</strong> —
+            oder einmalig kaufen ab 89 € inkl. MwSt.
           </p>
 
           <div style={{ maxWidth: 650, margin: '0 auto' }}>
@@ -87,13 +89,24 @@ export default function Startseite() {
           {daten && (
             <div style={{ maxWidth: 650, margin: '22px auto 0', textAlign: 'left' }}>
               {freie.map((e, i) => (
-                <div key={e.domain} className="treffer" style={{ background: i === 0 ? '#123726' : '#132234', borderColor: i === 0 ? '#1F6B44' : '#2A3C53' }}>
-                  <span aria-hidden="true" style={{ color: '#4ADE80', fontWeight: 800 }}>✓</span>
-                  <span style={{ flex: 1, fontSize: 15.5, fontWeight: 700, color: '#fff' }}>{e.domain}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#4ADE80', whiteSpace: 'nowrap' }}>
-                    {e.preis ? `${e.preis.toFixed(2).replace('.', ',')} € / Jahr inkl. MwSt.` : 'frei'}
+                <div key={e.domain} className="treffer" style={{ background: i === 0 ? '#123726' : '#132234', borderColor: i === 0 ? '#1F6B44' : '#2A3C53', flexWrap: 'wrap' }}>
+                  <i className="fa-solid fa-circle-check" style={{ color: '#4ADE80', fontSize: 15 }} aria-hidden="true" />
+                  <span style={{ flex: 1, minWidth: 150, fontSize: 16, fontWeight: 700, color: '#fff' }}>{e.domain}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#4ADE80', whiteSpace: 'nowrap' }}>
+                    {e.sicher ? 'frei' : 'wahrscheinlich frei'}
                   </span>
-                  <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '9px 15px', fontSize: 12.5, whiteSpace: 'nowrap' }}>Diese nehmen</button>
+                  <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '10px 16px', fontSize: 13, whiteSpace: 'nowrap' }}>
+                    Diese nehmen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 8 }} aria-hidden="true" />
+                  </button>
+                  <div style={{ flexBasis: '100%', display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+                    <span style={{ fontSize: 12, color: '#4ADE80', background: 'rgba(74,222,128,.12)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 99, padding: '3px 11px', fontWeight: 600 }}>
+                      <i className="fa-solid fa-check" style={{ marginRight: 6 }} aria-hidden="true" />Bei Miete ab 19,90 €/Monat inklusive
+                    </span>
+                    <span style={{ fontSize: 12, color: '#8496AE' }}>
+                      Beim Kauf bringst du Domain und Hosting selbst mit.
+                      {!e.sicher && ' Diese Endung konnten wir nicht amtlich prüfen – wir bestätigen sie vor der Buchung.'}
+                    </span>
+                  </div>
                 </div>
               ))}
               {belegte.length > 0 && <p style={{ fontSize: 12.5, color: '#8496AE', marginTop: 10 }}>Schon vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
@@ -107,7 +120,7 @@ export default function Startseite() {
           )}
 
           <div style={{ display: 'flex', gap: 22, justifyContent: 'center', flexWrap: 'wrap', marginTop: 42, fontSize: 13, color: '#8496AE' }}>
-            {[['ban', 'Kein Abo beim Kauf'], ['pen-to-square', 'Änderungen jederzeit kostenlos'], ['eye', 'Erst sehen, dann zahlen']].map(([ic, t]) => (
+            {[['eye', 'Erstellen und ansehen kostet nichts'], ['globe', 'Domain bei Miete inklusive'], ['pen-to-square', 'Änderungen immer kostenlos']].map(([ic, t]) => (
               <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <i className={`fa-solid fa-${ic}`} style={{ color: D.blauHell }} aria-hidden="true" />{t}
               </span>
@@ -349,6 +362,7 @@ export default function Startseite() {
       </section>
 
       <Fuss />
+      <Chat />
     </div>
   )
 }

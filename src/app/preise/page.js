@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
+import { Chat } from '@/components/Chat'
 import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN } from '@/lib/preise'
 
 export default function PreiseSeite() {
@@ -29,8 +30,9 @@ export default function PreiseSeite() {
           <p className="eyebrow" style={{ color: D.blauHell, marginBottom: 14 }}>Preise</p>
           <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,52px)', marginBottom: 16 }}>Alles, was es kostet.</h1>
           <p style={{ fontSize: 16.5, color: '#B7C4D9', maxWidth: 620, lineHeight: 1.68 }}>
-            Keine versteckten Posten. Alle Beträge inklusive 19 % Mehrwertsteuer.
-            Du kannst deine Website kaufen und selbst betreiben – oder mieten und dich um nichts kümmern.
+            <strong style={{ color: '#fff' }}>Die Erstellung ist immer kostenlos</strong> — du siehst deine Website,
+            bevor du zahlst. Danach entscheidest du: mieten und online gehen (Domain, Hosting und E-Mail inklusive)
+            oder einmalig kaufen und alle Dateien mitnehmen. Alle Beträge inklusive 19 % Mehrwertsteuer.
           </p>
         </div>
       </section>
@@ -84,11 +86,11 @@ export default function PreiseSeite() {
               <thead><tr><th>Was</th><th>Kaufen</th><th>Mieten</th></tr></thead>
               <tbody>
                 {[
-                  ['Zahlung', 'einmalig 89 – 199 €', 'monatlich 19,90 – 39,90 €'],
+                  ['Zahlung', 'einmalig 89 – 199 € inkl. MwSt.', 'monatlich 19,90 – 39,90 € inkl. MwSt.'],
                   ['Laufzeit', 'keine', '12 Monate, danach monatlich kündbar'],
                   ['Dateien (ZIP)', 'ja, gehören dir', 'ja, jederzeit herunterladbar'],
-                  ['Domain', 'selbst besorgen oder dazubuchen', 'inklusive (.de)'],
-                  ['Hosting & SSL', 'selbst besorgen', 'inklusive'],
+                  ['Domain', 'bringst du selbst mit', 'inklusive (.de), läuft auf deinen Namen'],
+                  ['Hosting & SSL', 'bringst du selbst mit', 'inklusive'],
                   ['E-Mail', 'selbst besorgen', 'Weiterleitung, ab Plus Postfach'],
                   ['Sicherungen', 'selbst', 'inklusive'],
                   ['Änderungen im Editor', 'ja', 'ja, dauerhaft'],
@@ -141,6 +143,7 @@ export default function PreiseSeite() {
       </section>
 
       <Fuss />
+      <Chat />
     </div>
   )
 }
