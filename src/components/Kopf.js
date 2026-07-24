@@ -54,20 +54,43 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid ${CI.blau};outline-offset:3px}
 ::selection{background:${CI.blau};color:#fff}
 
-/* ── Typografie: Kontrast über Gewicht 400 gegen 800 ── */
-.t1{font-size:clamp(34px,5vw,62px);line-height:1.06;letter-spacing:-.035em;font-weight:400}
+/* ── Typografie: Kontrast über 300 gegen 800 ── */
+.t1{font-size:clamp(40px,6.4vw,86px);line-height:1.02;letter-spacing:-.042em;font-weight:300}
 .t1 b{font-weight:800}
-.t2{font-size:clamp(28px,4vw,46px);line-height:1.1;letter-spacing:-.032em;font-weight:400}
+.t2{font-size:clamp(32px,5vw,62px);line-height:1.06;letter-spacing:-.04em;font-weight:300}
 .t2 b{font-weight:800}
-.t3{font-size:21px;font-weight:700;letter-spacing:-.022em;line-height:1.25}
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;color:${CI.blau}}
-.lauf{font-size:16.5px;line-height:1.75;color:${CI.textMatt};font-weight:400}
+.t3{font-size:23px;font-weight:700;letter-spacing:-.025em;line-height:1.25}
+.serif{font-family:'Playfair Display',Georgia,serif;font-weight:600;letter-spacing:-.02em}
+.serif-kursiv{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:500}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${CI.blau}}
+.lauf{font-size:17px;line-height:1.75;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
+
+/* ── Verlaufsschrift: Cyanblau ins Dunkle ── */
+.vschrift{background:linear-gradient(96deg,#3FC8F5,${CI.blau} 42%,${CI.stahl} 78%,${CI.petrol});
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.vschrift-hell{background:linear-gradient(96deg,#7FE3FF,#3FC8F5 46%,${CI.blau});
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.vschrift-bewegt{background:linear-gradient(96deg,#3FC8F5,${CI.blau},${CI.stahl},${CI.blau},#3FC8F5);
+  background-size:280% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:schriftlauf 12s ease-in-out infinite}
+@keyframes schriftlauf{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* ── Animierter Unterstrich ── */
+.strich{position:relative;display:inline-block;padding-bottom:10px}
+.strich:after{content:'';position:absolute;left:0;bottom:0;height:4px;width:0;border-radius:3px;
+  background:linear-gradient(90deg,#3FC8F5,${CI.blau} 60%,${CI.stahl});animation:strichauf 1.1s .25s cubic-bezier(.2,.7,.3,1) forwards}
+.reveal.an .strich:after{animation:strichauf 1.1s .3s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes strichauf{from{width:0}to{width:100%}}
+.strich-hover{position:relative}
+.strich-hover:after{content:'';position:absolute;left:0;bottom:-4px;height:2.5px;width:0;border-radius:2px;
+  background:linear-gradient(90deg,#3FC8F5,${CI.blau});transition:width .35s cubic-bezier(.2,.7,.3,1)}
+.strich-hover:hover:after{width:100%}
 
 /* ── Geister-Überschrift ── */
 .geistkopf{position:relative;padding-top:34px}
-.geist{position:absolute;top:-8px;left:-4px;font-size:clamp(52px,9vw,124px);font-weight:800;
-  letter-spacing:-.055em;line-height:.82;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none}
+.geist{position:absolute;top:-14px;left:-4px;font-size:clamp(56px,9.4vw,136px);font-weight:800;
+  letter-spacing:-.055em;line-height:.8;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none;opacity:.85}
 .dunkelzone .geist{color:rgba(255,255,255,.055)}
 .geistinhalt{position:relative;z-index:1}
 .mitte .geist{left:50%;transform:translateX(-50%)}
@@ -76,9 +99,20 @@ a{color:inherit;text-decoration:none}
 .band{width:100%}
 .band-hell{background:#fff}
 .band-grau{background:${CI.grau}}
-.band-dunkel{background:${CI.petrol};color:#fff}
+.band-dunkel{position:relative;color:#fff;overflow:hidden;
+  background:linear-gradient(118deg,${CI.petrol} 0%,#0D2A3D 42%,#123B52 72%,${CI.petrol} 100%);
+  background-size:220% 220%;animation:grundlauf 24s ease-in-out infinite}
+@keyframes grundlauf{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.band-dunkel:before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(720px 380px at 12% 8%,rgba(63,200,245,.22),transparent 62%),
+             radial-gradient(680px 340px at 88% 92%,rgba(27,147,210,.2),transparent 62%)}
+.band-dunkel>*{position:relative;z-index:1}
 .band-foto{position:relative;color:#fff;background-size:cover;background-position:center}
-.band-foto:before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,24,35,.95) 0%,rgba(10,24,35,.78) 52%,rgba(10,24,35,.5) 100%)}
+.band-foto:before{content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,rgba(10,24,35,.96) 0%,rgba(13,42,61,.86) 46%,rgba(18,59,82,.62) 100%)}
+.band-foto:after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(640px 340px at 78% 18%,rgba(63,200,245,.24),transparent 62%),
+             radial-gradient(560px 300px at 8% 88%,rgba(27,147,210,.18),transparent 62%)}
 .band-foto>*{position:relative;z-index:1}
 .dunkelzone{background:${CI.petrol};color:#fff}
 .dunkelzone .lauf,.dunkelzone .klein{color:#9FB2C0}
@@ -149,34 +183,33 @@ a{color:inherit;text-decoration:none}
 `
 
 const MENUE = [
+  { titel: 'Website mieten', gruppen: [
+    { name: 'Online bei uns — Domain inklusive', punkte: [
+      ['/preise#mieten', 'Mietpakete & Preise', 'Ab 19,90 € im Monat inkl. MwSt.'],
+      ['/preise#sorgenfrei', 'Keine-Sorgen-Paket', 'Alles inklusive, wir übernehmen die Änderungen'],
+      ['/domains', 'Domain & E-Mail', 'Was bei der Miete enthalten ist'],
+      ['/hilfe#mieten', 'Fragen zur Miete', 'Laufzeit, Kündigung, Umzug'],
+    ] },
+  ] },
+  { titel: 'Website kaufen', gruppen: [
+    { name: 'Einmalzahlung — ZIP gehört dir', punkte: [
+      ['/preise#kaufen', 'Kaufpakete & Preise', 'Ab 89,00 € einmalig inkl. MwSt.'],
+      ['/editor-funktionen', 'Was du bearbeiten kannst', 'Texte, Bilder, Farben, Blöcke'],
+      ['/hilfe#kaufen', 'Fragen zum Kauf', 'Eigentum, Hosting, Umzug'],
+    ] },
+  ] },
   { titel: 'Produkt', gruppen: [
     { name: 'Wie es funktioniert', punkte: [
       ['/so-funktioniert-es', 'So funktioniert es', 'Von den Angaben zur fertigen Seite'],
-      ['/editor-funktionen', 'Der Editor', 'Texte, Bilder und Farben selbst ändern'],
       ['/branchen', 'Branchen', 'Zehn Branchen mit passenden Inhalten'],
-    ] },
-    { name: 'Ausprobieren', punkte: [
+      ['/editor-funktionen', 'Der Editor', 'Alles selbst änderbar, dauerhaft gratis'],
       ['/#domain', 'Domain prüfen', 'Sofort sehen, was frei ist'],
-      ['/start', 'Website erstellen', 'Erstellen kostet nichts'],
-    ] },
-  ] },
-  { titel: 'Preise', gruppen: [
-    { name: 'Mieten oder kaufen', punkte: [
-      ['/preise', 'Alle Preise', 'Miete, Kauf und Einzelposten'],
-      ['/preise#mieten', 'Website mieten', 'Ab 19,90 € inkl. MwSt. — Domain inklusive'],
-      ['/preise#kaufen', 'Website kaufen', 'Ab 89 € inkl. MwSt. — ZIP sofort'],
-      ['/preise#sorgenfrei', 'Keine-Sorgen-Paket', 'Alles inklusive, ein Preis'],
-    ] },
-  ] },
-  { titel: 'Über uns', gruppen: [
-    { name: 'Wer dahintersteht', punkte: [
-      ['/ueber-uns', 'Über uns', 'Wer wir sind und wie wir arbeiten'],
-      ['/kontakt', 'Kontakt', 'Telefon, E-Mail und Formular'],
     ] },
   ] },
   { titel: 'Hilfe', gruppen: [
     { name: 'Fragen & Rechtliches', punkte: [
       ['/hilfe', 'Hilfe & FAQ', 'Kosten, Ablauf, Technik'],
+      ['/ueber-uns', 'Über uns', 'Wer dahintersteht'],
       ['/agb', 'AGB', 'Vertragsbedingungen'],
       ['/datenschutz', 'Datenschutz', 'Welche Daten wir verarbeiten'],
       ['/impressum', 'Impressum', 'Anbieterkennzeichnung'],
@@ -246,6 +279,7 @@ export function Kopf() {
                 </div>
               </div>
             ))}
+            <a href="/kontakt" className="navtrigger strich-hover" style={{ textDecoration: 'none' }}>Kontakt</a>
           </nav>
 
           <div style={{ flex: 1 }} />

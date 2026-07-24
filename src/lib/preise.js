@@ -1,3 +1,8 @@
+// Preisformat: immer zwei Dezimalstellen, deutsches Komma
+export function eur(n) {
+  return Number(n).toFixed(2).replace('.', ',')
+}
+
 // ── Zentrale Preisliste ──────────────────────────────────────
 // Hier änderst du alle Preise an EINER Stelle. Startseite und Preisseite
 // lesen daraus. Alle Beträge inkl. 19 % MwSt.
