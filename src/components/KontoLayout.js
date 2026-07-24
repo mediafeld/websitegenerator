@@ -61,7 +61,7 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
   }, [router])
 
   const rahmen = (inhalt) => (
-    <div className="arbeit" style={{ background: D.hellGrund, color: D.hellText, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="arbeit" style={{ background: D.hellGrund, color: D.hellText, fontFamily: '"Roboto",system-ui,sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + KONTO_CSS + css }} />

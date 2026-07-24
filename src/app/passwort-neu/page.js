@@ -33,7 +33,7 @@ export default function PasswortNeu() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Roboto",system-ui,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `

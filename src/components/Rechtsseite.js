@@ -5,12 +5,12 @@ import { Fuss } from '@/components/Fuss'
 // Gemeinsames Gerüst für Impressum / Datenschutz / AGB
 export function Rechtsseite({ titel, stand, kinder }) {
   return (
-    <div className="arbeit" style={{ background: D.hellGrund, color: D.hellText, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
+    <div className="arbeit" style={{ background: D.hellGrund, color: D.hellText, fontFamily: '"Roboto",system-ui,sans-serif', minHeight: '100vh' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
         .rtext{font-size:15px;line-height:1.8;color:${D.hellText}}
-        .rtext h2{font-family:'Inter Tight',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;color:${D.dunkel};margin:32px 0 10px}
+        .rtext h2{font-family:'Roboto',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;color:${D.dunkel};margin:32px 0 10px}
         .rtext h3{font-weight:700;font-size:15.5px;color:${D.dunkel};margin:22px 0 6px}
         .rtext p{margin-bottom:12px}
         .rtext ul{margin:0 0 14px 20px}

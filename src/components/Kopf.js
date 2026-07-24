@@ -19,6 +19,10 @@ export const CI = {
   textMatt: '#5A6B7A',
   textZart: '#8A99A6',
   geist: '#EDF1F5',       // Geister-Überschrift
+  orange: '#F59200',      // Kontrastfarbe – Handlungsaufrufe, Hervorhebungen
+  orangeHell: '#FFA829',
+  orangeZart: '#FFF4E3',
+  gruen: '#1F9D55',       // Bestätigungen
 }
 
 export const D = {
@@ -55,42 +59,36 @@ a{color:inherit;text-decoration:none}
 ::selection{background:${CI.blau};color:#fff}
 
 /* ── Typografie: Kontrast über 300 gegen 800 ── */
-.t1{font-size:clamp(40px,6.4vw,86px);line-height:1.02;letter-spacing:-.042em;font-weight:300}
+.t1{font-size:clamp(36px,5.4vw,68px);line-height:1.1;letter-spacing:-.026em;font-weight:300}
 .t1 b{font-weight:800}
-.t2{font-size:clamp(32px,5vw,62px);line-height:1.06;letter-spacing:-.04em;font-weight:300}
+.t2{font-size:clamp(29px,4.2vw,50px);line-height:1.14;letter-spacing:-.024em;font-weight:300}
 .t2 b{font-weight:800}
-.t3{font-size:23px;font-weight:700;letter-spacing:-.025em;line-height:1.25}
-.serif{font-family:'Playfair Display',Georgia,serif;font-weight:600;letter-spacing:-.02em}
-.serif-kursiv{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:500}
-.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${CI.blau}}
+.t3{font-size:21px;font-weight:700;letter-spacing:-.015em;line-height:1.3}
+.serif{font-weight:300}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${CI.orange}}
 .lauf{font-size:17px;line-height:1.75;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
 /* ── Verlaufsschrift: Cyanblau ins Dunkle ── */
-.vschrift{background:linear-gradient(96deg,#3FC8F5,${CI.blau} 42%,${CI.stahl} 78%,${CI.petrol});
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-.vschrift-hell{background:linear-gradient(96deg,#7FE3FF,#3FC8F5 46%,${CI.blau});
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-.vschrift-bewegt{background:linear-gradient(96deg,#3FC8F5,${CI.blau},${CI.stahl},${CI.blau},#3FC8F5);
-  background-size:280% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:schriftlauf 12s ease-in-out infinite}
-@keyframes schriftlauf{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.vschrift{color:${CI.blau}}
+.vschrift-hell{color:#5FC8F0}
+.vschrift-bewegt{color:#5FC8F0}
 
 /* ── Animierter Unterstrich ── */
 .strich{position:relative;display:inline-block;padding-bottom:10px}
 .strich:after{content:'';position:absolute;left:0;bottom:0;height:4px;width:0;border-radius:3px;
-  background:linear-gradient(90deg,#3FC8F5,${CI.blau} 60%,${CI.stahl});animation:strichauf 1.1s .25s cubic-bezier(.2,.7,.3,1) forwards}
+  background:${CI.orange};animation:strichauf 1.1s .25s cubic-bezier(.2,.7,.3,1) forwards}
 .reveal.an .strich:after{animation:strichauf 1.1s .3s cubic-bezier(.2,.7,.3,1) forwards}
 @keyframes strichauf{from{width:0}to{width:100%}}
 .strich-hover{position:relative}
 .strich-hover:after{content:'';position:absolute;left:0;bottom:-4px;height:2.5px;width:0;border-radius:2px;
-  background:linear-gradient(90deg,#3FC8F5,${CI.blau});transition:width .35s cubic-bezier(.2,.7,.3,1)}
+  background:${CI.orange};transition:width .35s cubic-bezier(.2,.7,.3,1)}
 .strich-hover:hover:after{width:100%}
 
 /* ── Geister-Überschrift ── */
 .geistkopf{position:relative;padding-top:34px}
 .geist{position:absolute;top:-14px;left:-4px;font-size:clamp(56px,9.4vw,136px);font-weight:800;
-  letter-spacing:-.055em;line-height:.8;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none;opacity:.85}
+  letter-spacing:-.055em;line-height:.8;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none;opacity:.6}
 .dunkelzone .geist{color:rgba(255,255,255,.055)}
 .geistinhalt{position:relative;z-index:1}
 .mitte .geist{left:50%;transform:translateX(-50%)}
@@ -100,19 +98,14 @@ a{color:inherit;text-decoration:none}
 .band-hell{background:#fff}
 .band-grau{background:${CI.grau}}
 .band-dunkel{position:relative;color:#fff;overflow:hidden;
-  background:linear-gradient(118deg,${CI.petrol} 0%,#0D2A3D 42%,#123B52 72%,${CI.petrol} 100%);
-  background-size:220% 220%;animation:grundlauf 24s ease-in-out infinite}
+  background:linear-gradient(160deg,${CI.petrol} 0%,#0D2231 100%)}
 @keyframes grundlauf{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .band-dunkel:before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(720px 380px at 12% 8%,rgba(63,200,245,.22),transparent 62%),
-             radial-gradient(680px 340px at 88% 92%,rgba(27,147,210,.2),transparent 62%)}
+  background:radial-gradient(760px 380px at 88% 6%,rgba(27,147,210,.13),transparent 66%)}
 .band-dunkel>*{position:relative;z-index:1}
 .band-foto{position:relative;color:#fff;background-size:cover;background-position:center}
 .band-foto:before{content:'';position:absolute;inset:0;
-  background:linear-gradient(100deg,rgba(10,24,35,.96) 0%,rgba(13,42,61,.86) 46%,rgba(18,59,82,.62) 100%)}
-.band-foto:after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(640px 340px at 78% 18%,rgba(63,200,245,.24),transparent 62%),
-             radial-gradient(560px 300px at 8% 88%,rgba(27,147,210,.18),transparent 62%)}
+  background:linear-gradient(96deg,rgba(10,24,35,.97) 0%,rgba(10,24,35,.9) 52%,rgba(10,24,35,.72) 100%)}
 .band-foto>*{position:relative;z-index:1}
 .dunkelzone{background:${CI.petrol};color:#fff}
 .dunkelzone .lauf,.dunkelzone .klein{color:#9FB2C0}
@@ -127,14 +120,18 @@ a{color:inherit;text-decoration:none}
 .karte-hover:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(10,24,35,.13);border-color:${CI.blau}66}
 
 /* ── Knöpfe ── */
-.btnfest{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
-  font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s,box-shadow .18s}
-.btnfest:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 28px rgba(27,147,210,.34)}
+.btnfest{background:${CI.orange};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:11px;
+  transition:background .18s,transform .18s,box-shadow .18s;text-decoration:none}
+.btnfest:hover{background:${CI.orangeHell};transform:translateY(-2px);box-shadow:0 12px 28px rgba(245,146,0,.34)}
+.btnblau{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:11px;transition:all .18s}
+.btnblau:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 28px rgba(27,147,210,.3)}
 .btnleer{background:#fff;color:${CI.text};border:1.5px solid ${CI.linie};border-radius:8px;padding:14px 24px;
-  font-size:15px;font-weight:700;cursor:pointer;display:inline-block;transition:all .18s}
+  font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
 .btnleer:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
 .btnhell{background:#fff;color:${CI.petrol};border:none;border-radius:8px;padding:15px 28px;font-size:15px;
-  font-weight:800;cursor:pointer;display:inline-block;transition:transform .18s,box-shadow .18s}
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
 .btnhell:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.24)}
 .btntuerkis{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
   font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
@@ -150,7 +147,17 @@ a{color:inherit;text-decoration:none}
   font-size:12.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase}
 @keyframes laufen{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-/* ── Navigation ── */
+/* ── Header: Ankündigung, Hauptleiste, Navigation ── */
+.ankuendigung{background:${CI.petrol};color:#DCE6EE;font-size:13.5px}
+.neu-marke{background:${CI.orange};color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;border-radius:5px;padding:4px 9px}
+.ank-link{color:${CI.orange};font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:gap .18s}
+.ank-link:hover{gap:11px}
+.hauptleiste{background:${CI.blau};color:#fff}
+.hl-punkt{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;color:#fff;
+  padding:7px 10px;border-radius:6px;transition:background .16s}
+.hl-punkt:hover{background:rgba(255,255,255,.16)}
+.navleiste{background:#fff;border-bottom:1px solid ${CI.linie};position:sticky;top:0;z-index:80}
 .minileiste{background:${CI.petrol};color:#9FB2C0;font-size:12.5px}
 .minileiste a:hover{color:#fff}
 .navroot{position:relative}
@@ -242,27 +249,36 @@ export function Kopf() {
 
   return (
     <>
-      <div className="minileiste">
-        <div className="wrap" style={{ height: 36, display: 'flex', alignItems: 'center', gap: 18 }}>
-          <a href={TELEFON_LINK} style={{ fontWeight: 700, color: '#fff' }}>
-            <i className="fa-solid fa-phone" style={{ marginRight: 8, fontSize: 11 }} aria-hidden="true" />{TELEFON}
-          </a>
-          <span className="minihide" style={{ opacity: .3 }}>·</span>
-          <a className="minihide" href={`mailto:${EMAIL}`}>{EMAIL}</a>
-          <div style={{ flex: 1 }} />
-          <span className="minihide" style={{ opacity: .8 }}>Mo. – Fr. 9 – 18 Uhr</span>
-          <span className="minihide" style={{ opacity: .3 }}>·</span>
-          <a href="/hilfe"><i className="fa-solid fa-headset" style={{ marginRight: 7, fontSize: 11 }} aria-hidden="true" />Hilfe &amp; Support</a>
+      {/* Ankündigungsleiste */}
+      <div className="ankuendigung">
+        <div className="wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, minHeight: 42, flexWrap: 'wrap' }}>
+          <span className="neu-marke">Neu</span>
+          <span style={{ fontSize: 13.5 }}>
+            <strong>Websiteerstellung kostenlos</strong> — erst zahlen, wenn dir die Website gefällt
+          </span>
+          <a href="/start" className="ank-link">Jetzt erstellen <i className="fa-solid fa-arrow-right" aria-hidden="true" /></a>
         </div>
       </div>
 
-      <header style={{ background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${D.linie}`, position: 'sticky', top: 0, zIndex: 80 }}>
-        <div className="wrap" style={{ height: 70, display: 'flex', alignItems: 'center', gap: 22 }}>
-          <a href="/" style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.04em', whiteSpace: 'nowrap' }}>
-            websitegenerator<span style={{ color: CI.blau }}>24</span>
+      {/* Hauptleiste */}
+      <div className="hauptleiste">
+        <div className="wrap" style={{ display: 'flex', alignItems: 'center', gap: 20, minHeight: 56 }}>
+          <a href="/" style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.03em', color: '#fff', whiteSpace: 'nowrap' }}>
+            websitegenerator<span style={{ color: '#FFD79A' }}>24</span>
           </a>
+          <div style={{ flex: 1 }} />
+          <a href={TELEFON_LINK} className="hl-punkt minihide"><i className="fa-solid fa-phone" aria-hidden="true" />{TELEFON}</a>
+          <a href="/hilfe" className="hl-punkt"><i className="fa-solid fa-circle-question" aria-hidden="true" /><span className="minihide">Hilfe &amp; Kontakt</span></a>
+          <a href={nutzer ? '/dashboard' : '/login'} className="hl-punkt">
+            <i className="fa-solid fa-user" aria-hidden="true" /><span className="minihide">{nutzer ? 'Mein Konto' : 'Login'}</span>
+          </a>
+        </div>
+      </div>
 
-          <nav className="navmitte" style={{ display: 'flex', gap: 16, marginLeft: 8 }}>
+      {/* Navigation */}
+      <header className="navleiste">
+        <div className="wrap" style={{ display: 'flex', alignItems: 'center', gap: 26, minHeight: 58 }}>
+          <nav className="navmitte" style={{ display: 'flex', gap: 26 }}>
             {MENUE.map(m => (
               <div key={m.titel} className="navroot">
                 <button className="navtrigger">{m.titel}<span className="pfeil" aria-hidden="true">▾</span></button>
@@ -281,24 +297,26 @@ export function Kopf() {
             ))}
             <a href="/kontakt" className="navtrigger strich-hover" style={{ textDecoration: 'none' }}>Kontakt</a>
           </nav>
-
           <div style={{ flex: 1 }} />
-
           {nutzer ? (
             <>
-              <a href="/start" className="btnfest">Neue Website</a>
+              <a href="/dashboard" className="btnleer" style={{ padding: '10px 17px', fontSize: 14 }}>
+                <i className="fa-solid fa-folder-open" aria-hidden="true" />Meine Websites
+              </a>
+              <a href="/start" className="btnfest" style={{ padding: '11px 20px', fontSize: 14.5 }}>
+                <i className="fa-solid fa-plus" aria-hidden="true" />Neue Website
+              </a>
               <div className="navroot">
                 <button className="avatar" title={nutzer.email}>{(nutzer.email || '?')[0].toUpperCase()}</button>
-                <div className="navdrop rechts" style={{ minWidth: 250 }}>
-                  <div style={{ padding: '10px 12px', fontSize: 11.5, color: D.grauHell, wordBreak: 'break-all' }}>{nutzer.email}</div>
+                <div className="navdrop rechts" style={{ minWidth: 240 }}>
+                  <div style={{ padding: '10px 12px', fontSize: 11.5, color: CI.textZart, wordBreak: 'break-all' }}>{nutzer.email}</div>
                   <div className="navtrenner" />
-                  <a className="navitem" href="/dashboard">Meine Websites<span>Entwürfe und Verträge</span></a>
-                  <a className="navitem" href="/konto">Meine Daten<span>Firma, Anschrift, USt-IdNr.</span></a>
-                  <a className="navitem" href="/abrechnungen">Rechnungen<span>Verträge und Zahlungen</span></a>
-                  <a className="navitem" href="/domains">Domains<span>Registrierte Adressen</span></a>
+                  <a className="navitem" href="/dashboard">Meine Websites</a>
+                  <a className="navitem" href="/konto">Meine Daten</a>
+                  <a className="navitem" href="/abrechnungen">Rechnungen</a>
+                  <a className="navitem" href="/domains">Domains</a>
                   <div className="navtrenner" />
-                  <button type="button" className="navitem" style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626' }}
-                    onClick={abmelden}>
+                  <button type="button" className="navitem" style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626' }} onClick={abmelden}>
                     <i className="fa-solid fa-arrow-right-from-bracket" style={{ marginRight: 9 }} aria-hidden="true" />Abmelden
                   </button>
                 </div>
@@ -306,8 +324,12 @@ export function Kopf() {
             </>
           ) : (
             <>
-              <a href="/login" className="btnleer">Anmelden</a>
-              <a href="/start" className="btnfest">Website erstellen</a>
+              <a href="/login" className="btnleer" style={{ padding: '10px 17px', fontSize: 14 }}>
+                <i className="fa-solid fa-right-to-bracket" aria-hidden="true" />Anmelden
+              </a>
+              <a href="/start" className="btnfest" style={{ padding: '11px 20px', fontSize: 14.5 }}>
+                <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Website erstellen
+              </a>
             </>
           )}
         </div>

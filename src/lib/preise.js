@@ -69,13 +69,13 @@ export const ZUSATZ = [
   { name: 'Zusätzliche .com / .eu / .net', preis: 'ab 19,90 € / Jahr', hinweis: 'nur zu einem Mietpaket, läuft auf deinen Namen' },
   { name: 'Zusätzliches E-Mail-Postfach', preis: '3,00 € / Monat', hinweis: 'inkl. Webmail, Spam-Filter' },
   { name: 'Weitere KI-Bilder', preis: '1,50 € / Bild', hinweis: 'wenn das Kontingent aufgebraucht ist' },
-  { name: 'Einrichtung bei Miete', preis: '49 € einmalig', hinweis: 'entfällt bei Zahlung für 12 Monate im Voraus' },
+  { name: 'Einrichtung bei Miete', preis: '49,00 € einmalig', hinweis: 'entfällt bei Zahlung für 12 Monate im Voraus' },
 ]
 
 export const MIETE_BEDINGUNGEN = {
   laufzeit: '12 Monate Mindestlaufzeit',
   danach: 'danach monatlich kündbar',
-  einrichtung: '49 € einmalig – entfällt bei Jahreszahlung',
+  einrichtung: '49,00 € einmalig – entfällt bei Jahreszahlung',
   jahresvorteil: 'Bei Zahlung für 12 Monate im Voraus zahlst du 10 statt 12 Monate.',
 }
 

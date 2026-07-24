@@ -39,6 +39,12 @@ const SPALTEN = [
 export function Fuss() {
   return (
     <footer className="dunkelzone" style={{ paddingTop: 54 }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .fusslink{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#C7D6E0;transition:all .18s}
+        .fusslink i{font-size:11px;color:#5B7A8F;width:13px;text-align:center;transition:color .18s}
+        .fusslink:hover{color:#fff;padding-left:4px}
+        .fusslink:hover i{color:#F59200}
+      ` }} />
       <div className="wrap">
         <div className="spalten2" style={{ display: 'grid', gridTemplateColumns: '1fr 2.7fr', gap: 40, paddingBottom: 42 }}>
           <div>
@@ -62,8 +68,12 @@ export function Fuss() {
               <div key={s.titel}>
                 <h3 className="eyebrow" style={{ color: '#7E93A3', marginBottom: 13 }}>{s.titel}</h3>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  {s.links.map(([href, t]) => (
-                    <li key={href + t}><a href={href} style={{ fontSize: 13.5, color: '#C7D6E0' }} className="link-u">{t}</a></li>
+                  {s.links.map(([href, t, ic]) => (
+                    <li key={href + t}>
+                      <a href={href} className="fusslink">
+                        <i className={`fa-solid fa-${ic || 'angle-right'}`} aria-hidden="true" />{t}
+                      </a>
+                    </li>
                   ))}
                 </ul>
               </div>

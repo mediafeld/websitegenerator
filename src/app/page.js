@@ -41,63 +41,60 @@ export default function Startseite() {
   const belegte = daten?.ergebnisse?.filter(e => !e.frei) || []
 
   return (
-    <div style={{ background: '#fff', color: CI.text, fontFamily: '"Inter Tight",system-ui,sans-serif', overflowX: 'hidden' }}>
+    <div style={{ background: '#fff', color: CI.text, fontFamily: '"Roboto",system-ui,sans-serif', overflowX: 'hidden' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + CSS }} />
       <Kopf />
 
-      {/* ═══ 1 · HERO mit Slider Mieten/Kaufen ═══ */}
-      <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
-        <div className="wrap" style={{ paddingTop: 66, paddingBottom: 62 }}>
-          <div className="hero-grid">
-            <Slider dauer={9000} folien={[
-              <HeroFolie key="m" art="mieten" starten={starten} />,
-              <HeroFolie key="k" art="kaufen" starten={starten} />,
-            ]} />
-
-            {/* Trichter: Domain prüfen */}
-            <div className="trichter">
-              <div className="trichter-kopf">
-                <span className="trichter-nr">1</span>
-                <div>
-                  <strong style={{ fontSize: 16.5 }}>Ist dein Wunschname frei?</strong>
-                  <span style={{ display: 'block', fontSize: 12.5, color: CI.textZart }}>Amtliche Prüfung bei der Registrierungsstelle</span>
-                </div>
-              </div>
-              <div className="adresszeile">
-                <span style={{ fontSize: 13, color: CI.textZart }}>https://</span>
-                <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
-                  placeholder="dein-firmenname" aria-label="Wunschname für die Domain"
-                  style={{ flex: 1, minWidth: 90, border: 'none', outline: 'none', fontSize: 16.5, fontWeight: 600, color: CI.text, background: 'transparent', padding: '10px 0' }} />
-                <span style={{ fontSize: 14.5, fontWeight: 600, color: CI.textZart }}>.de</span>
-              </div>
-              <button className="btnfest" onClick={pruefen} disabled={laedt} style={{ width: '100%', marginTop: 12, opacity: laedt ? .6 : 1 }}>
-                {laedt ? 'Prüft…' : 'Jetzt prüfen'}
+      {/* ═══ DOMAINPRÜFER — Herzstück, volle Breite ═══ */}
+      <section className="domainband">
+        <div className="wrap">
+          <div className="db-innen">
+            <div className="db-tlds">
+              {[['.de', 14.90], ['.com', 24.90], ['.net', 24.90], ['.org', 24.90]].map(([t, p]) => (
+                <span key={t}><b>{t}</b><em>{eur(p)} € / Jahr</em></span>
+              ))}
+            </div>
+            <div className="db-feld">
+              <i className="fa-solid fa-globe" aria-hidden="true" />
+              <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
+                placeholder="Wunsch-Domain eingeben …" aria-label="Wunschname für die Domain" />
+              <button onClick={pruefen} disabled={laedt}>
+                {laedt ? 'Prüft …' : 'Domain prüfen'}<i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
               </button>
-
-              {fehler && <p className="klein" style={{ marginTop: 12, color: '#8A5A00', background: '#FFF7E6', border: '1px solid #F3DDA8', borderRadius: 8, padding: '10px 12px' }}>{fehler}</p>}
-
-              {daten && (
-                <div style={{ marginTop: 14 }}>
-                  {freie.map((e, i) => (
-                    <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
-                      <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                      <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5 }}>{e.domain}</span>
-                      <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '8px 14px', fontSize: 12.5 }}>Nehmen</button>
-                    </div>
-                  ))}
-                  {belegte.length > 0 && <p className="klein" style={{ marginTop: 8, fontSize: 12.5 }}>Vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
-                  {freie.length === 0 && <p className="klein" style={{ marginTop: 8 }}>Alle belegt — probier einen Zusatz wie den Ort.</p>}
-                </div>
-              )}
-
-              <div className="trichter-fuss">
-                <span><i className="fa-solid fa-check" aria-hidden="true" />Prüfen ist gratis, kein Konto nötig</span>
-                <span><i className="fa-solid fa-check" aria-hidden="true" />Domain bei <b>Miete inklusive</b></span>
-              </div>
             </div>
           </div>
+
+          {(fehler || daten) && (
+            <div className="db-ergebnis">
+              {fehler && <p className="db-fehler">{fehler}</p>}
+              {daten && freie.map((e, i) => (
+                <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
+                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                  <span style={{ flex: 1, fontWeight: 700, fontSize: 15.5 }}>{e.domain}</span>
+                  <span className="tr-frei">frei</span>
+                  <span className="tr-preis">{eur(e.preis || 14.90)} € / Jahr</span>
+                  <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '10px 18px', fontSize: 13.5 }}>
+                    <i className="fa-solid fa-arrow-right" aria-hidden="true" />Diese nehmen
+                  </button>
+                </div>
+              ))}
+              {daten && belegte.length > 0 && <p className="db-belegt">Schon vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
+              {daten && freie.length === 0 && <p className="db-belegt">Alle geprüften Adressen sind belegt — probier einen Zusatz wie den Ort.</p>}
+              {daten && <p className="db-hinweis"><i className="fa-solid fa-circle-info" aria-hidden="true" />Bei einem Mietpaket ist die Domain inklusive. Beim Kauf bringst du Domain und Hosting selbst mit.</p>}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══ HERO ═══ */}
+      <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
+        <div className="wrap" style={{ paddingTop: 60, paddingBottom: 58 }}>
+          <Slider dauer={9500} folien={[
+            <HeroFolie key="m" art="mieten" starten={starten} />,
+            <HeroFolie key="k" art="kaufen" starten={starten} />,
+          ]} />
         </div>
       </section>
 
@@ -106,7 +103,7 @@ export default function Startseite() {
         <div className="laufband-inhalt">
           {[0, 1].map(k => (
             <span key={k} style={{ display: 'flex', gap: 46 }}>
-              {['Erstellung kostenlos', 'Domain inklusive bei Miete', 'Kein Abo beim Kauf', 'Änderungen gratis',
+              {['Erstellung kostenlos', 'Domain inklusive bei Miete', 'Erstellung immer kostenlos', 'Änderungen gratis',
                 'Quellcode als ZIP', 'Server in Deutschland', 'Ohne Cookie-Banner', 'Telefonisch erreichbar'].map(t => (
                 <span key={t}><i className="fa-solid fa-circle" style={{ fontSize: 4, color: CI.blau, marginRight: 12, verticalAlign: 'middle' }} aria-hidden="true" />{t}</span>
               ))}
@@ -160,7 +157,7 @@ export default function Startseite() {
             <div>
               <p className="eyebrow" style={{ marginBottom: 14 }}>Was kostet deine Website?</p>
               <h2 className="t2" style={{ color: '#fff', marginBottom: 16 }}>
-                <span className="serif">Erstellen kostenlos.</span><br /><b className="vschrift-hell">Zahlen erst am Ende.</b>
+                <span>Erstellen kostenlos.</span><br /><b className="vschrift-hell">Zahlen erst am Ende.</b>
               </h2>
               <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 470 }}>
                 Du gehst durch die Fragen, siehst deine fertige Website und entscheidest dann.
@@ -172,13 +169,13 @@ export default function Startseite() {
                 <span className="pband-label">Mieten</span>
                 <div className="pband-preis">ab <b>{eur(19.90)}</b> €</div>
                 <span className="pband-unter">pro Monat inkl. MwSt.<br />Domain, Hosting und E-Mail inklusive</span>
-                <a href="#preise" className="btnfest" style={{ width: '100%', textAlign: 'center', marginTop: 16 }}>Miete ansehen</a>
+                <a href="#preise" className="btnfest" style={{ width: '100%', textAlign: 'center', marginTop: 16 }}><i className="fa-solid fa-rotate" aria-hidden="true" />Miete ansehen</a>
               </div>
               <div className="pband">
                 <span className="pband-label">Kaufen</span>
                 <div className="pband-preis">ab <b>{eur(89)}</b> €</div>
                 <span className="pband-unter">einmalig inkl. MwSt.<br />ZIP sofort herunterladen, kein Abo</span>
-                <a href="#preise" className="btnleer" style={{ width: '100%', textAlign: 'center', marginTop: 16 }}>Kauf ansehen</a>
+                <a href="#preise" className="btnleer" style={{ width: '100%', textAlign: 'center', marginTop: 16 }}><i className="fa-solid fa-download" aria-hidden="true" />Kauf ansehen</a>
               </div>
             </div>
           </div>
@@ -193,7 +190,7 @@ export default function Startseite() {
               <span className="geist" aria-hidden="true">Mieten oder kaufen</span>
               <div className="geistinhalt">
                 <p className="eyebrow" style={{ marginBottom: 14 }}>Zwei Wege</p>
-                <h2 className="t2" style={{ marginBottom: 20 }}><span className="serif">Website mieten</span><br /><b className="vschrift">oder kaufen?</b></h2>
+                <h2 className="t2" style={{ marginBottom: 20 }}><span>Website mieten</span><br /><b className="vschrift">oder kaufen?</b></h2>
                 <p className="lauf" style={{ maxWidth: 560, margin: '0 auto' }}>
                   Der Unterschied in einem Satz: Beim Mieten läuft alles bei uns, beim Kaufen gehört dir alles.
                 </p>
@@ -231,8 +228,8 @@ export default function Startseite() {
                   ).map(t => <li key={t}><i className="fa-solid fa-check" aria-hidden="true" />{t}</li>)}
                 </ul>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 26 }}>
-                  <button className="btnfest" onClick={() => starten(null)}>Kostenlos erstellen</button>
-                  <a href="/preise" className="btnleer">Alle Preise</a>
+                  <button className="btnfest" onClick={() => starten(null)}><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Kostenlos erstellen</button>
+                  <a href="/preise" className="btnleer"><i className="fa-solid fa-tags" aria-hidden="true" />Alle Preise</a>
                 </div>
               </div>
               <div className="vergleich-bild" role="img" aria-label="Zusammenarbeit im Büro"
@@ -250,7 +247,7 @@ export default function Startseite() {
               <span className="geist" aria-hidden="true">Ablauf</span>
               <div className="geistinhalt">
                 <p className="eyebrow" style={{ marginBottom: 14 }}>Von der Idee zur Website</p>
-                <h2 className="t2" style={{ color: '#fff', marginBottom: 20 }}><span className="serif">Drei Schritte.</span><br /><b className="vschrift-hell">Eine Sitzung.</b></h2>
+                <h2 className="t2" style={{ color: '#fff', marginBottom: 20 }}><span>Drei Schritte.</span><br /><b className="vschrift-hell">Eine Sitzung.</b></h2>
               </div>
             </div>
           </Reveal>
@@ -275,7 +272,7 @@ export default function Startseite() {
           </div>
           <Reveal verzug={180}>
             <div style={{ marginTop: 34 }}>
-              <button className="btnfest" onClick={() => starten(null)}>Jetzt starten — kostenlos</button>
+              <button className="btnfest" onClick={() => starten(null)}><i className="fa-solid fa-rocket" aria-hidden="true" />Jetzt starten — kostenlos</button>
             </div>
           </Reveal>
         </div>
@@ -326,8 +323,8 @@ export default function Startseite() {
                   {branche.bereiche.map(t => <li key={t}><i className="fa-solid fa-circle-check" aria-hidden="true" />{t}</li>)}
                 </ul>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 24 }}>
-                  <button className="btnfest" onClick={() => starten(null)}>Für {branche.label} starten</button>
-                  <a href="/branchen" className="btnleer">Alle Branchen</a>
+                  <button className="btnfest" onClick={() => starten(null)}><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Für {branche.label} starten</button>
+                  <a href="/branchen" className="btnleer"><i className="fa-solid fa-layer-group" aria-hidden="true" />Alle Branchen</a>
                 </div>
               </div>
               <div className="branche-bild" role="img" aria-label={`Beispiel ${branche.label}`}
@@ -345,7 +342,7 @@ export default function Startseite() {
               <span className="geist" aria-hidden="true">Preise</span>
               <div className="geistinhalt">
                 <p className="eyebrow" style={{ marginBottom: 14 }}>Alle Preise inkl. 19 % MwSt.</p>
-                <h2 className="t2" style={{ marginBottom: 20 }}><span className="serif">Klare Preise.</span><br /><b className="vschrift">Keine Überraschungen.</b></h2>
+                <h2 className="t2" style={{ marginBottom: 20 }}><span>Klare Preise.</span><br /><b className="vschrift">Keine Überraschungen.</b></h2>
               </div>
             </div>
           </Reveal>
@@ -399,7 +396,7 @@ export default function Startseite() {
                     {p.punkte.map(t => <li key={t}><i className="fa-solid fa-circle-check" aria-hidden="true" />{t}</li>)}
                   </ul>
                   <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => starten(null)} style={{ width: '100%', marginTop: 22, fontSize: 15.5, padding: '16px' }}>
-                    {modus === 'mieten' ? `Mieten für ${eur(p.preis)} €/Monat` : `Kaufen für ${eur(p.preis)} €`}
+                    <><i className={`fa-solid fa-${modus === 'mieten' ? 'rotate' : 'download'}`} aria-hidden="true" />{modus === 'mieten' ? `Mieten für ${eur(p.preis)} €/Monat` : `Kaufen für ${eur(p.preis)} €`}</>
                   </button>
                   <p className="klein" style={{ fontSize: 12, textAlign: 'center', marginTop: 10 }}>
                     <i className="fa-solid fa-lock" style={{ marginRight: 6 }} aria-hidden="true" />Erstellung kostenlos — Zahlung erst am Ende
@@ -429,8 +426,8 @@ export default function Startseite() {
                 <p className="klein" style={{ color: '#9FB2C0', marginBottom: 18 }}>
                   <strong style={{ color: '#fff', fontSize: 15 }}>pro Monat</strong> inkl. 19 % MwSt.<br />oder {eur(SORGENFREI.jahr)} € im Jahr · 12 Monate Laufzeit
                 </p>
-                <button className="btnfest" onClick={() => starten(null)} style={{ width: '100%' }}>Sorgenfrei starten</button>
-                <a href="/preise#sorgenfrei" className="btnleer" style={{ width: '100%', textAlign: 'center', marginTop: 10, background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.34)' }}>Was ist enthalten?</a>
+                <button className="btnfest" onClick={() => starten(null)} style={{ width: '100%' }}><i className="fa-solid fa-shield-halved" aria-hidden="true" />Sorgenfrei starten</button>
+                <a href="/preise#sorgenfrei" className="btnleer" style={{ width: '100%', textAlign: 'center', marginTop: 10, background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.34)' }}><i className="fa-solid fa-list-check" aria-hidden="true" />Was ist enthalten?</a>
               </div>
             </div>
           </Reveal>
@@ -476,7 +473,7 @@ export default function Startseite() {
             </Reveal>
           ))}
           <Reveal verzug={100}>
-            <div style={{ marginTop: 20 }}><a href="/hilfe" className="btnleer">Alle Fragen &amp; Antworten</a></div>
+            <div style={{ marginTop: 20 }}><a href="/hilfe" className="btnleer"><i className="fa-solid fa-circle-question" aria-hidden="true" />Alle Fragen &amp; Antworten</a></div>
           </Reveal>
         </div>
       </section>
@@ -499,7 +496,7 @@ export default function Startseite() {
                   ))}
                 </ul>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <button className="btnfest" onClick={() => starten(null)}>Kostenlos erstellen</button>
+                  <button className="btnfest" onClick={() => starten(null)}><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Kostenlos erstellen</button>
                   <a href={TELEFON_LINK} className="btnleer"><i className="fa-solid fa-phone" style={{ marginRight: 9 }} aria-hidden="true" />{TELEFON}</a>
                 </div>
               </div>
@@ -525,8 +522,8 @@ export default function Startseite() {
                   <span className="trichter-nr" style={{ background: CI.blau }}>4</span>
                   <strong style={{ fontSize: 15.5 }}>Mieten oder kaufen — erst hier zahlen</strong>
                 </div>
-                <button className="btnfest" onClick={() => starten(null)} style={{ width: '100%', marginTop: 18 }}>
-                  Bei Schritt 1 anfangen
+                <button className="btnfest" onClick={() => starten(null)} style={{ width: '100%', marginTop: 18, justifyContent: 'center' }}>
+                  <i className="fa-solid fa-play" aria-hidden="true" />Bei Schritt 1 anfangen
                 </button>
               </div>
             </Reveal>
@@ -548,7 +545,7 @@ export default function Startseite() {
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <a href={TELEFON_LINK} className="btnhell"><i className="fa-solid fa-phone" style={{ marginRight: 10 }} aria-hidden="true" />{TELEFON}</a>
-            <a href="/kontakt" className="btnleer" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.34)' }}>Kontaktformular</a>
+            <a href="/kontakt" className="btnleer" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.34)' }}><i className="fa-solid fa-envelope" aria-hidden="true" />Kontaktformular</a>
           </div>
         </div>
       </section>
@@ -563,236 +560,283 @@ export default function Startseite() {
 function HeroFolie({ art, starten }) {
   const mieten = art === 'mieten'
   const punkte = mieten
-    ? ['Domain inklusive — läuft auf deinen Namen', 'Hosting, SSL und Sicherungen inklusive',
-       'E-Mail-Adresse unter deiner Domain', 'Änderungen jederzeit selbst — kostenlos', '12 Monate Laufzeit, dann monatlich kündbar']
-    : ['Kompletter Quellcode als ZIP (HTML/CSS)', 'Sofort nach Zahlung herunterladen',
-       'Kein Abo, keine Laufzeit, keine Kündigung', 'Bei jedem Anbieter betreibbar', 'Domain und Hosting bringst du selbst mit']
+    ? [['globe', 'Domain inklusive', 'läuft auf deinen Namen'],
+       ['server', 'Hosting & SSL inklusive', 'wir kümmern uns um alles'],
+       ['envelope', 'E-Mail-Adresse', 'unter deiner eigenen Domain'],
+       ['pen-to-square', 'Änderungen kostenlos', 'jederzeit selbst im Editor']]
+    : [['file-zipper', 'Quellcode als ZIP', 'HTML und CSS, gehört dir'],
+       ['bolt', 'Sofort verfügbar', 'direkt nach der Zahlung'],
+       ['building', 'Überall betreibbar', 'bei jedem Anbieter'],
+       ['pen-to-square', 'Änderungen kostenlos', 'jederzeit selbst im Editor']]
 
   return (
-    <div className="hfolie">
-      <span className="hmarke">
-        <i className={`fa-solid fa-${mieten ? 'globe' : 'download'}`} style={{ marginRight: 9 }} aria-hidden="true" />
-        {mieten ? 'Website mieten' : 'Website kaufen'}
-      </span>
-
-      <h1 className="t1" style={{ color: '#fff', margin: '20px 0 8px' }}>
-        {mieten ? <><span className="serif">Sofort online.</span><br /><b className="vschrift-bewegt">Wir kümmern uns.</b></>
-                : <><span className="serif">Einmal zahlen.</span><br /><b className="vschrift-bewegt">Dir gehört alles.</b></>}
-      </h1>
-
-      <div className="hpreis">
-        <span className="hpreis-ab">ab</span>
-        <span className="hpreis-zahl">{mieten ? eur(19.90) : eur(89)}</span>
-        <span className="hpreis-eur">€</span>
-        <span className="hpreis-info">
-          <b>{mieten ? 'pro Monat' : 'einmalig'}</b>
-          inkl. 19 % MwSt.
+    <div className="hgrid">
+      <div>
+        <span className="hmarke">
+          <i className={`fa-solid fa-${mieten ? 'globe' : 'download'}`} aria-hidden="true" />
+          {mieten ? 'Website mieten' : 'Website kaufen'}
         </span>
+
+        <h1 className="t1" style={{ color: '#fff', margin: '18px 0 14px' }}>
+          {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
+        </h1>
+
+        <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 470, marginBottom: 26 }}>
+          {mieten
+            ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
+            : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
+        </p>
+
+        <div className="hknoepfe">
+          <button className="btnfest" onClick={() => starten(null)} style={{ fontSize: 16, padding: '17px 28px' }}>
+            <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
+            Kostenlos erstellen
+          </button>
+          <a href={mieten ? '/preise#mieten' : '/preise#kaufen'} className="btnleer hell">
+            <i className="fa-solid fa-tags" aria-hidden="true" />
+            {mieten ? 'Mietpakete' : 'Kaufpakete'}
+          </a>
+        </div>
       </div>
-      <p className="hlaufzeit">
-        <i className={`fa-solid fa-${mieten ? 'calendar-days' : 'ban'}`} aria-hidden="true" />
-        {mieten ? <>Mindestlaufzeit <b>12 Monate</b>, danach monatlich kündbar · Einrichtung 49,00 € (entfällt bei Jahreszahlung)</>
-                : <><b>Keine Laufzeit</b>, kein Abo — Erstellung kostenlos, Zahlung erst am Ende</>}
-      </p>
 
-      <ul className="hliste">
-        {punkte.map(t => <li key={t}><i className="fa-solid fa-circle-check" aria-hidden="true" />{t}</li>)}
-      </ul>
-
-      <div className="hknoepfe">
-        <button className="btnfest" onClick={() => starten(null)} style={{ fontSize: 16, padding: '17px 30px' }}>
-          {mieten ? 'Mieten — kostenlos starten' : 'Kaufen — kostenlos starten'}
-          <i className="fa-solid fa-arrow-right" style={{ marginLeft: 11 }} aria-hidden="true" />
-        </button>
-        <a href={mieten ? '/preise#mieten' : '/preise#kaufen'} className="btnleer"
-          style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.36)', fontSize: 15.5, padding: '16px 26px' }}>
-          {mieten ? 'Mietpakete ansehen' : 'Kaufpakete ansehen'}
-        </a>
+      {/* Preiskasten */}
+      <div className="hpreiskasten">
+        <span className="hpk-label">{mieten ? 'Miete ab' : 'Kauf ab'}</span>
+        <div className="hpk-zahl">
+          <span>{eur(mieten ? 19.90 : 89)}</span><em>€</em>
+        </div>
+        <div className="hpk-zeilen">
+          <div><b>{mieten ? 'pro Monat' : 'einmalig'}</b><span>inkl. 19 % MwSt.</span></div>
+          {mieten ? (
+            <>
+              <div><b>12 Monate</b><span>Laufzeit, danach monatlich kündbar</span></div>
+              <div><b>49,00 €</b><span>Einrichtung — entfällt bei Jahreszahlung</span></div>
+            </>
+          ) : (
+            <>
+              <div><b>Keine Laufzeit</b><span>keine Kündigung nötig</span></div>
+              <div><b>Sofort</b><span>ZIP nach der Zahlung herunterladen</span></div>
+            </>
+          )}
+        </div>
+        <ul className="hpk-liste">
+          {punkte.map(([ic, t, u]) => (
+            <li key={t}>
+              <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
+              <span><b>{t}</b><em>{u}</em></span>
+            </li>
+          ))}
+        </ul>
+        <p className="hpk-fuss"><i className="fa-solid fa-lock" aria-hidden="true" />Erstellung kostenlos — Zahlung erst am Ende</p>
       </div>
     </div>
   )
 }
 
 const CSS = `
-/* ── Hero ── */
-.hero-grid{display:grid;grid-template-columns:1.2fr 400px;gap:52px;align-items:center}
-.hfolie{max-width:600px}
-.hmarke{display:inline-flex;align-items:center;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
-  color:#8FE4FF;border:1px solid rgba(143,228,255,.42);background:rgba(63,200,245,.12);border-radius:99px;padding:9px 17px}
-.hpreis{display:flex;align-items:flex-end;gap:9px;margin:20px 0 12px;flex-wrap:wrap}
-.hpreis-ab{font-size:17px;font-weight:400;color:#A9C2D2;margin-bottom:13px}
-.hpreis-zahl{font-size:clamp(52px,7vw,86px);font-weight:800;letter-spacing:-.05em;line-height:.92;
-  background:linear-gradient(96deg,#8FE4FF,#3FC8F5 48%,${CI.blau});-webkit-background-clip:text;background-clip:text;color:transparent}
-.hpreis-eur{font-size:30px;font-weight:800;color:#8FE4FF;margin-bottom:9px}
-.hpreis-info{display:flex;flex-direction:column;margin-bottom:12px;margin-left:8px;font-size:13px;color:#A9C2D2;line-height:1.35}
-.hpreis-info b{font-size:17px;font-weight:800;color:#fff}
-.hlaufzeit{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:#B8CCD9;line-height:1.6;
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:12px 15px;margin-bottom:22px}
-.hlaufzeit i{color:#8FE4FF;margin-top:3px}
-.hlaufzeit b{color:#fff;font-weight:800}
-.hliste{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:28px}
-.hliste li{display:flex;gap:10px;font-size:14.5px;color:#DCE8F0;line-height:1.5}
-.hliste li i{color:#22C55E;font-size:14px;margin-top:2px;flex-shrink:0}
+/* ══ DOMAINBAND — Herzstück ══ */
+.domainband{background:linear-gradient(94deg,${CI.orange},#FFAE33);padding:18px 0 20px}
+.db-innen{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.db-tlds{display:flex;gap:26px;flex-wrap:wrap}
+.db-tlds span{display:flex;flex-direction:column;align-items:center;color:#fff;line-height:1.25}
+.db-tlds b{font-size:16px;font-weight:700}
+.db-tlds em{font-style:normal;font-size:11.5px;opacity:.92}
+.db-feld{flex:1;min-width:330px;display:flex;align-items:center;gap:0;background:#fff;border-radius:99px;padding:5px 5px 5px 20px;
+  box-shadow:0 8px 24px rgba(0,0,0,.13)}
+.db-feld>i{color:${CI.textZart};font-size:15px;margin-right:12px}
+.db-feld input{flex:1;min-width:80px;border:none;outline:none;font-size:16px;font-weight:500;color:${CI.text};padding:12px 0;background:transparent}
+.db-feld button{background:${CI.petrol};color:#fff;border:none;border-radius:99px;padding:13px 24px;font-size:14.5px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;transition:background .18s}
+.db-feld button:hover{background:${CI.blau}}
+.db-ergebnis{margin-top:16px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:8px;padding:11px 13px}
+.db-belegt{font-size:13px;color:${CI.textMatt};margin-top:8px}
+.db-hinweis{display:flex;gap:9px;font-size:12.5px;color:${CI.textMatt};margin-top:12px;padding-top:12px;border-top:1px solid ${CI.linie}}
+.db-hinweis i{color:${CI.blau};margin-top:2px}
+.treffer{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:8px;border-radius:10px;
+  background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s}
+.treffer:hover{border-color:${CI.gruen}}
+.treffer>i{color:${CI.gruen};font-size:16px}
+.treffer-erst{border-color:${CI.gruen};background:#F1FAF4}
+.tr-frei{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:${CI.gruen}}
+.tr-preis{font-size:13.5px;font-weight:700;color:${CI.text}}
+
+/* ══ HERO ══ */
+.hgrid{display:grid;grid-template-columns:1.1fr 400px;gap:52px;align-items:center}
+.hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+  border-radius:99px;padding:9px 17px}
 .hknoepfe{display:flex;gap:13px;flex-wrap:wrap}
+.btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.38);padding:16px 24px;font-size:15.5px}
+.btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
 
-/* ── Trichter im Hero ── */
-.trichter{background:#fff;border-radius:16px;padding:26px 24px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text}}
-.trichter-kopf{display:flex;align-items:center;gap:13px;margin-bottom:16px}
-.trichter-nr{width:32px;height:32px;flex-shrink:0;border-radius:50%;background:${CI.petrol};color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:800}
-.adresszeile{display:flex;align-items:center;gap:9px;border:1.5px solid ${CI.linie};border-radius:9px;padding:2px 14px;transition:border-color .18s}
-.adresszeile:focus-within{border-color:${CI.blau};box-shadow:0 0 0 3px rgba(27,147,210,.14)}
-.treffer{display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:7px;border-radius:8px;
-  background:${CI.grau};border:1px solid ${CI.linie}}
-.treffer i{color:#22C55E}
-.treffer-erst{border-color:#22C55E;background:#F0FDF4}
-.trichter-fuss{margin-top:16px;padding-top:14px;border-top:1px solid ${CI.linie};display:flex;flex-direction:column;gap:8px}
-.trichter-fuss span{display:flex;gap:9px;font-size:12.5px;color:${CI.textMatt};align-items:center}
-.trichter-fuss i{color:#22C55E;font-size:11px}
-.trichter-fuss b{color:${CI.text}}
+/* Preiskasten im Hero */
+.hpreiskasten{background:#fff;border-radius:16px;padding:26px 24px;box-shadow:0 26px 60px rgba(0,0,0,.36);color:${CI.text}}
+.hpk-label{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:${CI.orange}}
+.hpk-zahl{display:flex;align-items:baseline;gap:6px;margin:6px 0 16px}
+.hpk-zahl span{font-size:56px;font-weight:700;letter-spacing:-.035em;line-height:1;color:${CI.text}}
+.hpk-zahl em{font-style:normal;font-size:24px;font-weight:700;color:${CI.textMatt}}
+.hpk-zeilen{display:flex;flex-direction:column;gap:11px;padding-bottom:18px;border-bottom:1px solid ${CI.linie}}
+.hpk-zeilen div{display:flex;flex-direction:column;gap:1px}
+.hpk-zeilen b{font-size:15px;font-weight:700;color:${CI.text}}
+.hpk-zeilen span{font-size:13px;color:${CI.textMatt};line-height:1.45}
+.hpk-liste{list-style:none;display:flex;flex-direction:column;gap:13px;padding:18px 0}
+.hpk-liste li{display:flex;gap:12px;align-items:flex-start}
+.hpk-liste li i{color:${CI.gruen};font-size:14px;width:18px;text-align:center;margin-top:3px;flex-shrink:0;transition:transform .22s}
+.hpk-liste li:hover i{transform:scale(1.22)}
+.hpk-liste span{display:flex;flex-direction:column}
+.hpk-liste b{font-size:14.5px;font-weight:700;color:${CI.text}}
+.hpk-liste em{font-style:normal;font-size:12.5px;color:${CI.textMatt}}
+.hpk-fuss{display:flex;gap:9px;align-items:center;font-size:12.5px;color:${CI.textMatt};padding-top:14px;border-top:1px solid ${CI.linie}}
+.hpk-fuss i{color:${CI.gruen}}
 
-/* ── Leistungskarten ── */
+/* ══ Leistungskarten ══ */
 .lkarte{padding:28px 26px;height:100%}
 .lkarte i{font-size:19px;color:${CI.blau};background:#EAF4FB;width:48px;height:48px;border-radius:11px;
-  display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:all .24s}
-.lkarte:hover i{background:${CI.blau};color:#fff;transform:translateY(-3px) rotate(-6deg)}
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:all .26s}
+.lkarte:hover i{background:${CI.orange};color:#fff;transform:translateY(-4px) rotate(-8deg)}
 
-/* ── Preisband dunkel ── */
+/* ══ Preisband dunkel ══ */
 .preisband{display:grid;grid-template-columns:1fr 440px;gap:44px;align-items:center}
 .preisband-karten{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.pband{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:13px;padding:22px 20px;
+.pband{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:22px 20px;
   display:flex;flex-direction:column;transition:all .22s}
-.pband:hover{background:rgba(255,255,255,.14);transform:translateY(-5px);border-color:rgba(143,228,255,.5)}
-.pband-label{font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8FE4FF}
-.pband-preis{font-size:15px;font-weight:400;color:#A9C2D2;margin:10px 0 4px}
-.pband-preis b{font-size:42px;font-weight:800;letter-spacing:-.045em;color:#fff;margin:0 3px}
+.pband:hover{background:rgba(255,255,255,.12);transform:translateY(-4px);border-color:${CI.orange}}
+.pband-label{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:${CI.orange}}
+.pband-preis{font-size:15px;color:#A9C2D2;margin:9px 0 4px}
+.pband-preis b{font-size:38px;font-weight:700;letter-spacing:-.035em;color:#fff;margin:0 3px}
 .pband-unter{font-size:12.5px;color:#9FB2C0;line-height:1.6;flex:1}
 
-/* ── Große Auswahl-Knöpfe ── */
-.wahlleiste{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;max-width:840px}
-.grosswahl{display:flex;align-items:center;gap:16px;text-align:left;border-radius:13px;padding:20px 22px;
+/* ══ Große Auswahlknöpfe ══ */
+.wahlleiste{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;max-width:860px}
+.grosswahl{display:flex;align-items:center;gap:16px;text-align:left;border-radius:12px;padding:20px 22px;
   cursor:pointer;transition:all .24s;border:2px solid}
-.grosswahl i{font-size:22px;width:44px;height:44px;border-radius:11px;display:flex;align-items:center;
+.grosswahl i{font-size:21px;width:46px;height:46px;border-radius:11px;display:flex;align-items:center;
   justify-content:center;flex-shrink:0;transition:all .24s}
 .grosswahl span{display:flex;flex-direction:column;gap:3px}
-.grosswahl b{font-size:18px;font-weight:800;letter-spacing:-.03em}
+.grosswahl b{font-size:18px;font-weight:700;letter-spacing:-.02em}
 .grosswahl em{font-style:normal;font-size:13px;font-weight:400}
-.gw-an{background:${CI.petrol};color:#fff;border-color:${CI.petrol};box-shadow:0 16px 36px rgba(10,24,35,.24)}
-.gw-an i{background:${CI.blau};color:#fff}
+.gw-an{background:${CI.petrol};color:#fff;border-color:${CI.petrol};box-shadow:0 14px 32px rgba(10,24,35,.22)}
+.gw-an i{background:${CI.orange};color:#fff}
 .gw-an em{color:#A9C2D2}
 .gw-aus{background:#fff;color:${CI.text};border-color:${CI.linie}}
 .gw-aus i{background:#EAF4FB;color:${CI.blau}}
 .gw-aus em{color:${CI.textMatt}}
-.gw-aus:hover{border-color:${CI.blau};transform:translateY(-3px);box-shadow:0 14px 32px rgba(27,147,210,.14)}
+.gw-aus:hover{border-color:${CI.orange};transform:translateY(-3px)}
 
-/* ── Vergleich / Branche ── */
-.vergleich,.branche{display:grid;grid-template-columns:1.05fr .95fr;gap:0;background:#fff;border:1px solid ${CI.linie};
-  border-radius:18px;overflow:hidden}
+/* ══ Vergleich / Branche ══ */
+.vergleich,.branche{display:grid;grid-template-columns:1.05fr .95fr;background:#fff;border:1px solid ${CI.linie};
+  border-radius:16px;overflow:hidden}
 .vergleich-text,.branche-text{padding:38px 36px}
-.vergleich-bild,.branche-bild{min-height:380px;background-size:cover;background-position:center}
+.vergleich-bild,.branche-bild{min-height:390px;background-size:cover;background-position:center}
 
-/* ── Haken-Listen ── */
-.haken{list-style:none;display:flex;flex-direction:column;gap:11px}
-.haken li{display:flex;gap:11px;font-size:14.8px;line-height:1.55;color:${CI.text}}
+/* ══ Haken ══ */
+.haken{list-style:none;display:flex;flex-direction:column;gap:12px}
+.haken li{display:flex;gap:12px;font-size:14.8px;line-height:1.5;color:${CI.text}}
 .haken li i{color:${CI.blau};font-size:12px;margin-top:4px;flex-shrink:0}
-.haken.gruen li i{color:#22C55E;font-size:14px;margin-top:2px}
+.haken.gruen li i{color:${CI.gruen};font-size:14px;margin-top:2px}
 .dunkelzone .haken li,.sorgen .haken li{color:#DCE6EE}
-.haken.zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+.haken.zwei{display:grid;grid-template-columns:1fr 1fr;gap:11px 24px}
 
-/* ── Schritt-Karten mit Bild ── */
-.schrittkarte{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;
+/* ══ Schritt-Karten ══ */
+.schrittkarte{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;
   padding:0 0 24px;overflow:hidden;height:100%;transition:all .26s}
-.schrittkarte:hover{transform:translateY(-6px);border-color:rgba(143,228,255,.45);box-shadow:0 22px 48px rgba(0,0,0,.34)}
+.schrittkarte:hover{transform:translateY(-6px);border-color:${CI.orange};box-shadow:0 22px 46px rgba(0,0,0,.3)}
 .schrittbild{position:relative;background:#fff}
 .schrittbild img{width:100%;display:block}
-.schrittbild-nr{position:absolute;top:14px;left:14px;background:${CI.blau};color:#fff;font-size:14px;font-weight:800;
-  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 20px rgba(27,147,210,.4)}
-.schrittkarte .schritt-dauer{display:inline-block;margin:20px 24px 0;font-size:11.5px;font-weight:800;
-  letter-spacing:.14em;text-transform:uppercase;color:#8FE4FF;background:rgba(143,228,255,.12);
-  border:1px solid rgba(143,228,255,.3);border-radius:99px;padding:5px 12px}
+.schrittbild-nr{position:absolute;top:14px;left:14px;background:${CI.orange};color:#fff;font-size:14px;font-weight:700;
+  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.schrittkarte .schritt-dauer{display:inline-block;margin:20px 24px 0;font-size:11.5px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:${CI.orange};background:rgba(245,146,0,.14);
+  border:1px solid rgba(245,146,0,.32);border-radius:99px;padding:5px 12px}
 .schrittkarte h3,.schrittkarte p{padding:0 24px}
 
-/* ── Reiter Branchen ── */
+/* ══ Reiter ══ */
 .reiter{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:26px}
-.reiter-an,.reiter-aus{border-radius:9px;padding:11px 18px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid}
+.reiter-an,.reiter-aus{border-radius:8px;padding:11px 18px;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s;border:1.5px solid}
 .reiter-an{background:${CI.petrol};color:#fff;border-color:${CI.petrol}}
 .reiter-aus{background:#fff;color:${CI.textMatt};border-color:${CI.linie}}
-.reiter-aus:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
+.reiter-aus:hover{border-color:${CI.orange};color:${CI.orange}}
 
-/* ── Preiskarten ── */
-.preis{padding:34px 30px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden}
-.preis-top{border-color:${CI.blau};box-shadow:0 20px 46px rgba(27,147,210,.18)}
-.eckband{position:absolute;top:0;right:0;background:${CI.blau};color:#fff;font-size:10.5px;font-weight:800;
-  letter-spacing:.12em;text-transform:uppercase;padding:7px 15px;border-radius:0 0 0 12px}
-.zahlweise{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.14em;
+/* ══ Preiskarten ══ */
+.preis{padding:32px 28px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden}
+.preis-top{border-color:${CI.orange};box-shadow:0 18px 42px rgba(245,146,0,.16)}
+.eckband{position:absolute;top:0;right:0;background:${CI.orange};color:#fff;font-size:10.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;padding:7px 15px;border-radius:0 0 0 11px}
+.zahlweise{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;border-radius:99px;padding:7px 14px}
-.zw-mieten{color:${CI.blau};background:#EAF4FB;border:1px solid rgba(27,147,210,.32)}
-.zw-kaufen{color:#15803D;background:#F0FDF4;border:1px solid rgba(34,197,94,.34)}
-.preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:13px;padding:20px 20px 18px;margin-bottom:22px}
-.preiszeile{display:flex;align-items:baseline;gap:7px;font-size:16px;color:${CI.textMatt};font-weight:400}
-.preiszeile b{font-size:clamp(46px,5.6vw,58px);font-weight:800;letter-spacing:-.05em;color:${CI.text};line-height:1}
+.zw-mieten{color:${CI.blau};background:#EAF4FB;border:1px solid rgba(27,147,210,.3)}
+.zw-kaufen{color:${CI.gruen};background:#F1FAF4;border:1px solid rgba(31,157,85,.3)}
+.preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:12px;padding:20px;margin-bottom:22px}
+.preiszeile{display:flex;align-items:baseline;gap:7px;font-size:15px;color:${CI.textMatt}}
+.preiszeile b{font-size:clamp(42px,5vw,52px);font-weight:700;letter-spacing:-.035em;color:${CI.text};line-height:1}
 .preiszeile.hell b{color:#fff}
 .preiszeile.hell{color:#A9C2D2;justify-content:center}
-.preis-unter{display:flex;align-items:baseline;gap:9px;margin-top:6px}
-.preis-unter strong{font-size:17px;font-weight:800;color:${CI.text}}
+.preis-unter{display:flex;flex-direction:column;gap:1px;margin-top:8px}
+.preis-unter strong{font-size:16px;font-weight:700;color:${CI.text}}
 .preis-unter span{font-size:13px;color:${CI.textMatt}}
-.preis-fakten{display:flex;flex-direction:column;gap:9px;margin-top:15px;padding-top:14px;border-top:1px solid ${CI.linie}}
-.preis-fakten span{display:flex;gap:10px;font-size:13px;color:${CI.textMatt};line-height:1.5}
-.preis-fakten i{color:${CI.blau};font-size:12px;margin-top:3px;flex-shrink:0}
-.preis-fakten b{color:${CI.text};font-weight:800}
+.preis-fakten{display:flex;flex-direction:column;gap:12px;margin-top:16px;padding-top:15px;border-top:1px solid ${CI.linie}}
+.preis-fakten span{display:flex;gap:11px;font-size:13.5px;color:${CI.textMatt};line-height:1.45}
+.preis-fakten i{color:${CI.blau};font-size:12px;margin-top:3px;flex-shrink:0;width:14px;text-align:center}
+.preis-fakten b{display:block;color:${CI.text};font-weight:700;font-size:14.5px}
 
-/* ── Keine-Sorgen ── */
+/* ══ Keine-Sorgen ══ */
 .sorgen{margin-top:28px;display:grid;grid-template-columns:1fr 310px;gap:36px;align-items:center;position:relative;
-  border-radius:18px;padding:38px 36px;color:#fff;overflow:hidden;
-  background:linear-gradient(118deg,${CI.petrol},#0D2A3D 44%,#123B52 76%,${CI.petrol});background-size:200% 200%;
-  animation:grundlauf 22s ease-in-out infinite}
-.sorgen-marke{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;
-  color:#8FE4FF;border:1px solid rgba(143,228,255,.42);background:rgba(63,200,245,.12);border-radius:99px;padding:7px 15px}
-.sorgen-preis{position:relative;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);
-  border-radius:14px;padding:26px 24px;text-align:center}
+  border-radius:16px;padding:38px 36px;color:#fff;overflow:hidden;background:linear-gradient(160deg,${CI.petrol},#0D2231)}
+.sorgen-marke{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:${CI.orange};border:1px solid rgba(245,146,0,.42);background:rgba(245,146,0,.12);
+  border-radius:99px;padding:7px 15px}
+.sorgen-preis{position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+  border-radius:13px;padding:26px 24px;text-align:center}
 
-/* ── FAQ ── */
+/* ══ FAQ ══ */
 .faqwahl{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
-.fw-an,.fw-aus{border-radius:9px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;border:1.5px solid}
-.fw-an{background:${CI.blau};color:#fff;border-color:${CI.blau}}
+.fw-an,.fw-aus{border-radius:8px;padding:12px 20px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:1.5px solid}
+.fw-an{background:${CI.petrol};color:#fff;border-color:${CI.petrol}}
 .fw-aus{background:#fff;color:${CI.textMatt};border-color:${CI.linie}}
-.fw-aus:hover{border-color:${CI.blau};color:${CI.blau}}
+.fw-aus:hover{border-color:${CI.orange};color:${CI.orange}}
 .frage{padding:19px 23px;margin-bottom:10px;background:#fff;transition:all .22s}
-.frage summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:15px;font-size:16.5px;font-weight:600}
+.frage summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:15px;font-size:16.5px;font-weight:500}
 .frage summary::-webkit-details-marker{display:none}
-.frage:hover{border-color:${CI.blau}66;transform:translateX(3px)}
-.frage[open]{border-color:${CI.blau}}
+.frage:hover{border-color:${CI.orange}}
+.frage[open]{border-color:${CI.orange}}
 .frage[open] .plus{transform:rotate(45deg)}
-.plus{transition:transform .28s;display:inline-block;font-size:22px;font-weight:400;color:${CI.blau};line-height:1}
-.frage p{font-size:15px;color:${CI.textMatt};line-height:1.82;margin-top:14px}
+.plus{transition:transform .26s;display:inline-block;font-size:22px;font-weight:300;color:${CI.orange};line-height:1}
+.frage p{font-size:15px;color:${CI.textMatt};line-height:1.8;margin-top:14px}
 
-/* ── Anfrage-Trichter ── */
+/* ══ Anfrage-Trichter ══ */
 .anfrage{display:grid;grid-template-columns:1fr 430px;gap:52px;align-items:center}
-.trichter-gross{background:${CI.grau};border:1px solid ${CI.linie};border-radius:18px;padding:28px 26px}
-.trichter-gross .trichter-kopf{background:#fff;border:1.5px solid ${CI.linie};border-radius:11px;padding:15px 17px;margin-bottom:0;transition:all .22s}
-.trichter-gross .trichter-kopf:hover{border-color:${CI.blau};transform:translateX(5px);box-shadow:0 8px 22px rgba(27,147,210,.12)}
+.trichter-gross{background:${CI.grau};border:1px solid ${CI.linie};border-radius:16px;padding:28px 26px}
+.trichter-kopf{display:flex;align-items:center;gap:13px}
+.trichter-nr{width:32px;height:32px;flex-shrink:0;border-radius:50%;background:${CI.petrol};color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:700}
+.trichter-gross .trichter-kopf{background:#fff;border:1.5px solid ${CI.linie};border-radius:10px;padding:15px 17px;transition:all .22s}
+.trichter-gross .trichter-kopf:hover{border-color:${CI.orange};transform:translateX(5px)}
 .trichter-pfeil{text-align:center;color:${CI.textZart};font-size:12px;padding:8px 0}
 
 /* ══ MOBIL ══ */
 @media(max-width:1060px){
-  .hero-grid,.preisband,.anfrage{grid-template-columns:1fr;gap:34px}
+  .hgrid,.preisband,.anfrage{grid-template-columns:1fr;gap:32px}
   .sorgen{grid-template-columns:1fr;gap:26px}
-  .hfolie{max-width:100%}
 }
 @media(max-width:860px){
   .vergleich,.branche{grid-template-columns:1fr}
   .vergleich-bild,.branche-bild{min-height:210px;order:-1}
-  .haken.zwei,.hliste{grid-template-columns:1fr}
+  .haken.zwei{grid-template-columns:1fr}
   .preisband-karten{grid-template-columns:1fr}
   .wahlleiste{grid-template-columns:1fr}
+  .db-tlds{display:none}
+  .db-feld{min-width:0;width:100%}
 }
 @media(max-width:640px){
   .wrap{padding:0 18px}
-  .hpreis-zahl{font-size:60px}
+  .hpk-zahl span{font-size:46px}
   .hknoepfe{flex-direction:column;align-items:stretch}
-  .hknoepfe .btnfest,.hknoepfe .btnleer{width:100%;text-align:center}
-  .trichter,.trichter-gross{padding:20px 18px}
+  .hknoepfe .btnfest,.hknoepfe .btnleer{width:100%;justify-content:center}
+  .db-feld{flex-wrap:wrap;border-radius:14px;padding:12px}
+  .db-feld input{width:100%;padding:8px 0}
+  .db-feld button{width:100%;justify-content:center}
+  .hpreiskasten,.trichter-gross{padding:22px 20px}
   .vergleich-text,.branche-text{padding:26px 22px}
   .preis{padding:26px 22px}
   .sorgen{padding:28px 22px}
@@ -800,9 +844,7 @@ const CSS = `
   .frage summary{font-size:15.5px;gap:11px}
   .grosswahl{padding:16px 17px;gap:13px}
   .grosswahl b{font-size:16.5px}
-  .lkarte{padding:24px 21px}
-  .reiter-an,.reiter-aus{padding:10px 14px;font-size:12.5px}
-  .schrittkarte h3,.schrittkarte p,.schrittkarte .schritt-dauer{padding-left:20px;padding-right:20px}
+  .schrittkarte h3,.schrittkarte p{padding:0 20px}
   .schrittkarte .schritt-dauer{margin-left:20px;margin-right:20px}
 }
 `

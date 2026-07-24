@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, CI } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
-import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN } from '@/lib/preise'
+import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN, eur } from '@/lib/preise'
 
 export default function PreiseSeite() {
   const router = useRouter()
@@ -12,7 +12,7 @@ export default function PreiseSeite() {
   const liste = modus === 'kaufen' ? KAUF : MIETE
 
   return (
-    <div style={{ background: '#fff', color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
+    <div style={{ background: '#fff', color: D.text, fontFamily: '"Roboto",system-ui,sans-serif', minHeight: '100vh' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
@@ -55,12 +55,12 @@ export default function PreiseSeite() {
                 <h2 className="display" style={{ fontSize: 21, marginBottom: 4 }}>{p.name}</h2>
                 <p style={{ fontSize: 13, color: D.textMatt, marginBottom: 18 }}>{p.kurz}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span className="display" style={{ fontSize: 44 }}>{String(p.preis).replace('.', ',')}</span>
+                  <span className="display" style={{ fontSize: 44 }}>{eur(p.preis)}</span>
                   <span style={{ fontSize: 17, fontWeight: 700, color: D.textMatt }}>€</span>
                   <span style={{ fontSize: 12.5, color: D.grauHell, marginLeft: 4 }}>{modus === 'kaufen' ? 'einmalig' : '/ Monat'}</span>
                 </div>
                 <p style={{ fontSize: 11.5, color: D.grauHell, margin: '6px 0 18px' }}>
-                  {modus === 'kaufen' ? 'inkl. MwSt. · kein Abo' : `inkl. MwSt. · oder ${p.jahr} € im Jahr (10 statt 12 Monate)`}
+                  {modus === 'kaufen' ? 'inkl. MwSt. · Einmalzahlung' : `inkl. MwSt. · oder ${eur(p.jahr)} € im Jahr (10 statt 12 Monate)`}
                 </p>
                 {p.fuer && <p style={{ fontSize: 13, color: D.grau, fontStyle: 'italic', marginBottom: 16, lineHeight: 1.55 }}>Für: {p.fuer}</p>}
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24, flex: 1 }}>
@@ -86,7 +86,7 @@ export default function PreiseSeite() {
               <thead><tr><th>Was</th><th>Kaufen</th><th>Mieten</th></tr></thead>
               <tbody>
                 {[
-                  ['Zahlung', 'einmalig 89 – 199 € inkl. MwSt.', 'monatlich 19,90 – 39,90 € inkl. MwSt.'],
+                  ['Zahlung', 'einmalig 89,00 – 199,00 € inkl. MwSt.', 'monatlich 19,90 – 39,90 € inkl. MwSt.'],
                   ['Laufzeit', 'keine', '12 Monate, danach monatlich kündbar'],
                   ['Dateien (ZIP)', 'ja, gehören dir', 'ja, jederzeit herunterladbar'],
                   ['Domain', 'bringst du selbst mit', 'inklusive (.de), läuft auf deinen Namen'],

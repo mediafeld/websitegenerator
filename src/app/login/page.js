@@ -58,7 +58,7 @@ export default function LoginSeite() {
   const unter = modus === 'login' ? 'zu Ihrem Kundenbereich' : modus === 'registrieren' ? 'kostenlos und in einer Minute' : 'Wir senden Ihnen einen Link'
 
   return (
-    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Roboto",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `

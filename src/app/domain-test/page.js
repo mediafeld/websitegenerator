@@ -26,7 +26,7 @@ export default function DomainTest() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafbff', fontFamily: '"Inter Tight",system-ui,sans-serif', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: '#fafbff', fontFamily: '"Roboto",system-ui,sans-serif', padding: 24 }}>
       <div style={{ maxWidth: 620, margin: '0 auto', paddingTop: 40 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6, color: '#0f172a' }}>Domain-Prüfung (Test)</h1>
         <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>
