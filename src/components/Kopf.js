@@ -4,25 +4,28 @@ import { useRouter } from 'next/navigation'
 import { aktuellerNutzer } from '@/lib/projekte'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 
-// ══ CI websitegenerator24 ══
+// ══ CI websitegenerator24 — „Bauplan“ ══
+// Gestaltungsidee: technische Zeichnung / Bauplan. Websites werden hier nicht
+// dekoriert, sie werden entworfen — wie eine Werkzeichnung, bevor gebaut wird.
 // Nur diese Farben werden verwendet.
 export const CI = {
-  petrol: '#0A1823',      // Grundfarbe dunkel
-  petrol2: '#0F2233',     // dunkel, eine Stufe heller
-  blau: '#1B93D2',        // Signalblau – Akzent
-  blauDunkel: '#157AB0',  // Akzent gedrückt
-  stahl: '#2D5A7B',       // Zwischenton
+  petrol: '#111C27',      // Bauplan-Tinte, dunkler Grund
+  petrol2: '#17293A',     // dunkel, eine Stufe heller (Panels)
+  blau: '#2E7EB3',        // Bauplanblau – Primärfarbe
+  blauDunkel: '#23648F',  // Akzent gedrückt
+  stahl: '#4C7593',       // Zwischenton
+  cyan: '#8AD8DE',        // Rasterlinie / Leuchtakzent auf Dunkel
   weiss: '#FFFFFF',
-  grau: '#F2F5F8',        // helle Fläche
-  linie: '#DFE6ED',
-  text: '#0A1823',
-  textMatt: '#5A6B7A',
-  textZart: '#8A99A6',
-  geist: '#EDF1F5',       // Geister-Überschrift
-  orange: '#F59200',      // Kontrastfarbe – Handlungsaufrufe, Hervorhebungen
-  orangeHell: '#FFA829',
-  orangeZart: '#FFF4E3',
-  gruen: '#1F9D55',       // Bestätigungen
+  grau: '#F2F4F3',        // helle Fläche
+  linie: '#DEE3E1',
+  text: '#111C27',
+  textMatt: '#57646C',
+  textZart: '#8996A0',
+  geist: '#EEF1F0',       // Geister-Überschrift
+  orange: '#E1591F',      // Werkzeug-Orange – Handlungsaufrufe, Hervorhebungen
+  orangeHell: '#EE7449',
+  orangeZart: '#FCE7DD',
+  gruen: '#2E9D63',       // Bestätigungen
 }
 
 export const D = {
@@ -32,10 +35,10 @@ export const D = {
   text: CI.text, textHell: '#FFFFFF', textMatt: CI.textMatt, textZart: CI.textZart,
   textMattDunkel: '#9FB2C0', grauHell: CI.textZart,
   linie: CI.linie, linieDunkel: 'rgba(255,255,255,.14)',
-  akzent: CI.blau, akzentHell: CI.blauDunkel, akzentZart: '#E8F4FB',
-  tuerkis: CI.blau, tuerkisZart: '#E8F4FB', violett: CI.stahl, magenta: CI.blau,
-  gruen: CI.blau, gruenZart: '#E8F4FB', gold: CI.blau, lila: CI.stahl,
-  blauHell: CI.blauDunkel, blauZart: '#E8F4FB',
+  akzent: CI.blau, akzentHell: CI.blauDunkel, akzentZart: '#E7EFF3',
+  tuerkis: CI.blau, tuerkisZart: '#E7EFF3', violett: CI.stahl, magenta: CI.blau,
+  gruen: CI.blau, gruenZart: '#E7EFF3', gold: CI.blau, lila: CI.stahl,
+  blauHell: CI.blauDunkel, blauZart: '#E7EFF3',
   hellGrund: CI.grau, hellKarte: CI.weiss, hellText: CI.text,
   hellGrau: CI.textMatt, hellLinie: CI.linie,
   verlauf: `linear-gradient(100deg, ${CI.blau}, ${CI.stahl})`,
@@ -48,31 +51,33 @@ export const EMAIL = 'info@websitegenerator24.de'
 
 export const BASIS_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#fff;color:${CI.text}}
+body{background:#fff;color:${CI.text};font-family:'Plex',system-ui,sans-serif}
 .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 button{font-family:inherit}
 input,select,textarea{font-family:inherit}
 a{color:inherit;text-decoration:none}
 .link-u{transition:color .15s}
 .link-u:hover{text-decoration:underline;color:${CI.blau}}
-:focus-visible{outline:2px solid ${CI.blau};outline-offset:3px}
-::selection{background:${CI.blau};color:#fff}
+:focus-visible{outline:2px solid ${CI.orange};outline-offset:3px}
+::selection{background:${CI.orange};color:#fff}
 
-/* ── Typografie: Kontrast über 300 gegen 800 ── */
-.t1{font-size:clamp(36px,5.4vw,68px);line-height:1.1;letter-spacing:-.026em;font-weight:300}
-.t1 b{font-weight:800}
-.t2{font-size:clamp(29px,4.2vw,50px);line-height:1.14;letter-spacing:-.024em;font-weight:300}
-.t2 b{font-weight:800}
-.t3{font-size:21px;font-weight:700;letter-spacing:-.015em;line-height:1.3}
-.serif{font-weight:300}
-.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${CI.orange}}
-.lauf{font-size:17px;line-height:1.75;color:${CI.textMatt};font-weight:400}
+/* ── Typografie: Grotesk für Überschriften, Plex für Fließtext ── */
+.t1{font-family:'Grotesk',sans-serif;font-size:clamp(34px,5vw,62px);line-height:1.06;letter-spacing:-.015em;font-weight:500}
+.t1 b{font-weight:700}
+.t2{font-family:'Grotesk',sans-serif;font-size:clamp(27px,3.8vw,44px);line-height:1.1;letter-spacing:-.012em;font-weight:500}
+.t2 b{font-weight:700}
+.t3{font-family:'Grotesk',sans-serif;font-size:21px;font-weight:600;letter-spacing:-.008em;line-height:1.3}
+.serif{font-weight:400}
+.mono{font-family:'Plexmono',ui-monospace,monospace}
+.eyebrow{font-family:'Plexmono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:${CI.orange}}
+.eyebrow:before{content:'// ';color:${CI.textZart}}
+.lauf{font-size:16.5px;line-height:1.72;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Verlaufsschrift: Cyanblau ins Dunkle ── */
+/* ── Verlaufsschrift: Bauplanblau ins Dunkle ── */
 .vschrift{color:${CI.blau}}
-.vschrift-hell{color:#5FC8F0}
-.vschrift-bewegt{color:#5FC8F0}
+.vschrift-hell{color:${CI.cyan}}
+.vschrift-bewegt{color:${CI.cyan}}
 
 /* ── Animierter Unterstrich ── */
 .strich{position:relative;display:inline-block;padding-bottom:10px}
@@ -115,26 +120,32 @@ a{color:inherit;text-decoration:none}
 .dunkelzone .btnleer:hover{border-color:#fff;background:rgba(255,255,255,.09)}
 
 /* ── Karten ── */
-.karte{background:#fff;border:1px solid ${CI.linie};border-radius:14px}
-.karte-hover{transition:transform .26s cubic-bezier(.2,.7,.3,1),box-shadow .26s,border-color .26s}
-.karte-hover:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(10,24,35,.13);border-color:${CI.blau}66}
+.karte{background:#fff;border:1px solid ${CI.linie};border-radius:5px}
+.karte-hover{transition:transform .22s cubic-bezier(.2,.7,.3,1),box-shadow .22s,border-color .22s}
+.karte-hover:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(17,28,39,.12);border-color:${CI.blau}77}
 
-/* ── Knöpfe ── */
-.btnfest{background:${CI.orange};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
-  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:11px;
+/* ── Eckmarken: wiederkehrendes Bauplan-Motiv ── */
+.ecken{position:relative}
+.ecken:before,.ecken:after{content:'';position:absolute;width:13px;height:13px;pointer-events:none;opacity:.55}
+.ecken:before{top:-1px;left:-1px;border-top:2px solid ${CI.orange};border-left:2px solid ${CI.orange}}
+.ecken:after{bottom:-1px;right:-1px;border-bottom:2px solid ${CI.orange};border-right:2px solid ${CI.orange}}
+
+/* ── Knöpfe: gerade Kanten, technische Anmutung ── */
+.btnfest{background:${CI.orange};color:#fff;border:none;border-radius:3px;padding:15px 26px;font-size:14.5px;
+  font-weight:600;letter-spacing:.005em;cursor:pointer;display:inline-flex;align-items:center;gap:11px;
   transition:background .18s,transform .18s,box-shadow .18s;text-decoration:none}
-.btnfest:hover{background:${CI.orangeHell};transform:translateY(-2px);box-shadow:0 12px 28px rgba(245,146,0,.34)}
-.btnblau{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
-  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:11px;transition:all .18s}
-.btnblau:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 28px rgba(27,147,210,.3)}
-.btnleer{background:#fff;color:${CI.text};border:1.5px solid ${CI.linie};border-radius:8px;padding:14px 24px;
-  font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
+.btnfest:hover{background:${CI.orangeHell};transform:translateY(-2px);box-shadow:0 12px 26px rgba(225,89,31,.32)}
+.btnblau{background:${CI.blau};color:#fff;border:none;border-radius:3px;padding:15px 26px;font-size:14.5px;
+  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:11px;transition:all .18s}
+.btnblau:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 26px rgba(46,126,179,.28)}
+.btnleer{background:#fff;color:${CI.text};border:1.5px solid ${CI.linie};border-radius:3px;padding:14px 24px;
+  font-size:14.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
 .btnleer:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
-.btnhell{background:#fff;color:${CI.petrol};border:none;border-radius:8px;padding:15px 28px;font-size:15px;
-  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
-.btnhell:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.24)}
-.btntuerkis{background:${CI.blau};color:#fff;border:none;border-radius:8px;padding:15px 26px;font-size:15px;
-  font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
+.btnhell{background:#fff;color:${CI.petrol};border:none;border-radius:3px;padding:15px 28px;font-size:14.5px;
+  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
+.btnhell:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.22)}
+.btntuerkis{background:${CI.blau};color:#fff;border:none;border-radius:3px;padding:15px 26px;font-size:14.5px;
+  font-weight:600;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
 .btntuerkis:hover{background:${CI.blauDunkel};transform:translateY(-2px)}
 
 /* ── Bewegung ── */
@@ -153,11 +164,15 @@ a{color:inherit;text-decoration:none}
   text-transform:uppercase;border-radius:5px;padding:4px 9px}
 .ank-link{color:${CI.orange};font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:gap .18s}
 .ank-link:hover{gap:11px}
-.hauptleiste{background:${CI.blau};color:#fff}
+.hauptleiste{background:${CI.petrol2};color:#fff;border-bottom:1px solid rgba(138,216,222,.18)}
 .hl-punkt{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;color:#fff;
-  padding:7px 10px;border-radius:6px;transition:background .16s}
-.hl-punkt:hover{background:rgba(255,255,255,.16)}
+  padding:7px 10px;border-radius:4px;transition:background .16s}
+.hl-punkt:hover{background:rgba(255,255,255,.12)}
 .navleiste{background:#fff;border-bottom:1px solid ${CI.linie};position:sticky;top:0;z-index:80}
+.logomarke{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;
+  border:1.5px solid ${CI.orange};border-radius:3px;position:relative}
+.logomarke:after{content:'';position:absolute;width:6px;height:6px;background:${CI.orange};border-radius:1px}
+.logowort{font-family:'Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.01em;color:#fff;white-space:nowrap}
 .minileiste{background:${CI.petrol};color:#9FB2C0;font-size:12.5px}
 .minileiste a:hover{color:#fff}
 .navroot{position:relative}
@@ -173,11 +188,11 @@ a{color:inherit;text-decoration:none}
 .navdrop.rechts{left:auto;right:-6px}
 .navitem{display:block;padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:${CI.text};
   transition:background .16s,padding-left .16s,color .16s}
-.navitem:hover{background:#EAF4FB;color:${CI.blau};padding-left:18px}
+.navitem:hover{background:#E7EFF3;color:${CI.blau};padding-left:18px}
 .navitem span{display:block;font-size:11.5px;font-weight:400;color:${CI.textZart};margin-top:2px}
 .navgroup{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${CI.textZart};padding:10px 12px 5px}
 .navtrenner{height:1px;background:${CI.linie};margin:6px 9px}
-.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid ${CI.linie};background:#EAF4FB;
+.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid ${CI.linie};background:#E7EFF3;
   color:${CI.blau};font-size:14px;font-weight:800;cursor:pointer;transition:all .18s}
 .avatar:hover{border-color:${CI.blau};transform:translateY(-2px)}
 
@@ -263,8 +278,9 @@ export function Kopf() {
       {/* Hauptleiste */}
       <div className="hauptleiste">
         <div className="wrap" style={{ display: 'flex', alignItems: 'center', gap: 20, minHeight: 56 }}>
-          <a href="/" style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.03em', color: '#fff', whiteSpace: 'nowrap' }}>
-            websitegenerator<span style={{ color: '#FFD79A' }}>24</span>
+          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <span className="logomarke" aria-hidden="true" />
+            <span className="logowort">websitegenerator<span style={{ color: CI.orangeHell }}>24</span></span>
           </a>
           <div style={{ flex: 1 }} />
           <a href={TELEFON_LINK} className="hl-punkt minihide"><i className="fa-solid fa-phone" aria-hidden="true" />{TELEFON}</a>

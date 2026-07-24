@@ -48,8 +48,9 @@ export function Fuss() {
       <div className="wrap">
         <div className="spalten2" style={{ display: 'grid', gridTemplateColumns: '1fr 2.7fr', gap: 40, paddingBottom: 42 }}>
           <div>
-            <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.04em', marginBottom: 12 }}>
-              websitegenerator<span style={{ color: CI.blau }}>24</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span className="logomarke" aria-hidden="true" />
+              <span className="logowort">websitegenerator<span style={{ color: CI.orangeHell }}>24</span></span>
             </div>
             <p style={{ fontSize: 13.5, color: '#9FB2C0', lineHeight: 1.7, maxWidth: 290, marginBottom: 18 }}>
               Website-Baukasten mit KI für kleine Betriebe. Angaben machen, Website erhalten,

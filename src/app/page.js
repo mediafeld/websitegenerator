@@ -88,8 +88,10 @@ export default function Startseite() {
         </div>
       </section>
 
-      {/* ═══ HERO ═══ */}
-      <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
+      {/* ═══ HERO — Zeichenbrett ═══ */}
+      <section className="band dunkelzone hero">
+        <div className="hero-raster" aria-hidden="true" />
+        <BauplanZeichnung />
         <div className="wrap" style={{ paddingTop: 60, paddingBottom: 58 }}>
           <Slider dauer={9500} folien={[
             <HeroFolie key="m" art="mieten" starten={starten} />,
@@ -518,7 +520,7 @@ export default function Startseite() {
                   <strong style={{ fontSize: 15.5 }}>Website ansehen &amp; anpassen</strong>
                 </div>
                 <div className="trichter-pfeil" aria-hidden="true"><i className="fa-solid fa-arrow-down" /></div>
-                <div className="trichter-kopf" style={{ borderColor: CI.blau, background: '#EAF4FB' }}>
+                <div className="trichter-kopf" style={{ borderColor: CI.blau, background: '#E7EFF3' }}>
                   <span className="trichter-nr" style={{ background: CI.blau }}>4</span>
                   <strong style={{ fontSize: 15.5 }}>Mieten oder kaufen — erst hier zahlen</strong>
                 </div>
@@ -557,6 +559,41 @@ export default function Startseite() {
 }
 
 // ── Hero-Folie: Mieten oder Kaufen ──
+// Signaturelement: die Website als Werkzeichnung, die sich selbst aufbaut —
+// statt eines Stockfotos zeigt der Hero, was websitegenerator24 tatsächlich tut.
+function BauplanZeichnung() {
+  return (
+    <svg className="bauplan-svg" viewBox="0 0 380 470" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g fill="none" stroke="#8AD8DE" strokeWidth="1.2" opacity="0.9">
+        <rect x="30" y="20" width="300" height="430" rx="2" className="bp-linie" style={{ animationDelay: '0ms' }} />
+        <rect x="30" y="20" width="300" height="52" rx="2" className="bp-linie" style={{ animationDelay: '180ms' }} />
+        <circle cx="52" cy="46" r="6" className="bp-linie" style={{ animationDelay: '260ms' }} />
+        <rect x="240" y="36" width="66" height="20" rx="2" className="bp-linie" style={{ animationDelay: '320ms' }} />
+        <rect x="52" y="96" width="256" height="120" rx="2" className="bp-linie" style={{ animationDelay: '400ms' }} />
+        <line x1="52" y1="96" x2="308" y2="216" className="bp-linie" style={{ animationDelay: '520ms' }} />
+        <line x1="308" y1="96" x2="52" y2="216" className="bp-linie" style={{ animationDelay: '560ms' }} />
+        <rect x="52" y="240" width="120" height="70" rx="2" className="bp-linie" style={{ animationDelay: '620ms' }} />
+        <rect x="188" y="240" width="120" height="70" rx="2" className="bp-linie" style={{ animationDelay: '680ms' }} />
+        <rect x="52" y="332" width="256" height="16" rx="2" className="bp-linie" style={{ animationDelay: '740ms' }} />
+        <rect x="52" y="358" width="180" height="10" rx="2" className="bp-linie" style={{ animationDelay: '780ms' }} />
+        <rect x="52" y="400" width="110" height="34" rx="2" className="bp-linie" style={{ animationDelay: '840ms' }} />
+      </g>
+      {/* Maßlinien */}
+      <g className="bp-mass" style={{ animationDelay: '1000ms' }}>
+        <line x1="18" y1="20" x2="18" y2="450" stroke="#8AD8DE" strokeWidth="1" opacity="0.5" />
+        <line x1="14" y1="20" x2="22" y2="20" stroke="#8AD8DE" strokeWidth="1" opacity="0.5" />
+        <line x1="14" y1="450" x2="22" y2="450" stroke="#8AD8DE" strokeWidth="1" opacity="0.5" />
+        <text x="10" y="238" fill="#8AD8DE" fontSize="9" fontFamily="Plexmono, monospace" opacity="0.75" transform="rotate(-90 10 238)">1 SEITE</text>
+      </g>
+      <g className="bp-mass" style={{ animationDelay: '1100ms' }} fontFamily="Plexmono, monospace" fontSize="9" fill="#8AD8DE" opacity="0.75">
+        <text x="52" y="230">↔ 256px · Hero</text>
+        <text x="188" y="330">2 Spalten</text>
+        <text x="52" y="450">CTA</text>
+      </g>
+    </svg>
+  )
+}
+
 function HeroFolie({ art, starten }) {
   const mieten = art === 'mieten'
   const punkte = mieten
@@ -634,48 +671,69 @@ function HeroFolie({ art, starten }) {
 }
 
 const CSS = `
-/* ══ DOMAINBAND — Herzstück ══ */
-.domainband{background:linear-gradient(94deg,${CI.orange},#FFAE33);padding:18px 0 20px}
+/* ══ DOMAINBAND — Herzstück, wie eine Eingabezeile am Zeichenbrett ══ */
+.domainband{background:${CI.petrol};padding:16px 0;border-bottom:1px solid rgba(138,216,222,.16);position:relative}
+.domainband:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(138,216,222,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(138,216,222,.09) 1px,transparent 1px);
+  background-size:26px 26px}
+.domainband>.wrap{position:relative}
 .db-innen{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
-.db-tlds{display:flex;gap:26px;flex-wrap:wrap}
-.db-tlds span{display:flex;flex-direction:column;align-items:center;color:#fff;line-height:1.25}
-.db-tlds b{font-size:16px;font-weight:700}
-.db-tlds em{font-style:normal;font-size:11.5px;opacity:.92}
-.db-feld{flex:1;min-width:330px;display:flex;align-items:center;gap:0;background:#fff;border-radius:99px;padding:5px 5px 5px 20px;
-  box-shadow:0 8px 24px rgba(0,0,0,.13)}
-.db-feld>i{color:${CI.textZart};font-size:15px;margin-right:12px}
-.db-feld input{flex:1;min-width:80px;border:none;outline:none;font-size:16px;font-weight:500;color:${CI.text};padding:12px 0;background:transparent}
-.db-feld button{background:${CI.petrol};color:#fff;border:none;border-radius:99px;padding:13px 24px;font-size:14.5px;
-  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;transition:background .18s}
-.db-feld button:hover{background:${CI.blau}}
-.db-ergebnis{margin-top:16px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
-.db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:8px;padding:11px 13px}
-.db-belegt{font-size:13px;color:${CI.textMatt};margin-top:8px}
+.db-tlds{display:flex;gap:22px;flex-wrap:wrap;font-family:'Plexmono',monospace}
+.db-tlds span{display:flex;flex-direction:column;align-items:flex-start;color:#fff;line-height:1.3}
+.db-tlds b{font-size:14.5px;font-weight:500;color:${CI.cyan}}
+.db-tlds em{font-style:normal;font-size:11px;opacity:.68}
+.db-feld{flex:1;min-width:330px;display:flex;align-items:center;gap:0;background:${CI.petrol2};border:1px solid rgba(138,216,222,.3);
+  border-radius:4px;padding:4px 4px 4px 18px}
+.db-feld:focus-within{border-color:${CI.cyan}}
+.db-feld>i{color:${CI.cyan};font-size:13px;margin-right:12px}
+.db-feld input{flex:1;min-width:80px;border:none;outline:none;font-size:15px;font-weight:500;color:#fff;padding:12px 0;
+  background:transparent;font-family:'Plexmono',monospace}
+.db-feld input::placeholder{color:rgba(255,255,255,.4)}
+.db-feld button{background:${CI.orange};color:#fff;border:none;border-radius:3px;padding:13px 22px;font-size:13.5px;
+  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;transition:background .18s}
+.db-feld button:hover{background:${CI.orangeHell}}
+.db-ergebnis{margin-top:14px;background:#fff;border-radius:5px;padding:16px 18px;box-shadow:0 14px 34px rgba(0,0,0,.28)}
+.db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:4px;padding:11px 13px}
+.db-belegt{font-size:13px;color:${CI.textMatt};margin-top:8px;font-family:'Plexmono',monospace}
 .db-hinweis{display:flex;gap:9px;font-size:12.5px;color:${CI.textMatt};margin-top:12px;padding-top:12px;border-top:1px solid ${CI.linie}}
 .db-hinweis i{color:${CI.blau};margin-top:2px}
-.treffer{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:8px;border-radius:10px;
-  background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s}
+.treffer{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:8px;border-radius:4px;
+  background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s;font-family:'Plexmono',monospace}
 .treffer:hover{border-color:${CI.gruen}}
-.treffer>i{color:${CI.gruen};font-size:16px}
-.treffer-erst{border-color:${CI.gruen};background:#F1FAF4}
-.tr-frei{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:${CI.gruen}}
-.tr-preis{font-size:13.5px;font-weight:700;color:${CI.text}}
+.treffer>i{color:${CI.gruen};font-size:15px}
+.treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
+.tr-frei{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
+.tr-preis{font-size:13px;font-weight:600;color:${CI.text}}
 
-/* ══ HERO ══ */
-.hgrid{display:grid;grid-template-columns:1.1fr 400px;gap:52px;align-items:center}
-.hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:.14em;
-  text-transform:uppercase;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
-  border-radius:99px;padding:9px 17px}
+/* ══ HERO — Zeichenbrett ══ */
+.hero{position:relative;overflow:hidden}
+.bauplan-svg{position:absolute;top:-10px;right:-30px;width:360px;height:auto;pointer-events:none;opacity:.9}
+.bp-linie{stroke-dasharray:900;stroke-dashoffset:900;animation:bpzeichnen 1.1s cubic-bezier(.2,.7,.3,1) forwards}
+.bp-mass{opacity:0;animation:bpeinblenden .5s ease forwards}
+@keyframes bpzeichnen{to{stroke-dashoffset:0}}
+@keyframes bpeinblenden{to{opacity:1}}
+@media(max-width:1320px){.bauplan-svg{display:none}}
+.hero-raster{position:absolute;inset:0;pointer-events:none;opacity:.55;
+  background-image:linear-gradient(rgba(138,216,222,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(138,216,222,.1) 1px,transparent 1px);
+  background-size:34px 34px;
+  mask-image:linear-gradient(180deg,#000 0%,transparent 78%);-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 78%)}
+.hgrid{display:grid;grid-template-columns:1.1fr 400px;gap:52px;align-items:center;position:relative}
+.hmarke{display:inline-flex;align-items:center;gap:10px;font-family:'Plexmono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;color:${CI.cyan};background:rgba(138,216,222,.09);border:1px solid rgba(138,216,222,.32);
+  border-radius:3px;padding:8px 15px}
 .hknoepfe{display:flex;gap:13px;flex-wrap:wrap}
 .btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.38);padding:16px 24px;font-size:15.5px}
 .btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
 
-/* Preiskasten im Hero */
-.hpreiskasten{background:#fff;border-radius:16px;padding:26px 24px;box-shadow:0 26px 60px rgba(0,0,0,.36);color:${CI.text}}
-.hpk-label{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:${CI.orange}}
-.hpk-zahl{display:flex;align-items:baseline;gap:6px;margin:6px 0 16px}
-.hpk-zahl span{font-size:56px;font-weight:700;letter-spacing:-.035em;line-height:1;color:${CI.text}}
-.hpk-zahl em{font-style:normal;font-size:24px;font-weight:700;color:${CI.textMatt}}
+/* Preiskasten im Hero — Datenblatt-Stil */
+.hpreiskasten{background:#fff;border-radius:5px;padding:26px 24px;box-shadow:0 26px 60px rgba(0,0,0,.4);color:${CI.text};position:relative}
+.hpreiskasten:before,.hpreiskasten:after{content:'';position:absolute;width:15px;height:15px;pointer-events:none}
+.hpreiskasten:before{top:-1px;left:-1px;border-top:2px solid ${CI.orange};border-left:2px solid ${CI.orange}}
+.hpreiskasten:after{bottom:-1px;right:-1px;border-bottom:2px solid ${CI.orange};border-right:2px solid ${CI.orange}}
+.hpk-label{font-family:'Plexmono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:${CI.orange}}
+.hpk-zahl{display:flex;align-items:baseline;gap:6px;margin:6px 0 16px;font-family:'Plexmono',monospace}
+.hpk-zahl span{font-size:52px;font-weight:500;letter-spacing:-.02em;line-height:1;color:${CI.text}}
+.hpk-zahl em{font-style:normal;font-size:22px;font-weight:500;color:${CI.textMatt}}
 .hpk-zeilen{display:flex;flex-direction:column;gap:11px;padding-bottom:18px;border-bottom:1px solid ${CI.linie}}
 .hpk-zeilen div{display:flex;flex-direction:column;gap:1px}
 .hpk-zeilen b{font-size:15px;font-weight:700;color:${CI.text}}
@@ -692,7 +750,7 @@ const CSS = `
 
 /* ══ Leistungskarten ══ */
 .lkarte{padding:28px 26px;height:100%}
-.lkarte i{font-size:19px;color:${CI.blau};background:#EAF4FB;width:48px;height:48px;border-radius:11px;
+.lkarte i{font-size:19px;color:${CI.blau};background:#E7EFF3;width:48px;height:48px;border-radius:11px;
   display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:all .26s}
 .lkarte:hover i{background:${CI.orange};color:#fff;transform:translateY(-4px) rotate(-8deg)}
 
@@ -720,7 +778,7 @@ const CSS = `
 .gw-an i{background:${CI.orange};color:#fff}
 .gw-an em{color:#A9C2D2}
 .gw-aus{background:#fff;color:${CI.text};border-color:${CI.linie}}
-.gw-aus i{background:#EAF4FB;color:${CI.blau}}
+.gw-aus i{background:#E7EFF3;color:${CI.blau}}
 .gw-aus em{color:${CI.textMatt}}
 .gw-aus:hover{border-color:${CI.orange};transform:translateY(-3px)}
 
@@ -765,7 +823,7 @@ const CSS = `
   letter-spacing:.1em;text-transform:uppercase;padding:7px 15px;border-radius:0 0 0 11px}
 .zahlweise{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;border-radius:99px;padding:7px 14px}
-.zw-mieten{color:${CI.blau};background:#EAF4FB;border:1px solid rgba(27,147,210,.3)}
+.zw-mieten{color:${CI.blau};background:#E7EFF3;border:1px solid rgba(27,147,210,.3)}
 .zw-kaufen{color:${CI.gruen};background:#F1FAF4;border:1px solid rgba(31,157,85,.3)}
 .preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:12px;padding:20px;margin-bottom:22px}
 .preiszeile{display:flex;align-items:baseline;gap:7px;font-size:15px;color:${CI.textMatt}}
