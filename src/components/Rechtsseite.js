@@ -5,11 +5,11 @@ import { Fuss } from '@/components/Fuss'
 // Gemeinsames Gerüst für Impressum / Datenschutz / AGB
 export function Rechtsseite({ titel, stand, kinder }) {
   return (
-    <div style={{ background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
+    <div className="arbeit" style={{ background: D.hellGrund, color: D.hellText, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
-        .rtext{font-size:15px;line-height:1.8;color:#41506B}
+        .rtext{font-size:15px;line-height:1.8;color:${D.hellText}}
         .rtext h2{font-family:'Inter Tight',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;color:${D.dunkel};margin:32px 0 10px}
         .rtext h3{font-weight:700;font-size:15.5px;color:${D.dunkel};margin:22px 0 6px}
         .rtext p{margin-bottom:12px}
@@ -31,7 +31,7 @@ export function Rechtsseite({ titel, stand, kinder }) {
       <section style={{ padding: '40px 0 76px' }}>
         <div className="wrap" style={{ maxWidth: 820 }}>
           <div className="karte rtext" style={{ padding: '30px 30px 36px' }}>{kinder}</div>
-          <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 16, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12.5, color: D.hellGrauHell, marginTop: 16, lineHeight: 1.6 }}>
             Gelb markierte Stellen musst du noch ausfüllen. Diese Texte sind Vorlagen und keine Rechtsberatung –
             lass sie vor dem Start prüfen.
           </p>

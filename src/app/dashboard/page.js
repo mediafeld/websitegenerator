@@ -43,7 +43,7 @@ export default function Dashboard() {
           <div className="kkarte" style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: projekte.length ? 20 : 6 }}>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <h2><i className="fa-solid fa-globe" style={{ color: D.blau, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Meine Websites</h2>
+                <h2><i className="fa-solid fa-globe" style={{ color: D.magenta, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Meine Websites</h2>
                 <p className="unter" style={{ marginBottom: 0 }}>
                   {projekte.length === 0 ? 'Noch keine Website angelegt.' : `${projekte.length} ${projekte.length === 1 ? 'Website' : 'Websites'}`}
                 </p>
@@ -54,10 +54,10 @@ export default function Dashboard() {
             </div>
 
             {projekte.length === 0 ? (
-              <div style={{ background: D.paper, border: `2px dashed ${D.linie}`, borderRadius: 14, padding: '42px 24px', textAlign: 'center' }}>
-                <i className="fa-solid fa-wand-magic-sparkles" style={{ fontSize: 28, color: D.blau, marginBottom: 14, display: 'block' }} aria-hidden="true" />
+              <div style={{ background: D.hellGrund, border: `2px dashed ${D.linie}`, borderRadius: 14, padding: '42px 24px', textAlign: 'center' }}>
+                <i className="fa-solid fa-wand-magic-sparkles" style={{ fontSize: 28, color: D.magenta, marginBottom: 14, display: 'block' }} aria-hidden="true" />
                 <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 7 }}>Einfach Website — in wenigen Schritten online</div>
-                <p style={{ fontSize: 14.5, color: D.grau, marginBottom: 20, maxWidth: 420, margin: '0 auto 20px', lineHeight: 1.65 }}>
+                <p style={{ fontSize: 14.5, color: D.hellGrau, marginBottom: 20, maxWidth: 420, margin: '0 auto 20px', lineHeight: 1.65 }}>
                   Angaben machen, Ergebnis ansehen, anpassen. Bezahlt wird erst, wenn dir die Website gefällt.
                 </p>
                 <button className="btnfest" onClick={() => router.push('/start')} style={{ padding: '13px 24px', fontSize: 14.5 }}>Jetzt starten</button>
@@ -67,13 +67,13 @@ export default function Dashboard() {
                 {projekte.map(p => {
                   const st = STATUS[p.status] || STATUS.entwurf
                   return (
-                    <div key={p.id} className="karte-hover" style={{ background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 13, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
+                    <div key={p.id} className="karte-hover" style={{ background: D.hellKarte, border: `1px solid ${D.hellLinie}`, borderRadius: 13, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
                       <div style={{ width: 44, height: 44, borderRadius: 11, background: D.blauZart, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <i className="fa-solid fa-globe" style={{ color: D.blau, fontSize: 17 }} aria-hidden="true" />
+                        <i className="fa-solid fa-globe" style={{ color: D.magenta, fontSize: 17 }} aria-hidden="true" />
                       </div>
                       <div style={{ flex: 1, minWidth: 160 }}>
                         <div style={{ fontSize: 15.5, fontWeight: 700 }}>{p.name}</div>
-                        <div style={{ fontSize: 12.5, color: D.grauHell }}>
+                        <div style={{ fontSize: 12.5, color: D.hellGrau }}>
                           {p.domain || 'noch keine Domain'}
                           {p.geaendert_am && ` · geändert ${new Date(p.geaendert_am).toLocaleDateString('de-DE')}`}
                         </div>
@@ -82,7 +82,7 @@ export default function Dashboard() {
                       <button className="btnfest" onClick={() => router.push(`/editor?projekt=${p.id}`)} style={{ padding: '10px 17px', fontSize: 13 }}>
                         <i className="fa-solid fa-pen" style={{ marginRight: 7 }} aria-hidden="true" />Bearbeiten
                       </button>
-                      <button onClick={() => loeschen(p.id, p.name)} title="Löschen" style={{ background: '#fff', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 9, padding: '10px 13px', cursor: 'pointer' }}>
+                      <button onClick={() => loeschen(p.id, p.name)} title="Löschen" style={{ background: D.hellKarte, color: '#DC2626', border: '1px solid #FECACA', borderRadius: 9, padding: '10px 13px', cursor: 'pointer' }}>
                         <i className="fa-solid fa-trash" aria-hidden="true" />
                       </button>
                     </div>
@@ -100,9 +100,9 @@ export default function Dashboard() {
               ['file-invoice', 'Rechnungen', 'Verträge, Rechnungen und Zahlungsmittel.', '/abrechnungen'],
             ].map(([ic, t, u, href]) => (
               <a key={href} href={href} className="kkarte karte-hover" style={{ padding: '22px 22px', display: 'block' }}>
-                <i className={`fa-solid fa-${ic}`} style={{ color: D.blau, fontSize: 19, marginBottom: 11, display: 'block' }} aria-hidden="true" />
+                <i className={`fa-solid fa-${ic}`} style={{ color: D.magenta, fontSize: 19, marginBottom: 11, display: 'block' }} aria-hidden="true" />
                 <strong style={{ fontSize: 16, display: 'block', marginBottom: 5 }}>{t}</strong>
-                <span style={{ fontSize: 13.8, color: D.grau, lineHeight: 1.6 }}>{u}</span>
+                <span style={{ fontSize: 13.8, color: D.hellGrau, lineHeight: 1.6 }}>{u}</span>
               </a>
             ))}
           </div>

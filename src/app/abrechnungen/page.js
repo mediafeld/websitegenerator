@@ -9,36 +9,36 @@ export default function Abrechnungen() {
       kinder={
         <>
           <div className="kkarte" style={{ marginBottom: 16 }}>
-            <h2><i className="fa-solid fa-file-contract" style={{ color: D.blau, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Laufende Verträge</h2>
+            <h2><i className="fa-solid fa-file-contract" style={{ color: D.magenta, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Laufende Verträge</h2>
             <p className="unter">Noch kein Vertrag aktiv. Solange du nichts kaufst oder mietest, entstehen keine Kosten.</p>
-            <div style={{ background: D.paper, borderRadius: 12, padding: '26px 22px', textAlign: 'center' }}>
+            <div style={{ background: D.hellGrund, borderRadius: 12, padding: '26px 22px', textAlign: 'center' }}>
               <a href="/preise" className="btnfest">Pakete ansehen</a>
             </div>
           </div>
 
           <div className="kkarte" style={{ marginBottom: 16 }}>
-            <h2><i className="fa-solid fa-file-invoice" style={{ color: D.blau, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Rechnungen</h2>
+            <h2><i className="fa-solid fa-file-invoice" style={{ color: D.magenta, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Rechnungen</h2>
             <p className="unter">Jede Rechnung kommt automatisch per E-Mail und liegt hier zum Herunterladen.</p>
-            <div style={{ border: `1px solid ${D.linie}`, borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{ border: `1px solid ${D.hellLinie}`, borderRadius: 12, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead><tr>{['Datum', 'Nummer', 'Leistung', 'Betrag', ''].map(h => (
-                  <th key={h} style={{ textAlign: 'left', fontSize: 10.5, letterSpacing: '.12em', textTransform: 'uppercase', color: D.grauHell, padding: '13px 15px', borderBottom: `1px solid ${D.linie}`, fontWeight: 700 }}>{h}</th>
+                  <th key={h} style={{ textAlign: 'left', fontSize: 10.5, letterSpacing: '.12em', textTransform: 'uppercase', color: D.hellGrau, padding: '13px 15px', borderBottom: `1px solid ${D.hellLinie}`, fontWeight: 700 }}>{h}</th>
                 ))}</tr></thead>
-                <tbody><tr><td colSpan={5} style={{ textAlign: 'center', color: D.grauHell, padding: '30px 15px', fontSize: 14 }}>Noch keine Rechnungen vorhanden.</td></tr></tbody>
+                <tbody><tr><td colSpan={5} style={{ textAlign: 'center', color: D.hellGrau, padding: '30px 15px', fontSize: 14 }}>Noch keine Rechnungen vorhanden.</td></tr></tbody>
               </table>
             </div>
           </div>
 
           <div className="kkarte" style={{ marginBottom: 16 }}>
-            <h2><i className="fa-solid fa-credit-card" style={{ color: D.blau, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Zahlungsmittel</h2>
+            <h2><i className="fa-solid fa-credit-card" style={{ color: D.magenta, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Zahlungsmittel</h2>
             <p className="unter">Kreditkarte, SEPA-Lastschrift, PayPal oder Rechnung. Die Zahlungsdaten liegen beim Zahlungsdienstleister, nicht bei uns.</p>
-            <div style={{ background: D.paper, borderRadius: 12, padding: '22px', fontSize: 14.5, color: D.grau, lineHeight: 1.65 }}>
+            <div style={{ background: D.hellGrund, borderRadius: 12, padding: '22px', fontSize: 14.5, color: D.hellGrau, lineHeight: 1.65 }}>
               Noch kein Zahlungsmittel hinterlegt. Du legst es beim ersten Kauf fest.
             </div>
           </div>
 
           <div className="kkarte">
-            <h2><i className="fa-solid fa-circle-info" style={{ color: D.blau, marginRight: 10, fontSize: 17 }} aria-hidden="true" />So wird abgerechnet</h2>
+            <h2><i className="fa-solid fa-circle-info" style={{ color: D.magenta, marginRight: 10, fontSize: 17 }} aria-hidden="true" />So wird abgerechnet</h2>
             <p className="unter">Damit es keine Überraschungen gibt.</p>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
@@ -49,13 +49,13 @@ export default function Abrechnungen() {
                 ['Zahlungsverzug', 'Bleibt eine Zahlung aus, erinnern wir zweimal. Erst danach wird die Website vorübergehend offline genommen.'],
               ].map(([t, u]) => (
                 <li key={t} style={{ display: 'flex', gap: 14 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: D.blau, background: D.blauZart, borderRadius: 8, padding: '4px 11px', whiteSpace: 'nowrap', height: 'fit-content', minWidth: 118, textAlign: 'center' }}>{t}</span>
-                  <span style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.72 }}>{u}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: D.magenta, background: D.blauZart, borderRadius: 8, padding: '4px 11px', whiteSpace: 'nowrap', height: 'fit-content', minWidth: 118, textAlign: 'center' }}>{t}</span>
+                  <span style={{ fontSize: 14.5, color: D.hellGrau, lineHeight: 1.72 }}>{u}</span>
                 </li>
               ))}
             </ul>
-            <p style={{ fontSize: 13.5, color: D.grauHell, marginTop: 20, lineHeight: 1.65 }}>
-              Fragen zur Rechnung? Schreib an <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.blau }}>{EMAIL}</a> — bitte mit Rechnungsnummer.
+            <p style={{ fontSize: 13.5, color: D.hellGrau, marginTop: 20, lineHeight: 1.65 }}>
+              Fragen zur Rechnung? Schreib an <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.magenta }}>{EMAIL}</a> — bitte mit Rechnungsnummer.
             </p>
           </div>
         </>

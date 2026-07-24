@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
 import { KontoLayout } from '@/components/KontoLayout'
+import { D } from '@/components/Kopf'
 
 const LEER = { zusatz: '', anrede: '', vorname: '', nachname: '', firma: '', rechtsform: '', strasse: '', plz: '', ort: '', land: 'Deutschland', telefon: '', ust_id: '', steuernummer: '', rechnung_mail: '' }
 
@@ -105,7 +106,7 @@ export default function Konto() {
 
           <div className="kkarte">
             <h2><i className="fa-solid fa-trash" style={{ color: '#DC2626', marginRight: 10, fontSize: 16 }} aria-hidden="true" />Konto löschen</h2>
-            <p style={{ fontSize: 14.5, color: '#57657E', lineHeight: 1.75, marginBottom: 16 }}>
+            <p style={{ fontSize: 14.5, color: D.hellGrau, lineHeight: 1.75, marginBottom: 16 }}>
               Mit dem Konto werden auch deine Websites gelöscht. Lade sie vorher herunter.
               Rechnungsdaten müssen wir gesetzlich zehn Jahre aufbewahren. Wir bestätigen die Löschung schriftlich.
             </p>

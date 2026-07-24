@@ -29,12 +29,12 @@ export default function Rechtstexte() {
                 ['Pflicht für alle', ['Vor- und Nachname', 'Vollständige Anschrift (kein Postfach)', 'Telefon oder Kontaktformular', 'E-Mail-Adresse', 'Rechtsform']],
                 ['Je nach Fall', ['Geschäftsbezeichnung', 'USt-IdNr. bei Umsatzsteuerpflicht', 'Registergericht und -nummer', 'Kammer und Berufsbezeichnung bei reglementierten Berufen', 'Aufsichtsbehörde bei Erlaubnispflicht', 'Verantwortlicher nach § 18 MStV bei redaktionellen Inhalten']],
               ].map(([t, liste]) => (
-                <div key={t} style={{ background: D.paper, borderRadius: 12, padding: 20 }}>
+                <div key={t} style={{ background: D.hellGrund, borderRadius: 12, padding: 20 }}>
                   <h3 style={{ fontSize: 15.5, fontWeight: 800, marginBottom: 12 }}>{t}</h3>
                   <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {liste.map(p => (
-                      <li key={p} style={{ display: 'flex', gap: 9, fontSize: 13.8, color: D.grau, lineHeight: 1.55 }}>
-                        <i className="fa-solid fa-check" style={{ color: D.blau, fontSize: 11, marginTop: 4 }} aria-hidden="true" />{p}
+                      <li key={p} style={{ display: 'flex', gap: 9, fontSize: 13.8, color: D.hellGrau, lineHeight: 1.55 }}>
+                        <i className="fa-solid fa-check" style={{ color: D.magenta, fontSize: 11, marginTop: 4 }} aria-hidden="true" />{p}
                       </li>
                     ))}
                   </ul>
@@ -56,8 +56,8 @@ export default function Rechtstexte() {
                 'Nimmst du an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teil?',
                 'Verkaufst du online (dann braucht es zusätzlich AGB und Widerrufsbelehrung)?',
               ].map(q => (
-                <li key={q} style={{ display: 'flex', gap: 11, fontSize: 14.2, color: '#41506B', lineHeight: 1.65 }}>
-                  <i className="fa-solid fa-circle-question" style={{ color: D.blau, fontSize: 14, marginTop: 3, flexShrink: 0 }} aria-hidden="true" />{q}
+                <li key={q} style={{ display: 'flex', gap: 11, fontSize: 14.2, color: D.hellText, lineHeight: 1.65 }}>
+                  <i className="fa-solid fa-circle-question" style={{ color: D.magenta, fontSize: 14, marginTop: 3, flexShrink: 0 }} aria-hidden="true" />{q}
                 </li>
               ))}
             </ul>
@@ -75,9 +75,9 @@ export default function Rechtstexte() {
                 ['share-nodes', 'Social-Media-Verweise', 'Einfache Links sind unkritisch, eingebettete Inhalte nicht.'],
               ].map(([ic, t, u]) => (
                 <li key={t} style={{ display: 'flex', gap: 12 }}>
-                  <i className={`fa-solid fa-${ic}`} style={{ color: D.blau, fontSize: 14, marginTop: 4, width: 18, textAlign: 'center' }} aria-hidden="true" />
+                  <i className={`fa-solid fa-${ic}`} style={{ color: D.magenta, fontSize: 14, marginTop: 4, width: 18, textAlign: 'center' }} aria-hidden="true" />
                   <span><strong style={{ fontSize: 14.5 }}>{t}</strong>
-                    <span style={{ fontSize: 14, color: D.grau, lineHeight: 1.65, display: 'block' }}>{u}</span></span>
+                    <span style={{ fontSize: 14, color: D.hellGrau, lineHeight: 1.65, display: 'block' }}>{u}</span></span>
                 </li>
               ))}
             </ul>
@@ -85,7 +85,7 @@ export default function Rechtstexte() {
 
           <div className="kkarte">
             <h2>Noch nicht verfügbar</h2>
-            <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.75, marginBottom: 16 }}>
+            <p style={{ fontSize: 14.5, color: D.hellGrau, lineHeight: 1.75, marginBottom: 16 }}>
               Das Erzeugen der Rechtstexte bauen wir gerade. Sobald es fertig ist, findest du hier
               Impressum, Datenschutzerklärung und Cookie-Hinweis zum Übernehmen — mit Hinweis auf
               fehlende Angaben.

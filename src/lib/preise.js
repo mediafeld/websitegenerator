@@ -23,6 +23,23 @@ export const KAUF = [
   },
 ]
 
+// Das Rundum-Paket – als Blickfang im Shop
+export const SORGENFREI = {
+  id: 'sorgenfrei', name: 'Keine-Sorgen-Paket', preis: 49.90, jahr: 499,
+  kurz: 'Alles inklusive · wir kümmern uns um jeden Schritt',
+  punkte: [
+    'Website nach deinen Angaben — Erstellung kostenlos',
+    'Domain inklusive, läuft auf deinen Namen',
+    'Hosting, SSL und Sicherungen inklusive',
+    'Bis zu 8 Unterseiten, 12 KI-Bilder',
+    '3 E-Mail-Postfächer mit Spam-Filter',
+    'Änderungen jederzeit selbst — oder wir machen sie',
+    '5 Änderungswünsche pro Monat durch uns',
+    'Support mit Vorrang, telefonisch erreichbar',
+    'Rechtstexte-Vorlagen für Impressum und Datenschutz',
+  ],
+}
+
 export const MIETE = [
   {
     id: 'start', name: 'Start', preis: 19.90, jahr: 199,

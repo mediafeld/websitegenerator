@@ -3,16 +3,16 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
-import { FONT_LINK } from '@/components/Seite'
-import { KAUF, MIETE, MIETE_BEDINGUNGEN } from '@/lib/preise'
+import { Chat } from '@/components/Chat'
+import { Reveal, Zaehler, Slider } from '@/components/Effekte'
+import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN } from '@/lib/preise'
 import { BRANCHEN_INFO, BILD } from '@/lib/branchenSeite'
 import { FRAGEN } from '@/lib/fragen'
-import { Chat } from '@/components/Chat'
 
 const SCHRITTE = [
-  { nr: '01', dauer: 'ca. 10 Min.', t: 'Angaben machen', u: 'Branche wählen, Firmendaten eintragen, Stil festlegen. Acht kurze Schritte, keine Technik.' },
-  { nr: '02', dauer: 'ca. 2 Min.', t: 'Website entsteht', u: 'Texte, Bilder und Aufbau werden für deine Branche erzeugt — aus deinen Angaben.' },
-  { nr: '03', dauer: 'dauerhaft', t: 'Selbst anpassen', u: 'Im Editor alles ändern, so oft du willst. Ohne Zusatzkosten, ohne Anruf.' },
+  { nr: '01', dauer: '10 Min.', t: 'Angaben machen', u: 'Branche wählen, Firmendaten eintragen, Stil festlegen. Acht kurze Schritte, keine Technik.', ic: 'clipboard-list' },
+  { nr: '02', dauer: '2 Min.', t: 'Website entsteht', u: 'Texte, Bilder und Aufbau werden für deine Branche erzeugt — aus deinen Angaben.', ic: 'wand-magic-sparkles' },
+  { nr: '03', dauer: 'dauerhaft', t: 'Selbst anpassen', u: 'Im Editor alles ändern, so oft du willst. Ohne Zusatzkosten, ohne Anruf.', ic: 'sliders' },
 ]
 
 export default function Startseite() {
@@ -21,7 +21,7 @@ export default function Startseite() {
   const [laedt, setLaedt] = useState(false)
   const [daten, setDaten] = useState(null)
   const [fehler, setFehler] = useState('')
-  const [modus, setModus] = useState('kaufen')
+  const [modus, setModus] = useState('mieten')
   const [branche, setBranche] = useState(BRANCHEN_INFO[0])
   const eingabeRef = useRef(null)
 
@@ -33,7 +33,7 @@ export default function Startseite() {
       const json = await res.json()
       if (json.error) setFehler(json.error); else setDaten(json)
     } catch {
-      setFehler('Die Domainprüfung ist gerade nicht erreichbar. Du kannst trotzdem starten und die Domain später wählen.')
+      setFehler('Die Domainprüfung ist gerade nicht erreichbar. Du kannst trotzdem starten und die Domain später festlegen.')
     }
     setLaedt(false)
   }
@@ -47,317 +47,397 @@ export default function Startseite() {
   const belegte = daten?.ergebnisse?.filter(e => !e.frei) || []
   const topFragen = FRAGEN.filter(q => q.top).slice(0, 6)
 
+  const folien = [
+    <Folie key="a" ober="Websiteerstellung kostenlos" zeile1="Erst sehen." zeile2="Dann zahlen."
+      text="Geh die Fragen durch und schau dir das Ergebnis an. Erst wenn dir die Website gefällt, entscheidest du — mieten oder kaufen."
+      bild="/platzhalter/laptop.svg" alt="Website auf einem Laptop" starten={starten} />,
+    <Folie key="b" ober="Mieten · ab 19,90 € inkl. MwSt." zeile1="Domain drin." zeile2="Sofort online."
+      text="Wir übernehmen Domain, Server, SSL und E-Mail. Du kümmerst dich um nichts und änderst trotzdem jederzeit selbst."
+      bild="/platzhalter/rakete.svg" alt="Rakete als Symbol für Start" starten={starten} knopf="Mieten ansehen" ziel="/preise#mieten" />,
+    <Folie key="c" ober="Kaufen · ab 89 € inkl. MwSt." zeile1="ZIP laden." zeile2="Dir gehört alles."
+      text="Kompletter Quellcode als HTML und CSS, sofort zum Herunterladen. Kein Abo, kein Anbieterzwang — betreibe sie, wo du willst."
+      bild="/platzhalter/schild.svg" alt="Schild als Symbol für Eigentum" starten={starten} knopf="Kauf ansehen" ziel="/preise#kaufen" />,
+  ]
+
   return (
-    <div style={{ background: D.paper, color: D.dunkel, fontFamily: '"Inter Tight",system-ui,sans-serif' }}>
+    <div style={{ background: D.dunkel, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', overflowX: 'hidden' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + CSS }} />
       <Kopf />
 
-      {/* ══ HERO ══ */}
-      <section id="domain" style={{ background: D.dunkel, color: '#fff', padding: '80px 0 72px', position: 'relative', overflow: 'hidden' }}>
-        <div aria-hidden="true" className="glanz" />
-        <div className="wrap" style={{ position: 'relative', maxWidth: 900, textAlign: 'center' }}>
-          <p className="eyebrow" style={{ color: D.blauHell, marginBottom: 18 }}>Website-Baukasten mit KI · Berlin</p>
-          <h1 className="display" style={{ fontSize: 'clamp(40px,7vw,82px)', marginBottom: 20 }}>
-            Websiteerstellung<br /><span style={{ color: D.blauHell }}>kostenlos.</span>
-          </h1>
-          <p style={{ fontSize: 18, color: '#B7C4D9', lineHeight: 1.65, maxWidth: 600, margin: '0 auto 40px' }}>
-            Erstellen kostet nichts — bezahlt wird erst, wenn deine Website online geht.
-            Für Handwerk, Gastronomie, Praxen und Dienstleister: Angaben machen, Ergebnis ansehen,
-            entscheiden. Miete ab 19,90 € im Monat inkl. MwSt., <strong style={{ color: '#fff' }}>Domain inklusive</strong> —
-            oder einmalig kaufen ab 89 € inkl. MwSt.
-          </p>
+      {/* ══════ HERO ══════ */}
+      <section id="domain" style={{ position: 'relative', overflow: 'hidden', paddingTop: 62, paddingBottom: 66 }}>
+        <div className="blase" style={{ width: 460, height: 460, background: D.magenta, top: -140, left: -110 }} aria-hidden="true" />
+        <div className="blase" style={{ width: 400, height: 400, background: D.lila, top: 40, right: -120, animationDelay: '-5s' }} aria-hidden="true" />
+        <div className="blase" style={{ width: 320, height: 320, background: D.tuerkis, bottom: -90, left: '38%', animationDelay: '-9s', opacity: .35 }} aria-hidden="true" />
+        <div className="gitter" aria-hidden="true" />
 
-          <div style={{ maxWidth: 650, margin: '0 auto' }}>
-            <div className="adresszeile" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 14, padding: '9px 10px 9px 17px', boxShadow: '0 22px 54px rgba(0,0,0,.3)' }}>
-              <span style={{ fontSize: 13, color: '#9AA6BC', whiteSpace: 'nowrap' }}>https://</span>
-              <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
-                placeholder="dein-firmenname" aria-label="Wunschname für die Domain"
-                style={{ flex: 1, minWidth: 110, border: 'none', outline: 'none', fontSize: 17, fontWeight: 600, color: D.dunkel, background: 'transparent', padding: '8px 0' }} />
-              {!name && <span className="caret" aria-hidden="true" />}
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#9AA6BC' }}>.de</span>
-              <button className="btnfest" onClick={pruefen} disabled={laedt} style={{ padding: '11px 20px', whiteSpace: 'nowrap', opacity: laedt ? .6 : 1 }}>
-                {laedt ? 'Prüft…' : 'Frei?'}
-              </button>
+        <div className="wrap" style={{ position: 'relative' }}>
+          <Slider folien={folien} />
+
+          {/* Domain-Leiste */}
+          <Reveal verzug={120}>
+            <div style={{ maxWidth: 700, margin: '48px auto 0' }}>
+              <p className="eyebrow" style={{ color: D.tuerkis, textAlign: 'center', marginBottom: 13 }}>
+                <i className="fa-solid fa-bolt" style={{ marginRight: 8 }} aria-hidden="true" />Ist dein Wunschname noch frei?
+              </p>
+              <div className="adresszeile">
+                <span style={{ fontSize: 13, color: D.grauHell, whiteSpace: 'nowrap' }}>https://</span>
+                <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
+                  placeholder="dein-firmenname" aria-label="Wunschname für die Domain"
+                  style={{ flex: 1, minWidth: 110, border: 'none', outline: 'none', fontSize: 18, fontWeight: 700, color: D.text, background: 'transparent', padding: '10px 0' }} />
+                {!name && <span className="caret" aria-hidden="true" />}
+                <span style={{ fontSize: 15, fontWeight: 700, color: D.grauHell }}>.de</span>
+                <button className="btnfest" onClick={pruefen} disabled={laedt} style={{ padding: '12px 22px', whiteSpace: 'nowrap', opacity: laedt ? .6 : 1 }}>
+                  {laedt ? 'Prüft…' : 'Prüfen'}
+                </button>
+              </div>
+              <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 12, textAlign: 'center' }}>
+                Amtliche Prüfung bei der Registrierungsstelle — kein Zwischenspeicher, keine Schätzung.
+              </p>
             </div>
-            <p style={{ fontSize: 12.5, color: '#8496AE', marginTop: 12 }}>Firmenname eingeben — wir prüfen live, welche Adresse noch frei ist.</p>
-          </div>
+          </Reveal>
 
-          {fehler && <div className="hinweis-dunkel">{fehler}</div>}
+          {fehler && <div className="hinweis">{fehler}</div>}
 
           {daten && (
-            <div style={{ maxWidth: 650, margin: '22px auto 0', textAlign: 'left' }}>
+            <div style={{ maxWidth: 700, margin: '24px auto 0' }}>
               {freie.map((e, i) => (
-                <div key={e.domain} className="treffer" style={{ background: i === 0 ? '#123726' : '#132234', borderColor: i === 0 ? '#1F6B44' : '#2A3C53', flexWrap: 'wrap' }}>
-                  <i className="fa-solid fa-circle-check" style={{ color: '#4ADE80', fontSize: 15 }} aria-hidden="true" />
-                  <span style={{ flex: 1, minWidth: 150, fontSize: 16, fontWeight: 700, color: '#fff' }}>{e.domain}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#4ADE80', whiteSpace: 'nowrap' }}>
-                    {e.sicher ? 'frei' : 'wahrscheinlich frei'}
-                  </span>
-                  <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '10px 16px', fontSize: 13, whiteSpace: 'nowrap' }}>
-                    Diese nehmen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 8 }} aria-hidden="true" />
+                <div key={e.domain} className="treffer" style={{ borderColor: i === 0 ? D.tuerkis : D.linie }}>
+                  <i className="fa-solid fa-circle-check" style={{ color: D.tuerkis, fontSize: 16 }} aria-hidden="true" />
+                  <span style={{ flex: 1, minWidth: 150, fontSize: 17, fontWeight: 800, letterSpacing: '-.02em' }}>{e.domain}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: D.tuerkis, letterSpacing: '.08em', textTransform: 'uppercase' }}>frei</span>
+                  <button className="btntuerkis" onClick={() => starten(e.domain)} style={{ padding: '11px 18px', fontSize: 13.5, whiteSpace: 'nowrap' }}>
+                    Diese nehmen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 9 }} aria-hidden="true" />
                   </button>
-                  <div style={{ flexBasis: '100%', display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
-                    <span style={{ fontSize: 12, color: '#4ADE80', background: 'rgba(74,222,128,.12)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 99, padding: '3px 11px', fontWeight: 600 }}>
-                      <i className="fa-solid fa-check" style={{ marginRight: 6 }} aria-hidden="true" />Bei Miete ab 19,90 €/Monat inklusive
-                    </span>
-                    <span style={{ fontSize: 12, color: '#8496AE' }}>
-                      Beim Kauf bringst du Domain und Hosting selbst mit.
-                      {!e.sicher && ' Diese Endung konnten wir nicht amtlich prüfen – wir bestätigen sie vor der Buchung.'}
-                    </span>
+                  <div style={{ flexBasis: '100%', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 6 }}>
+                    <span className="marke-tuerkis"><i className="fa-solid fa-check" style={{ marginRight: 6 }} aria-hidden="true" />Bei Miete inklusive</span>
+                    <span style={{ fontSize: 12.5, color: D.grauHell }}>Beim Kauf bringst du Domain und Hosting selbst mit.</span>
                   </div>
                 </div>
               ))}
-              {belegte.length > 0 && <p style={{ fontSize: 12.5, color: '#8496AE', marginTop: 10 }}>Schon vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
+              {belegte.length > 0 && (
+                <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 12 }}>
+                  <i className="fa-solid fa-circle-xmark" style={{ marginRight: 8, color: '#FF6B8A' }} aria-hidden="true" />
+                  Schon vergeben: {belegte.map(e => e.domain).join(' · ')}
+                </p>
+              )}
               {freie.length === 0 && (
-                <div style={{ padding: 16, borderRadius: 12, background: '#132234', border: '1px solid #2A3C53', fontSize: 13.5, color: '#B7C4D9', lineHeight: 1.6 }}>
+                <div className="karte" style={{ padding: 20, fontSize: 14, color: D.textMatt, lineHeight: 1.7 }}>
                   Alle geprüften Adressen sind belegt. Probier einen Zusatz — den Ort oder die Leistung, etwa „mueller-sanitaer-berlin".
-                  <div style={{ marginTop: 12 }}><button className="btnfest" onClick={() => starten(null)}>Ohne Domain starten</button></div>
+                  <div style={{ marginTop: 14 }}><button className="btnfest" onClick={() => starten(null)}>Ohne Domain starten</button></div>
                 </div>
               )}
             </div>
           )}
-
-          <div style={{ display: 'flex', gap: 22, justifyContent: 'center', flexWrap: 'wrap', marginTop: 42, fontSize: 13, color: '#8496AE' }}>
-            {[['eye', 'Erstellen und ansehen kostet nichts'], ['globe', 'Domain bei Miete inklusive'], ['pen-to-square', 'Änderungen immer kostenlos']].map(([ic, t]) => (
-              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <i className={`fa-solid fa-${ic}`} style={{ color: D.blauHell }} aria-hidden="true" />{t}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ══ ABLAUF ══ */}
-      <section style={{ background: D.weiss, borderBottom: `1px solid ${D.linie}`, padding: '72px 0' }}>
-        <div className="wrap">
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginBottom: 42 }}>
-            <div style={{ flex: 1, minWidth: 280 }}>
-              <p className="eyebrow" style={{ color: D.blau, marginBottom: 12 }}>Bereich 01 — Ablauf</p>
-              <h2 className="display" style={{ fontSize: 'clamp(27px,3.8vw,40px)', marginBottom: 12 }}>
-                Drei Schritte. <span className="leicht">Eine Sitzung.</span>
-              </h2>
-              <p style={{ fontSize: 15.5, color: D.grau, maxWidth: 520, lineHeight: 1.65 }}>
-                Vom leeren Blatt zur fertigen Website — ohne Termin und ohne Warteschleife.
-              </p>
-            </div>
-            <a href="/so-funktioniert-es" className="btnleer">Ablauf im Detail →</a>
-          </div>
+      {/* ══════ LAUFBAND ══════ */}
+      <div className="laufband" aria-hidden="true">
+        <div className="laufband-inhalt">
+          {[0, 1].map(k => (
+            <span key={k} style={{ display: 'flex', gap: 44 }}>
+              {['Erstellung kostenlos', 'Domain inklusive', 'Kein Abo beim Kauf', 'Änderungen gratis', 'ZIP zum Mitnehmen',
+                'Server in Deutschland', 'Ohne Cookie-Banner', 'Telefonisch erreichbar'].map(t => (
+                <span key={t} style={{ color: D.textMatt }}>
+                  <span className="neon" style={{ marginRight: 12, fontWeight: 900 }}>✦</span>{t}
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
 
-          <div className="ablauf">
+      {/* ══════ ZAHLEN ══════ */}
+      <section style={{ padding: '54px 0' }}>
+        <div className="wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 26, textAlign: 'center' }}>
+          {[[10, 'Minuten bis zur Website', ''], [10, 'Branchen mit eigenen Inhalten', ''], [15, 'Blocktypen im Editor', '+'], [0, 'Euro für Änderungen', '']].map(([z, t, s], i) => (
+            <Reveal key={t} verzug={i * 90}>
+              <div className="display neon" style={{ fontSize: 'clamp(40px,5.4vw,62px)' }}>
+                <Zaehler bis={z} suffix={s} />
+              </div>
+              <p style={{ fontSize: 13.5, color: D.textMatt, marginTop: 6 }}>{t}</p>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════ ABLAUF ══════ */}
+      <section style={{ padding: '58px 0', position: 'relative' }}>
+        <div className="wrap">
+          <Reveal>
+            <p className="eyebrow neon" style={{ marginBottom: 14 }}>01 — Ablauf</p>
+            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
+              Drei Schritte.<br /><span className="leicht">Eine Sitzung.</span>
+            </h2>
+            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 560, marginBottom: 40, lineHeight: 1.7 }}>
+              Vom leeren Blatt zur fertigen Website — ohne Termin und ohne Warteschleife.
+            </p>
+          </Reveal>
+          <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 22 }}>
             {SCHRITTE.map((s, i) => (
-              <div key={s.nr} className="stufe">
-                <div className="stufe-kopf">
-                  <span className="stufe-nr">{s.nr}</span>
-                  {i < SCHRITTE.length - 1 && <span className="stufe-linie" aria-hidden="true" />}
+              <Reveal key={s.nr} verzug={i * 120}>
+                <div className="karte karte-hover stufe" style={{ padding: '28px 26px', height: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <span className="stufe-ic"><i className={`fa-solid fa-${s.ic}`} aria-hidden="true" /></span>
+                    <span className="display neon" style={{ fontSize: 34, opacity: .85 }}>{s.nr}</span>
+                  </div>
+                  <span className="marke-tuerkis" style={{ marginBottom: 12, display: 'inline-block' }}>{s.dauer}</span>
+                  <h3 className="display" style={{ fontSize: 21, marginBottom: 10 }}>{s.t}</h3>
+                  <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.72 }}>{s.u}</p>
                 </div>
-                <span className="stufe-dauer">{s.dauer}</span>
-                <h3 className="display" style={{ fontSize: 19, margin: '14px 0 8px', letterSpacing: '-.025em' }}>{s.t}</h3>
-                <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.68 }}>{s.u}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
+          <Reveal verzug={200}><div style={{ marginTop: 24 }}><a href="/so-funktioniert-es" className="btnleer">Ablauf im Detail <i className="fa-solid fa-arrow-right" style={{ marginLeft: 8 }} aria-hidden="true" /></a></div></Reveal>
         </div>
       </section>
 
-      {/* ══ BILDSTREIFEN ══ */}
-      <section style={{ padding: '0 0 8px', background: D.weiss }}>
-        <div className="wrap" style={{ paddingTop: 0, paddingBottom: 60 }}>
-          <div className="bildstreifen">
-            {[
-              ['photo-1573497019940-1c28c88b4f3e', 'Beratung am Telefon'],
-              ['photo-1521737711867-e3b97375f902', 'Team im Gespräch'],
-              ['photo-1600880292089-90a7e086ee0c', 'Zusammenarbeit im Büro'],
-              ['photo-1556761175-b413da4baf72', 'Arbeit am Laptop'],
-            ].map(([id, alt], i) => (
-              <div key={id} className="bstreif" style={{ gridArea: `b${i + 1}` }}>
-                <div className="bstreif-bild" role="img" aria-label={alt}
-                  style={{ background: `#E6EBF4 center/cover url(${BILD(id, 800)})` }} />
-              </div>
+      {/* ══════ PREISE ══════ */}
+      <section id="preise" style={{ padding: '58px 0 66px', position: 'relative', overflow: 'hidden' }}>
+        <div className="blase" style={{ width: 420, height: 420, background: D.lila, top: 120, left: -160, opacity: .3 }} aria-hidden="true" />
+        <div className="wrap" style={{ position: 'relative' }}>
+          <Reveal>
+            <p className="eyebrow neon" style={{ marginBottom: 14 }}>02 — Preise</p>
+            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
+              Mieten oder <span className="leicht">kaufen.</span>
+            </h2>
+            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 620, marginBottom: 28, lineHeight: 1.7 }}>
+              Die Erstellung ist immer kostenlos. Danach entscheidest du:
+              <strong style={{ color: D.text }}> mieten und sofort online</strong> mit Domain, Hosting und E-Mail —
+              oder <strong style={{ color: D.text }}>einmalig kaufen</strong> und das ZIP herunterladen.
+            </p>
+
+            <div className="umschalter">
+              {[['mieten', 'globe', 'Mieten · monatlich'], ['kaufen', 'download', 'Kaufen · einmalig']].map(([id, ic, t]) => (
+                <button key={id} onClick={() => setModus(id)} className={modus === id ? 'um-an' : 'um-aus'}>
+                  <i className={`fa-solid fa-${ic}`} style={{ marginRight: 9 }} aria-hidden="true" />{t}
+                </button>
+              ))}
+            </div>
+          </Reveal>
+
+          <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 22, alignItems: 'stretch' }}>
+            {(modus === 'mieten' ? MIETE : KAUF).map((p, i) => (
+              <Reveal key={p.id} verzug={i * 110}>
+                <div className={`karte karte-hover preis ${p.beliebt ? 'preis-top' : ''}`}>
+                  {p.beliebt && <span className="eckband">TOP</span>}
+                  <h3 className="display" style={{ fontSize: 22, marginBottom: 5 }}>{p.name}</h3>
+                  <p style={{ fontSize: 13, color: D.grauHell, marginBottom: 22 }}>{p.kurz}</p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: D.textMatt, marginTop: 14 }}>ab</span>
+                    <span className="display neon" style={{ fontSize: 'clamp(46px,6vw,64px)' }}>{String(p.preis).replace('.', ',')}</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: D.textMatt, marginTop: 10 }}>€</span>
+                  </div>
+                  <p style={{ fontSize: 12.5, color: D.grauHell, margin: '2px 0 22px' }}>
+                    inkl. 19 % MwSt. · {modus === 'mieten' ? `pro Monat, oder ${p.jahr} € im Jahr` : 'einmalig, kein Abo'}
+                  </p>
+                  <ul className="pliste">
+                    {p.punkte.map(t => (
+                      <li key={t}><i className="fa-solid fa-check" aria-hidden="true" />{t}</li>
+                    ))}
+                  </ul>
+                  <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => starten(null)} style={{ width: '100%', padding: 14, marginTop: 22, fontSize: 14.5 }}>
+                    {modus === 'mieten' ? 'Jetzt mieten' : 'Jetzt kaufen'}
+                  </button>
+                  <p style={{ fontSize: 11.5, color: D.grauHell, textAlign: 'center', marginTop: 10 }}>
+                    Erstellung kostenlos — Zahlung erst am Ende
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
+
+          {/* Keine-Sorgen-Paket */}
+          <Reveal verzug={140}>
+            <div id="sorgenfrei" className="sorgenfrei">
+              <div className="sorgen-glanz" aria-hidden="true" />
+              <div className="sorgen-innen">
+                <div style={{ flex: '1 1 320px' }}>
+                  <span className="marke-gold"><i className="fa-solid fa-crown" style={{ marginRight: 8 }} aria-hidden="true" />Rundum betreut</span>
+                  <h3 className="display" style={{ fontSize: 'clamp(28px,4vw,42px)', margin: '16px 0 12px' }}>
+                    Keine-Sorgen-<span className="neon">Paket</span>
+                  </h3>
+                  <p style={{ fontSize: 15.5, color: D.textMatt, lineHeight: 1.72, marginBottom: 22, maxWidth: 460 }}>
+                    {SORGENFREI.kurz}. Für alle, die sich um gar nichts kümmern wollen —
+                    wir übernehmen auch die Änderungen für dich.
+                  </p>
+                  <ul className="pliste zweispaltig">
+                    {SORGENFREI.punkte.map(t => <li key={t}><i className="fa-solid fa-check" aria-hidden="true" />{t}</li>)}
+                  </ul>
+                </div>
+                <div className="sorgen-preis">
+                  <img src="/platzhalter/formen.svg" alt="" aria-hidden="true" style={{ width: 96, opacity: .8, marginBottom: 14 }} />
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, justifyContent: 'center' }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: D.textMatt, marginTop: 14 }}>ab</span>
+                    <span className="display neon" style={{ fontSize: 'clamp(48px,7vw,72px)' }}>{String(SORGENFREI.preis).replace('.', ',')}</span>
+                    <span style={{ fontSize: 24, fontWeight: 800, color: D.textMatt, marginTop: 10 }}>€</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: D.grauHell, marginBottom: 20 }}>
+                    inkl. 19 % MwSt. pro Monat<br />oder {SORGENFREI.jahr} € im Jahr
+                  </p>
+                  <button className="btnfest" onClick={() => starten(null)} style={{ width: '100%', padding: 15, fontSize: 15 }}>
+                    Sorgenfrei starten
+                  </button>
+                  <a href="/preise#sorgenfrei" className="btnleer" style={{ width: '100%', padding: 12, marginTop: 10, textAlign: 'center' }}>Was ist enthalten?</a>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="karte" style={{ marginTop: 22, padding: '20px 22px', display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+              <p style={{ fontSize: 13.5, color: D.textMatt, flex: 1, minWidth: 260, lineHeight: 1.7 }}>
+                {modus === 'mieten'
+                  ? `${MIETE_BEDINGUNGEN.laufzeit}, ${MIETE_BEDINGUNGEN.danach}. Einrichtung ${MIETE_BEDINGUNGEN.einrichtung}. ${MIETE_BEDINGUNGEN.jahresvorteil}`
+                  : 'Einmalzahlung, kein Abo. Domain und Hosting bringst du selbst mit — oder du mietest stattdessen.'}
+              </p>
+              <a href="/preise" className="btnleer">Alle Preise im Detail</a>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ══ VOLLE KONTROLLE ══ */}
-      <section style={{ padding: '72px 0' }}>
+      {/* ══════ KONTROLLE ══════ */}
+      <section style={{ padding: '58px 0', background: D.dunkel2, borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
         <div className="wrap">
-          <p className="eyebrow" style={{ color: D.blau, marginBottom: 12 }}>Bereich 02 — Kontrolle</p>
-          <h2 className="display" style={{ fontSize: 'clamp(27px,3.8vw,40px)', marginBottom: 12 }}>
-            Änderungen kosten nichts. <span className="leicht">Nie.</span>
-          </h2>
-          <p style={{ fontSize: 15.5, color: D.grau, maxWidth: 660, marginBottom: 34, lineHeight: 1.68 }}>
-            Bei einer Agentur kostet jede Textänderung Geld und Wartezeit. Hier änderst du selbst:
-            neue Öffnungszeiten, neue Preise, neues Teamfoto — einloggen, anklicken, ändern.
-            Das gilt beim Kauf genauso wie bei der Miete.
-          </p>
+          <Reveal>
+            <p className="eyebrow neon" style={{ marginBottom: 14 }}>03 — Kontrolle</p>
+            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
+              Änderungen kosten nichts. <span className="leicht">Nie.</span>
+            </h2>
+            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 660, marginBottom: 38, lineHeight: 1.7 }}>
+              Bei einer Agentur kostet jede Textänderung Geld und Wartezeit. Hier änderst du selbst:
+              neue Öffnungszeiten, neue Preise, neues Teamfoto — einloggen, anklicken, ändern.
+            </p>
+          </Reveal>
           <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
             {[
               ['euro-sign', 'Keine Stundensätze', 'Du zahlst nie für Textänderungen, neue Bilder oder zusätzliche Bereiche.'],
               ['bolt', 'Kein Warten', 'Keine E-Mail an die Agentur, keine Rückfrage, kein Termin. Änderung ist sofort live.'],
               ['key', 'Volle Kontrolle', 'Es ist deine Website. Du entscheidest, was drinsteht — und wann.'],
-            ].map(([ic, t, u]) => (
-              <div key={t} className="karte karte-hover ikarte" style={{ padding: '26px 24px' }}>
-                <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
-                <h3 className="display" style={{ fontSize: 18.5, marginBottom: 8 }}>{t}</h3>
-                <p style={{ fontSize: 14.2, color: D.grau, lineHeight: 1.68 }}>{u}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 20 }}><a href="/editor-funktionen" className="btnleer">Alle Editor-Funktionen →</a></div>
-        </div>
-      </section>
-
-      {/* ══ BRANCHEN ══ */}
-      <section style={{ background: D.weiss, borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}`, padding: '72px 0' }}>
-        <div className="wrap">
-          <p className="eyebrow" style={{ color: D.blau, marginBottom: 12 }}>Bereich 03 — Branchen</p>
-          <h2 className="display" style={{ fontSize: 'clamp(27px,3.8vw,40px)', marginBottom: 12 }}>
-            Inhalte, die zur <span className="leicht">Branche passen.</span>
-          </h2>
-          <p style={{ fontSize: 15.5, color: D.grau, maxWidth: 640, marginBottom: 28, lineHeight: 1.68 }}>
-            Ein Restaurant braucht eine Speisekarte, eine Kanzlei Rechtsgebiete, ein Handwerksbetrieb
-            den Notdienst.
-          </p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
-            {BRANCHEN_INFO.map(b => (
-              <button key={b.id} onClick={() => setBranche(b)} className="chip"
-                style={branche.id === b.id ? { background: D.blau, color: '#fff', borderColor: D.blau } : undefined}>{b.label}</button>
-            ))}
-          </div>
-          <div className="karte bkarte zweispalt" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', overflow: 'hidden' }}>
-            <div style={{ padding: '30px 28px' }}>
-              <h3 className="display" style={{ fontSize: 22, marginBottom: 12 }}>{branche.label}</h3>
-              <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.7, marginBottom: 20 }}>{branche.text}</p>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24 }}>
-                {branche.bereiche.map(t => (
-                  <li key={t} style={{ display: 'flex', gap: 10, fontSize: 14.5, color: '#41506B' }}>
-                    <span aria-hidden="true" style={{ color: D.blau, fontWeight: 800 }}>✓</span>{t}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button className="btnfest" onClick={() => starten(null)}>Für {branche.label} starten</button>
-                <a href="/branchen" className="btnleer">Alle Branchen</a>
-              </div>
-            </div>
-            <div style={{ minHeight: 330, overflow: 'hidden' }}>
-              <div className="bbild" role="img" aria-label={`Beispielbild ${branche.label}`}
-                style={{ width: '100%', height: '100%', minHeight: 330, background: `#E6EBF4 center/cover url(${BILD(branche.bild)})` }} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ PREISE ══ */}
-      <section style={{ padding: '72px 0' }}>
-        <div className="wrap">
-          <p className="eyebrow" style={{ color: D.blau, marginBottom: 12 }}>Bereich 04 — Preise</p>
-          <h2 className="display" style={{ fontSize: 'clamp(27px,3.8vw,40px)', marginBottom: 12 }}>
-            Kaufen oder <span className="leicht">mieten.</span>
-          </h2>
-          <p style={{ fontSize: 15.5, color: D.grau, maxWidth: 640, marginBottom: 26, lineHeight: 1.68 }}>
-            Kaufen heißt: einmal zahlen, alle Dateien gehören dir. Mieten heißt: monatlich zahlen,
-            Domain und Server laufen bei uns. Alle Preise inklusive 19 % Mehrwertsteuer.
-          </p>
-
-          <div className="umschalter">
-            {[['kaufen', 'Kaufen · einmalig'], ['mieten', 'Mieten · monatlich']].map(([id, t]) => (
-              <button key={id} onClick={() => setModus(id)} className={modus === id ? 'um-an' : 'um-aus'}>{t}</button>
-            ))}
-          </div>
-
-          <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, alignItems: 'stretch' }}>
-            {(modus === 'kaufen' ? KAUF : MIETE).map(p => (
-              <div key={p.id} className="karte karte-hover" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', position: 'relative', borderColor: p.beliebt ? D.blau : D.linie, borderWidth: p.beliebt ? 2 : 1 }}>
-                {p.beliebt && <span className="badge">Meist gewählt</span>}
-                <h3 className="display" style={{ fontSize: 20, marginBottom: 4 }}>{p.name}</h3>
-                <p style={{ fontSize: 13, color: D.grau, marginBottom: 18 }}>{p.kurz}</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span className="display" style={{ fontSize: 42 }}>{String(p.preis).replace('.', ',')}</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: D.grau }}>€</span>
-                  <span style={{ fontSize: 12.5, color: D.grauHell, marginLeft: 4 }}>{modus === 'kaufen' ? 'einmalig' : '/ Monat'}</span>
+            ].map(([ic, t, u], i) => (
+              <Reveal key={t} verzug={i * 110}>
+                <div className="karte karte-hover ikarte" style={{ padding: '28px 26px', height: '100%' }}>
+                  <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
+                  <h3 className="display" style={{ fontSize: 20, marginBottom: 9 }}>{t}</h3>
+                  <p style={{ fontSize: 14.3, color: D.textMatt, lineHeight: 1.72 }}>{u}</p>
                 </div>
-                <p style={{ fontSize: 11.5, color: D.grauHell, margin: '6px 0 20px' }}>
-                  inkl. 19 % MwSt.{modus === 'kaufen' ? ' · kein Abo' : ` · oder ${p.jahr} € im Jahr`}
-                </p>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24, flex: 1 }}>
-                  {p.punkte.map(t => (
-                    <li key={t} style={{ display: 'flex', gap: 9, fontSize: 14, color: '#41506B', lineHeight: 1.5 }}>
-                      <span aria-hidden="true" style={{ color: D.blau, fontWeight: 800 }}>✓</span>{t}
-                    </li>
-                  ))}
-                </ul>
-                <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => starten(null)} style={{ width: '100%', padding: 12 }}>Mit {p.name} starten</button>
-              </div>
+              </Reveal>
             ))}
           </div>
-
-          <div className="karte" style={{ marginTop: 20, padding: '18px 20px', display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-            <p style={{ fontSize: 13.5, color: D.grau, flex: 1, minWidth: 260, lineHeight: 1.65 }}>
-              {modus === 'mieten'
-                ? `${MIETE_BEDINGUNGEN.laufzeit}, ${MIETE_BEDINGUNGEN.danach}. Einrichtung ${MIETE_BEDINGUNGEN.einrichtung}. ${MIETE_BEDINGUNGEN.jahresvorteil}`
-                : 'Einmalzahlung, kein Abo. Domain und Hosting kannst du dazubuchen oder selbst mitbringen.'}
-            </p>
-            <a href="/preise" className="btnleer">Alle Preise im Detail →</a>
-          </div>
+          <Reveal verzug={200}><div style={{ marginTop: 24 }}><a href="/editor-funktionen" className="btnleer">Alle Editor-Funktionen <i className="fa-solid fa-arrow-right" style={{ marginLeft: 8 }} aria-hidden="true" /></a></div></Reveal>
         </div>
       </section>
 
-      {/* ══ VERTRAUEN ══ */}
-      <section style={{ background: D.dunkel, color: '#fff', padding: '58px 0' }}>
-        <div className="wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 30 }}>
-          {[
-            ['Telefonisch erreichbar', 'Kein Ticketsystem. Mo. bis Fr. von 9 bis 18 Uhr geht jemand ans Telefon.'],
-            ['Deine Dateien, dein Eigentum', 'Kompletter Quellcode als ZIP. Kein Anbieterzwang, kein Umzugsproblem.'],
-            ['Kein Abo im Kaufpreis', 'Beim Kauf zahlst du einmal. Monatliche Kosten nur bei Domain und Hosting.'],
-            ['Ohne Cookie-Banner', 'Wir setzen kein Tracking ein — nur technisch notwendige Speicherung.'],
-          ].map(([t, u]) => (
-            <div key={t}>
-              <h3 className="display" style={{ fontSize: 16.5, marginBottom: 8 }}>{t}</h3>
-              <p style={{ fontSize: 13.5, color: '#98A8C0', lineHeight: 1.66 }}>{u}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══ FRAGEN ══ */}
-      <section style={{ padding: '72px 0' }}>
-        <div className="wrap" style={{ maxWidth: 800 }}>
-          <p className="eyebrow" style={{ color: D.blau, marginBottom: 12 }}>Bereich 05 — Fragen</p>
-          <h2 className="display" style={{ fontSize: 'clamp(27px,3.8vw,40px)', marginBottom: 12 }}>
-            Häufige <span className="leicht">Fragen.</span>
-          </h2>
-          <p style={{ fontSize: 15.5, color: D.grau, marginBottom: 28, lineHeight: 1.65 }}>
-            Die wichtigsten hier — alle weiteren in der <a className="link-u" href="/hilfe" style={{ color: D.blau, fontWeight: 600 }}>Hilfe</a>.
-          </p>
-          {topFragen.map(q => (
-            <details key={q.f} className="karte frage" style={{ padding: '15px 18px', marginBottom: 9 }}>
-              <summary style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 15.5, fontWeight: 700 }}>
-                <span style={{ flex: 1 }}>{q.f}</span>
-                <span className="plus" aria-hidden="true" style={{ color: D.blau, fontSize: 19, fontWeight: 700, lineHeight: 1 }}>+</span>
-              </summary>
-              <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.78, marginTop: 12 }}>{q.a}</p>
-            </details>
-          ))}
-          <div style={{ marginTop: 16 }}><a href="/hilfe" className="btnleer">Alle Fragen &amp; Antworten →</a></div>
-        </div>
-      </section>
-
-      {/* ══ ABSCHLUSS ══ */}
-      <section style={{ padding: '4px 0 76px' }}>
+      {/* ══════ BRANCHEN ══════ */}
+      <section style={{ padding: '58px 0' }}>
         <div className="wrap">
-          <div style={{ background: `linear-gradient(140deg,${D.dunkel},${D.blau})`, borderRadius: 18, padding: '52px 34px', textAlign: 'center' }}>
-            <h2 className="display" style={{ fontSize: 'clamp(25px,3.6vw,36px)', color: '#fff', marginBottom: 12 }}>Schauen kostet nichts.</h2>
-            <p style={{ fontSize: 15.5, color: '#D3DEF8', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.65 }}>
-              Geh die Fragen durch und sieh dir das Ergebnis an. Bezahlt wird erst, wenn dir die Website gefällt.
+          <Reveal>
+            <p className="eyebrow neon" style={{ marginBottom: 14 }}>04 — Branchen</p>
+            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
+              Inhalte, die zur <span className="leicht">Branche passen.</span>
+            </h2>
+            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 620, marginBottom: 26, lineHeight: 1.7 }}>
+              Ein Restaurant braucht eine Speisekarte, eine Kanzlei Rechtsgebiete, ein Handwerksbetrieb den Notdienst.
             </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button className="btnhell" onClick={() => starten(null)}>Website erstellen</button>
-              <a href="/preise" style={{ border: '1px solid rgba(255,255,255,.35)', color: '#fff', borderRadius: 10, padding: '13px 24px', fontSize: 14.5, fontWeight: 700 }}>Preise ansehen</a>
+            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 24 }}>
+              {BRANCHEN_INFO.map(b => (
+                <button key={b.id} onClick={() => setBranche(b)} className={`chip ${branche.id === b.id ? 'chip-an' : ''}`}>{b.label}</button>
+              ))}
             </div>
-          </div>
+          </Reveal>
+          <Reveal>
+            <div className="karte bkarte zweispalt" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', overflow: 'hidden' }}>
+              <div style={{ padding: '34px 32px' }}>
+                <h3 className="display" style={{ fontSize: 26, marginBottom: 12 }}>{branche.label}</h3>
+                <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.75, marginBottom: 22 }}>{branche.text}</p>
+                <ul className="pliste">
+                  {branche.bereiche.map(t => <li key={t}><i className="fa-solid fa-check" aria-hidden="true" />{t}</li>)}
+                </ul>
+                <div style={{ display: 'flex', gap: 11, flexWrap: 'wrap', marginTop: 24 }}>
+                  <button className="btnfest" onClick={() => starten(null)}>Für {branche.label} starten</button>
+                  <a href="/branchen" className="btnleer">Alle Branchen</a>
+                </div>
+              </div>
+              <div style={{ minHeight: 340, overflow: 'hidden', position: 'relative' }}>
+                <div className="bbild" role="img" aria-label={`Beispielbild ${branche.label}`}
+                  style={{ width: '100%', height: '100%', minHeight: 340, background: `#1A0B40 center/cover url(${BILD(branche.bild)})` }} />
+                <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg,${D.karte} 0%,transparent 42%), linear-gradient(0deg,rgba(255,47,185,.22),rgba(34,231,208,.14))` }} />
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ══════ VERTRAUEN ══════ */}
+      <section style={{ padding: '58px 0', background: D.dunkel2, borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
+        <div className="wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 28 }}>
+          {[
+            ['headset', 'Telefonisch erreichbar', 'Kein Ticketsystem. Mo. bis Fr. von 9 bis 18 Uhr geht jemand ans Telefon.'],
+            ['file-zipper', 'Deine Dateien, dein Eigentum', 'Kompletter Quellcode als ZIP. Kein Anbieterzwang, kein Umzugsproblem.'],
+            ['server', 'Server in Deutschland', 'Datenbank in Frankfurt, Websites und Postfächer bei deutschen Anbietern.'],
+            ['cookie-bite', 'Ohne Cookie-Banner', 'Kein Tracking, keine Werbe-Cookies. Schriften und Icons liegen bei uns.'],
+          ].map(([ic, t, u], i) => (
+            <Reveal key={t} verzug={i * 90}>
+              <i className={`fa-solid fa-${ic}`} style={{ fontSize: 20, color: D.tuerkis, marginBottom: 13, display: 'block' }} aria-hidden="true" />
+              <h3 className="display" style={{ fontSize: 17.5, marginBottom: 8 }}>{t}</h3>
+              <p style={{ fontSize: 13.8, color: D.textMatt, lineHeight: 1.7 }}>{u}</p>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════ FRAGEN ══════ */}
+      <section style={{ padding: '58px 0' }}>
+        <div className="wrap" style={{ maxWidth: 820 }}>
+          <Reveal>
+            <p className="eyebrow neon" style={{ marginBottom: 14 }}>05 — Fragen</p>
+            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
+              Häufige <span className="leicht">Fragen.</span>
+            </h2>
+            <p style={{ fontSize: 16, color: D.textMatt, marginBottom: 28, lineHeight: 1.7 }}>
+              Die wichtigsten hier — alle weiteren in der <a className="link-u" href="/hilfe" style={{ color: D.tuerkis, fontWeight: 600 }}>Hilfe</a>.
+            </p>
+          </Reveal>
+          {topFragen.map((q, i) => (
+            <Reveal key={q.f} verzug={i * 60}>
+              <details className="karte frage">
+                <summary>
+                  <span style={{ flex: 1 }}>{q.f}</span>
+                  <span className="plus" aria-hidden="true">+</span>
+                </summary>
+                <p>{q.a}</p>
+              </details>
+            </Reveal>
+          ))}
+          <Reveal verzug={120}><div style={{ marginTop: 18 }}><a href="/hilfe" className="btnleer">Alle Fragen &amp; Antworten <i className="fa-solid fa-arrow-right" style={{ marginLeft: 8 }} aria-hidden="true" /></a></div></Reveal>
+        </div>
+      </section>
+
+      {/* ══════ ABSCHLUSS ══════ */}
+      <section style={{ padding: '10px 0 76px' }}>
+        <div className="wrap">
+          <Reveal>
+            <div className="abschluss">
+              <div className="gitter" style={{ height: '70%', opacity: .5 }} aria-hidden="true" />
+              <div style={{ position: 'relative' }}>
+                <img src="/platzhalter/rakete.svg" alt="" aria-hidden="true" style={{ width: 78, marginBottom: 18 }} />
+                <h2 className="display" style={{ fontSize: 'clamp(30px,4.6vw,50px)', marginBottom: 14 }}>
+                  Schauen kostet <span className="neon">nichts.</span>
+                </h2>
+                <p style={{ fontSize: 16, color: '#E4D8FF', maxWidth: 500, margin: '0 auto 30px', lineHeight: 1.7 }}>
+                  Geh die Fragen durch und sieh dir das Ergebnis an. Bezahlt wird erst, wenn dir die Website gefällt.
+                </p>
+                <div style={{ display: 'flex', gap: 13, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button className="btnhell" onClick={() => starten(null)}>Website erstellen</button>
+                  <a href="/preise" className="btnleer" style={{ borderColor: 'rgba(255,255,255,.4)' }}>Preise ansehen</a>
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -367,51 +447,111 @@ export default function Startseite() {
   )
 }
 
-const CSS = `
-.glanz{position:absolute;inset:0;background:radial-gradient(900px 430px at 50% -8%, ${D.blau}44, transparent 70%)}
-.caret{display:inline-block;width:2px;height:1.05em;background:${D.blau};vertical-align:-.16em;animation:blink 1.1s step-end infinite}
-@keyframes blink{50%{opacity:0}}
-.hinweis-dunkel{max-width:650px;margin:20px auto 0;padding:14px 16px;text-align:left;font-size:13.5px;color:#FDE68A;background:#1C2E44;border:1px solid #33465F;border-radius:12px;line-height:1.55}
-.treffer{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:8px;border-radius:12px;border:1px solid;transition:transform .16s}
-.treffer:hover{transform:translateX(3px)}
-.chip{background:#fff;border:1px solid ${D.linie};border-radius:99px;padding:9px 15px;font-size:13px;font-weight:600;color:${D.grau};cursor:pointer;transition:all .16s}
-.chip:hover{border-color:${D.blau};color:${D.blau};transform:translateY(-1px)}
-.bkarte{transition:box-shadow .2s}
-.bbild{transition:transform .6s cubic-bezier(.2,.7,.3,1)}
-.bkarte:hover .bbild{transform:scale(1.05)}
-.frage summary{cursor:pointer;list-style:none}
-.frage summary::-webkit-details-marker{display:none}
-.frage{transition:border-color .16s,box-shadow .16s}
-.frage:hover{border-color:${D.blau};box-shadow:0 6px 20px rgba(10,24,36,.07)}
-.frage[open]{border-color:${D.blau}}
-.frage[open] .plus{transform:rotate(45deg)}
-.plus{transition:transform .2s;display:inline-block}
-.ikarte i{font-size:20px;color:${D.blau};background:${D.blauZart};width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;transition:transform .22s cubic-bezier(.2,.7,.3,1),background .18s}
-.ikarte:hover i{transform:scale(1.1) rotate(-6deg);background:${D.blau};color:#fff}
-.badge{position:absolute;top:-11px;left:22px;background:${D.blau};color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 11px;border-radius:99px}
-.umschalter{display:inline-flex;background:${D.weiss};border:1px solid ${D.linie};border-radius:11px;padding:4px;margin-bottom:30px}
-.um-an,.um-aus{border:none;border-radius:8px;padding:10px 19px;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .16s}
-.um-an{background:${D.blau};color:#fff}
-.um-aus{background:transparent;color:${D.grau}}
-.um-aus:hover{color:${D.dunkel}}
-
-/* Ablauf-Stufen */
-.ablauf{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
-.stufe{position:relative}
-.stufe-kopf{display:flex;align-items:center;gap:12px;margin-bottom:4px}
-.stufe-nr{width:48px;height:48px;flex-shrink:0;border-radius:14px;background:${D.blau};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;letter-spacing:-.02em;box-shadow:0 8px 22px rgba(29,78,216,.28);transition:transform .22s cubic-bezier(.2,.7,.3,1)}
-.stufe:hover .stufe-nr{transform:scale(1.08) rotate(-4deg)}
-.stufe-linie{flex:1;height:2px;background:linear-gradient(90deg,${D.blau}55,${D.linie})}
-.stufe-dauer{font-size:11.5px;font-weight:700;color:${D.blau};background:${D.blauZart};border-radius:99px;padding:3px 10px}
-@media(max-width:860px){
-  .ablauf{grid-template-columns:1fr}
-  .stufe-linie{display:none}
-  .zweispalt{grid-template-columns:1fr !important}
+// ── Hero-Folie ──
+function Folie({ ober, zeile1, zeile2, text, bild, alt, starten, knopf, ziel }) {
+  return (
+    <div className="folie">
+      <div>
+        <span className="marke-neon">{ober}</span>
+        <h1 className="display" style={{ fontSize: 'clamp(44px,8vw,96px)', margin: '20px 0 20px' }}>
+          {zeile1}<br /><span className="neon">{zeile2}</span>
+        </h1>
+        <p style={{ fontSize: 17.5, color: D.textMatt, lineHeight: 1.7, maxWidth: 520, marginBottom: 32 }}>{text}</p>
+        <div style={{ display: 'flex', gap: 13, flexWrap: 'wrap' }}>
+          <button className="btnfest" onClick={() => starten(null)} style={{ padding: '15px 28px', fontSize: 15.5 }}>
+            Kostenlos erstellen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 10 }} aria-hidden="true" />
+          </button>
+          {knopf && <a href={ziel} className="btnleer" style={{ padding: '15px 24px', fontSize: 15 }}>{knopf}</a>}
+        </div>
+      </div>
+      <div className="folie-bild">
+        <img src={bild} alt={alt} style={{ width: '100%', maxWidth: 440 }} />
+      </div>
+    </div>
+  )
 }
-@media(max-width:760px){.adresszeile{flex-wrap:wrap}}
-.bildstreifen{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-template-rows:150px 150px;gap:14px;grid-template-areas:'b1 b2 b3' 'b1 b4 b4'}
-.bstreif{border-radius:16px;overflow:hidden}
-.bstreif-bild{width:100%;height:100%;transition:transform .6s cubic-bezier(.2,.7,.3,1);filter:saturate(.95)}
-.bstreif:hover .bstreif-bild{transform:scale(1.06);filter:saturate(1.05)}
-@media(max-width:760px){.bildstreifen{grid-template-columns:1fr 1fr;grid-template-rows:130px 130px;grid-template-areas:'b1 b2' 'b3 b4'}}
+
+const CSS = `
+.folie{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;min-height:430px}
+.folie-bild{display:flex;justify-content:center;animation:wippen 7s ease-in-out infinite}
+@keyframes wippen{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-16px) rotate(1.5deg)}}
+.marke-neon{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
+  color:${D.tuerkis};border:1px solid ${D.tuerkis}55;background:rgba(34,231,208,.09);border-radius:99px;padding:7px 15px}
+.marke-tuerkis{display:inline-block;font-size:11.5px;font-weight:800;color:${D.tuerkis};background:rgba(34,231,208,.1);
+  border:1px solid rgba(34,231,208,.32);border-radius:99px;padding:4px 12px}
+.marke-gold{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:${D.gold};background:rgba(255,177,61,.12);border:1px solid rgba(255,177,61,.4);border-radius:99px;padding:6px 14px}
+
+.adresszeile{display:flex;align-items:center;gap:11px;background:${D.karte};border:1.5px solid ${D.linie};
+  border-radius:16px;padding:10px 11px 10px 19px;box-shadow:0 0 0 1px rgba(255,47,185,.12),0 22px 60px rgba(0,0,0,.5);transition:border-color .2s,box-shadow .2s}
+.adresszeile:focus-within{border-color:${D.magenta};box-shadow:0 0 0 4px rgba(255,47,185,.16),0 22px 60px rgba(0,0,0,.5)}
+.caret{display:inline-block;width:2px;height:1.05em;background:${D.magenta};vertical-align:-.16em;animation:blink 1.1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.hinweis{max-width:700px;margin:22px auto 0;padding:15px 17px;font-size:13.5px;color:${D.gold};
+  background:rgba(255,177,61,.08);border:1px solid rgba(255,177,61,.3);border-radius:13px;line-height:1.6}
+.treffer{display:flex;align-items:center;gap:13px;padding:16px 18px;margin-bottom:10px;border-radius:14px;
+  background:${D.karte};border:1.5px solid;flex-wrap:wrap;transition:transform .2s,box-shadow .2s}
+.treffer:hover{transform:translateX(4px);box-shadow:0 0 30px rgba(34,231,208,.18)}
+
+.stufe-ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,${D.magenta},${D.lila});color:#fff;font-size:19px;
+  box-shadow:0 8px 26px rgba(255,47,185,.36);transition:transform .24s cubic-bezier(.2,.7,.3,1)}
+.stufe:hover .stufe-ic{transform:scale(1.12) rotate(-8deg)}
+.ikarte i{font-size:21px;color:${D.tuerkis};background:rgba(34,231,208,.1);border:1px solid rgba(34,231,208,.28);
+  width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+  transition:transform .24s cubic-bezier(.2,.7,.3,1),background .2s,color .2s}
+.ikarte:hover i{transform:scale(1.12) rotate(-8deg);background:${D.tuerkis};color:#04121A}
+
+.chip{background:${D.karte};border:1px solid ${D.linie};border-radius:99px;padding:10px 17px;font-size:13px;
+  font-weight:600;color:${D.textMatt};cursor:pointer;transition:all .18s}
+.chip:hover{border-color:${D.tuerkis};color:${D.tuerkis};transform:translateY(-2px)}
+.chip-an{background:linear-gradient(96deg,${D.magenta},${D.lila});color:#fff;border-color:transparent;box-shadow:0 8px 24px rgba(255,47,185,.35)}
+.bbild{transition:transform .8s cubic-bezier(.2,.7,.3,1)}
+.bkarte:hover .bbild{transform:scale(1.07)}
+
+.umschalter{display:inline-flex;background:${D.karte};border:1px solid ${D.linie};border-radius:14px;padding:5px;margin-bottom:32px;flex-wrap:wrap}
+.um-an,.um-aus{border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s}
+.um-an{background:linear-gradient(96deg,${D.magenta},${D.lila});color:#fff;box-shadow:0 8px 24px rgba(255,47,185,.35)}
+.um-aus{background:transparent;color:${D.textMatt}}
+.um-aus:hover{color:${D.text}}
+
+.preis{padding:32px 28px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden}
+.preis-top{border-color:${D.magenta};box-shadow:0 0 0 1px ${D.magenta}44,0 18px 46px rgba(255,47,185,.2)}
+.eckband{position:absolute;top:16px;right:-38px;width:130px;text-align:center;transform:rotate(45deg);
+  background:linear-gradient(96deg,${D.gold},${D.magenta});color:#1A0630;font-size:11px;font-weight:900;
+  letter-spacing:.14em;padding:5px 0}
+.pliste{list-style:none;display:flex;flex-direction:column;gap:11px;flex:1}
+.pliste li{display:flex;gap:11px;font-size:14px;color:${D.text};line-height:1.55;opacity:.92}
+.pliste li i{color:${D.tuerkis};font-size:11px;margin-top:5px;flex-shrink:0}
+.zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+
+.sorgenfrei{position:relative;margin-top:26px;border-radius:22px;overflow:hidden;
+  background:linear-gradient(140deg,#1B0A46,#2A0C55 55%,#0E2A3C);border:1.5px solid rgba(255,177,61,.34)}
+.sorgen-glanz{position:absolute;inset:0;background:radial-gradient(700px 300px at 88% 0%,rgba(255,177,61,.2),transparent 65%)}
+.sorgen-innen{position:relative;display:flex;gap:34px;padding:38px 34px;flex-wrap:wrap;align-items:center}
+.sorgen-preis{flex:0 0 268px;text-align:center;background:rgba(11,4,32,.55);border:1px solid ${D.linie};
+  border-radius:18px;padding:26px 24px}
+
+.frage{padding:17px 20px;margin-bottom:10px;transition:border-color .18s,box-shadow .18s}
+.frage summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;font-size:16px;font-weight:700}
+.frage summary::-webkit-details-marker{display:none}
+.frage:hover{border-color:${D.tuerkis}}
+.frage[open]{border-color:${D.magenta}}
+.frage[open] .plus{transform:rotate(45deg)}
+.plus{transition:transform .22s;display:inline-block;color:${D.magenta};font-size:21px;font-weight:700;line-height:1}
+.frage p{font-size:14.8px;color:${D.textMatt};line-height:1.82;margin-top:14px}
+
+.abschluss{position:relative;overflow:hidden;border-radius:24px;padding:56px 34px;text-align:center;
+  background:linear-gradient(140deg,#2B0B5A,#5B1090 48%,#0B3C4A);border:1px solid rgba(255,255,255,.14)}
+
+@media(max-width:900px){
+  .folie{grid-template-columns:1fr;gap:26px;text-align:center;min-height:0}
+  .folie-bild img{max-width:280px}
+  .folie .marke-neon{margin:0 auto}
+  .folie p{margin-left:auto;margin-right:auto}
+  .folie>div>div{justify-content:center}
+  .zweispalt{grid-template-columns:1fr !important}
+  .zweispaltig{grid-template-columns:1fr}
+}
+@media(max-width:780px){.adresszeile{flex-wrap:wrap}.sorgen-preis{flex:1 1 100%}}
 `
