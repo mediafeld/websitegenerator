@@ -1,70 +1,58 @@
-/* Lokal ausgeliefert – keine Verbindung zu Google Fonts (DSGVO) */
-
-/* IBM Plex Sans – Fließtext */
+/* Roboto – lokal ausgeliefert, keine Verbindung zu Google (DSGVO).
+   Einzige Schriftart der Seite, volle Schnittbreite 200–900. */
 @font-face {
-  font-family: 'Plex';
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url(/schrift/roboto-200.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(/schrift/roboto-300.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Roboto';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/schrift/ibmplexsans-400.woff2) format('woff2');
+  src: url(/schrift/roboto-400.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Plex';
+  font-family: 'Roboto';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/schrift/ibmplexsans-500.woff2) format('woff2');
+  src: url(/schrift/roboto-500.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Plex';
+  font-family: 'Roboto';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url(/schrift/ibmplexsans-600.woff2) format('woff2');
+  src: url(/schrift/roboto-600.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Plex';
+  font-family: 'Roboto';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url(/schrift/ibmplexsans-700.woff2) format('woff2');
-}
-
-/* Space Grotesk – Überschriften */
-@font-face {
-  font-family: 'Grotesk';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url(/schrift/spacegrotesk-500.woff2) format('woff2');
+  src: url(/schrift/roboto-700.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Grotesk';
+  font-family: 'Roboto';
   font-style: normal;
-  font-weight: 600;
+  font-weight: 800;
   font-display: swap;
-  src: url(/schrift/spacegrotesk-600.woff2) format('woff2');
+  src: url(/schrift/roboto-800.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Grotesk';
+  font-family: 'Roboto';
   font-style: normal;
-  font-weight: 700;
+  font-weight: 900;
   font-display: swap;
-  src: url(/schrift/spacegrotesk-700.woff2) format('woff2');
-}
-
-/* IBM Plex Mono – Preise, Labels, technische Werte */
-@font-face {
-  font-family: 'Plexmono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(/schrift/ibmplexmono-400.woff2) format('woff2');
-}
-@font-face {
-  font-family: 'Plexmono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url(/schrift/ibmplexmono-500.woff2) format('woff2');
+  src: url(/schrift/roboto-900.woff2) format('woff2');
 }

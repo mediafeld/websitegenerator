@@ -43,14 +43,13 @@ export function Fuss() {
         .fusslink{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#C7D6E0;transition:all .18s}
         .fusslink i{font-size:11px;color:#5B7A8F;width:13px;text-align:center;transition:color .18s}
         .fusslink:hover{color:#fff;padding-left:4px}
-        .fusslink:hover i{color:#F59200}
+        .fusslink:hover i{color:#6FC3EF}
       ` }} />
       <div className="wrap">
         <div className="spalten2" style={{ display: 'grid', gridTemplateColumns: '1fr 2.7fr', gap: 40, paddingBottom: 42 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <span className="logomarke" aria-hidden="true" />
-              <span className="logowort">websitegenerator<span style={{ color: CI.orangeHell }}>24</span></span>
+            <div className="logowort" style={{ marginBottom: 14, fontSize: 19 }}>
+              websitegenerator<span style={{ color: CI.blau }}>24</span>
             </div>
             <p style={{ fontSize: 13.5, color: '#9FB2C0', lineHeight: 1.7, maxWidth: 290, marginBottom: 18 }}>
               Website-Baukasten mit KI für kleine Betriebe. Angaben machen, Website erhalten,

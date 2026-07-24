@@ -4,28 +4,27 @@ import { useRouter } from 'next/navigation'
 import { aktuellerNutzer } from '@/lib/projekte'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 
-// ══ CI websitegenerator24 — „Bauplan“ ══
-// Gestaltungsidee: technische Zeichnung / Bauplan. Websites werden hier nicht
-// dekoriert, sie werden entworfen — wie eine Werkzeichnung, bevor gebaut wird.
-// Nur diese Farben werden verwendet.
+// ══ CI websitegenerator24 — angelehnt an mediafeld.de ══
+// Farbwelt bewusst schmal gehalten: Blau, Schwarzblau, Weiß, Hellgrau.
+// „orange" bleibt als Token für Abwärtskompatibilität bestehen, ist aber
+// bewusst auf einen zweiten Blauton gelegt — kein Fremdfarbton in der CI.
 export const CI = {
-  petrol: '#111C27',      // Bauplan-Tinte, dunkler Grund
-  petrol2: '#17293A',     // dunkel, eine Stufe heller (Panels)
-  blau: '#2E7EB3',        // Bauplanblau – Primärfarbe
-  blauDunkel: '#23648F',  // Akzent gedrückt
-  stahl: '#4C7593',       // Zwischenton
-  cyan: '#8AD8DE',        // Rasterlinie / Leuchtakzent auf Dunkel
+  petrol: '#0A1824',      // mediafeld-Navy, Grundfarbe dunkel
+  petrol2: '#0F2436',     // dunkel, eine Stufe heller
+  blau: '#1B93D2',        // Signalblau – Haupt-Handlungsfarbe
+  blauDunkel: '#157AB0',  // Akzent gedrückt
+  stahl: '#2D5A7B',       // Zwischenton
   weiss: '#FFFFFF',
-  grau: '#F2F4F3',        // helle Fläche
-  linie: '#DEE3E1',
-  text: '#111C27',
-  textMatt: '#57646C',
-  textZart: '#8996A0',
-  geist: '#EEF1F0',       // Geister-Überschrift
-  orange: '#E1591F',      // Werkzeug-Orange – Handlungsaufrufe, Hervorhebungen
-  orangeHell: '#EE7449',
-  orangeZart: '#FCE7DD',
-  gruen: '#2E9D63',       // Bestätigungen
+  grau: '#F1F4F6',        // helle Fläche
+  linie: '#E1E7EB',
+  text: '#0A1824',
+  textMatt: '#5A6B7A',
+  textZart: '#8A99A6',
+  geist: '#EEF2F5',       // Geister-Überschrift
+  orange: '#2FA8E8',       // zweiter, hellerer Blauton – Auszeichnungen, Ribbons
+  orangeHell: '#54BCEF',
+  orangeZart: '#E7F4FC',
+  gruen: '#1F9D55',       // Bestätigungen
 }
 
 export const D = {
@@ -51,50 +50,48 @@ export const EMAIL = 'info@websitegenerator24.de'
 
 export const BASIS_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#fff;color:${CI.text};font-family:'Plex',system-ui,sans-serif}
+body{background:#fff;color:${CI.text};font-family:'Roboto',system-ui,sans-serif}
 .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 button{font-family:inherit}
 input,select,textarea{font-family:inherit}
 a{color:inherit;text-decoration:none}
 .link-u{transition:color .15s}
 .link-u:hover{text-decoration:underline;color:${CI.blau}}
-:focus-visible{outline:2px solid ${CI.orange};outline-offset:3px}
-::selection{background:${CI.orange};color:#fff}
+:focus-visible{outline:2px solid ${CI.blau};outline-offset:3px}
+::selection{background:${CI.blau};color:#fff}
 
-/* ── Typografie: Grotesk für Überschriften, Plex für Fließtext ── */
-.t1{font-family:'Grotesk',sans-serif;font-size:clamp(34px,5vw,62px);line-height:1.06;letter-spacing:-.015em;font-weight:500}
-.t1 b{font-weight:700}
-.t2{font-family:'Grotesk',sans-serif;font-size:clamp(27px,3.8vw,44px);line-height:1.1;letter-spacing:-.012em;font-weight:500}
-.t2 b{font-weight:700}
-.t3{font-family:'Grotesk',sans-serif;font-size:21px;font-weight:600;letter-spacing:-.008em;line-height:1.3}
-.serif{font-weight:400}
-.mono{font-family:'Plexmono',ui-monospace,monospace}
-.eyebrow{font-family:'Plexmono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:${CI.orange}}
-.eyebrow:before{content:'// ';color:${CI.textZart}}
-.lauf{font-size:16.5px;line-height:1.72;color:${CI.textMatt};font-weight:400}
+/* ── Typografie: Roboto, volle Schnittbreite 200–900, Kontrast über Gewicht ── */
+.t1{font-size:clamp(36px,5.4vw,66px);line-height:1.1;letter-spacing:-.025em;font-weight:300}
+.t1 b{font-weight:800}
+.t2{font-size:clamp(28px,4vw,46px);line-height:1.14;letter-spacing:-.022em;font-weight:300}
+.t2 b{font-weight:800}
+.t3{font-size:21px;font-weight:700;letter-spacing:-.012em;line-height:1.3}
+.serif{font-weight:300}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:${CI.blau}}
+.lauf{font-size:16.5px;line-height:1.74;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Verlaufsschrift: Bauplanblau ins Dunkle ── */
+/* ── Verlaufsschrift: Blau ins Dunkle ── */
 .vschrift{color:${CI.blau}}
-.vschrift-hell{color:${CI.cyan}}
-.vschrift-bewegt{color:${CI.cyan}}
+.vschrift-hell{color:#6FC3EF}
+.vschrift-bewegt{color:#6FC3EF}
 
 /* ── Animierter Unterstrich ── */
 .strich{position:relative;display:inline-block;padding-bottom:10px}
 .strich:after{content:'';position:absolute;left:0;bottom:0;height:4px;width:0;border-radius:3px;
-  background:${CI.orange};animation:strichauf 1.1s .25s cubic-bezier(.2,.7,.3,1) forwards}
+  background:${CI.blau};animation:strichauf 1.1s .25s cubic-bezier(.2,.7,.3,1) forwards}
 .reveal.an .strich:after{animation:strichauf 1.1s .3s cubic-bezier(.2,.7,.3,1) forwards}
 @keyframes strichauf{from{width:0}to{width:100%}}
 .strich-hover{position:relative}
 .strich-hover:after{content:'';position:absolute;left:0;bottom:-4px;height:2.5px;width:0;border-radius:2px;
-  background:${CI.orange};transition:width .35s cubic-bezier(.2,.7,.3,1)}
+  background:${CI.blau};transition:width .35s cubic-bezier(.2,.7,.3,1)}
 .strich-hover:hover:after{width:100%}
 
 /* ── Geister-Überschrift ── */
 .geistkopf{position:relative;padding-top:34px}
 .geist{position:absolute;top:-14px;left:-4px;font-size:clamp(56px,9.4vw,136px);font-weight:800;
   letter-spacing:-.055em;line-height:.8;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none;opacity:.6}
-.dunkelzone .geist{color:rgba(255,255,255,.055)}
+.dunkelzone .geist{color:rgba(255,255,255,.05)}
 .geistinhalt{position:relative;z-index:1}
 .mitte .geist{left:50%;transform:translateX(-50%)}
 
@@ -104,13 +101,12 @@ a{color:inherit;text-decoration:none}
 .band-grau{background:${CI.grau}}
 .band-dunkel{position:relative;color:#fff;overflow:hidden;
   background:linear-gradient(160deg,${CI.petrol} 0%,#0D2231 100%)}
-@keyframes grundlauf{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .band-dunkel:before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(760px 380px at 88% 6%,rgba(27,147,210,.13),transparent 66%)}
+  background:radial-gradient(760px 380px at 88% 6%,rgba(27,147,210,.15),transparent 66%)}
 .band-dunkel>*{position:relative;z-index:1}
 .band-foto{position:relative;color:#fff;background-size:cover;background-position:center}
 .band-foto:before{content:'';position:absolute;inset:0;
-  background:linear-gradient(96deg,rgba(10,24,35,.97) 0%,rgba(10,24,35,.9) 52%,rgba(10,24,35,.72) 100%)}
+  background:linear-gradient(96deg,rgba(10,24,36,.96) 0%,rgba(10,24,36,.88) 52%,rgba(10,24,36,.68) 100%)}
 .band-foto>*{position:relative;z-index:1}
 .dunkelzone{background:${CI.petrol};color:#fff}
 .dunkelzone .lauf,.dunkelzone .klein{color:#9FB2C0}
@@ -120,32 +116,31 @@ a{color:inherit;text-decoration:none}
 .dunkelzone .btnleer:hover{border-color:#fff;background:rgba(255,255,255,.09)}
 
 /* ── Karten ── */
-.karte{background:#fff;border:1px solid ${CI.linie};border-radius:5px}
-.karte-hover{transition:transform .22s cubic-bezier(.2,.7,.3,1),box-shadow .22s,border-color .22s}
-.karte-hover:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(17,28,39,.12);border-color:${CI.blau}77}
+.karte{background:#fff;border:1px solid ${CI.linie};border-radius:14px}
+.karte-hover{transition:transform .28s cubic-bezier(.2,.7,.3,1),box-shadow .28s,border-color .28s}
+.karte-hover:hover{transform:translateY(-6px);box-shadow:0 22px 48px rgba(10,24,36,.14);border-color:${CI.blau}66}
 
-/* ── Eckmarken: wiederkehrendes Bauplan-Motiv ── */
-.ecken{position:relative}
-.ecken:before,.ecken:after{content:'';position:absolute;width:13px;height:13px;pointer-events:none;opacity:.55}
-.ecken:before{top:-1px;left:-1px;border-top:2px solid ${CI.orange};border-left:2px solid ${CI.orange}}
-.ecken:after{bottom:-1px;right:-1px;border-bottom:2px solid ${CI.orange};border-right:2px solid ${CI.orange}}
+/* Bildkacheln: leichter Zoom beim Hover, damit die Seite lebendig wirkt */
+.bildzoom{overflow:hidden}
+.bildzoom img,.bildzoom .bzimg{transition:transform .6s cubic-bezier(.2,.7,.3,1)}
+.bildzoom:hover img,.bildzoom:hover .bzimg{transform:scale(1.06)}
 
-/* ── Knöpfe: gerade Kanten, technische Anmutung ── */
-.btnfest{background:${CI.orange};color:#fff;border:none;border-radius:3px;padding:15px 26px;font-size:14.5px;
-  font-weight:600;letter-spacing:.005em;cursor:pointer;display:inline-flex;align-items:center;gap:11px;
+/* ── Knöpfe ── */
+.btnfest{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:15px 28px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:11px;
   transition:background .18s,transform .18s,box-shadow .18s;text-decoration:none}
-.btnfest:hover{background:${CI.orangeHell};transform:translateY(-2px);box-shadow:0 12px 26px rgba(225,89,31,.32)}
-.btnblau{background:${CI.blau};color:#fff;border:none;border-radius:3px;padding:15px 26px;font-size:14.5px;
-  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:11px;transition:all .18s}
-.btnblau:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 26px rgba(46,126,179,.28)}
-.btnleer{background:#fff;color:${CI.text};border:1.5px solid ${CI.linie};border-radius:3px;padding:14px 24px;
-  font-size:14.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
+.btnfest:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 14px 30px rgba(27,147,210,.32)}
+.btnblau{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:15px 26px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:11px;transition:all .18s}
+.btnblau:hover{background:${CI.blauDunkel};transform:translateY(-2px);box-shadow:0 12px 28px rgba(27,147,210,.3)}
+.btnleer{background:#fff;color:${CI.text};border:1.5px solid ${CI.linie};border-radius:99px;padding:14px 25px;
+  font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
 .btnleer:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
-.btnhell{background:#fff;color:${CI.petrol};border:none;border-radius:3px;padding:15px 28px;font-size:14.5px;
-  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
-.btnhell:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.22)}
-.btntuerkis{background:${CI.blau};color:#fff;border:none;border-radius:3px;padding:15px 26px;font-size:14.5px;
-  font-weight:600;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
+.btnhell{background:#fff;color:${CI.petrol};border:none;border-radius:99px;padding:15px 28px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .18s;text-decoration:none}
+.btnhell:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.24)}
+.btntuerkis{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:15px 26px;font-size:15px;
+  font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
 .btntuerkis:hover{background:${CI.blauDunkel};transform:translateY(-2px)}
 
 /* ── Bewegung ── */
@@ -158,43 +153,42 @@ a{color:inherit;text-decoration:none}
   font-size:12.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase}
 @keyframes laufen{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-/* ── Header: Ankündigung, Hauptleiste, Navigation ── */
+/* ── Header: Ankündigung, Hauptleiste, Navigation — durchgehend dunkel ── */
 .ankuendigung{background:${CI.petrol};color:#DCE6EE;font-size:13.5px}
-.neu-marke{background:${CI.orange};color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+.neu-marke{background:${CI.blau};color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;border-radius:5px;padding:4px 9px}
-.ank-link{color:${CI.orange};font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:gap .18s}
+.ank-link{color:#6FC3EF;font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:gap .18s}
 .ank-link:hover{gap:11px}
-.hauptleiste{background:${CI.petrol2};color:#fff;border-bottom:1px solid rgba(138,216,222,.18)}
+.hauptleiste{background:${CI.petrol2};color:#fff}
 .hl-punkt{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;color:#fff;
-  padding:7px 10px;border-radius:4px;transition:background .16s}
-.hl-punkt:hover{background:rgba(255,255,255,.12)}
-.navleiste{background:#fff;border-bottom:1px solid ${CI.linie};position:sticky;top:0;z-index:80}
-.logomarke{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;
-  border:1.5px solid ${CI.orange};border-radius:3px;position:relative}
-.logomarke:after{content:'';position:absolute;width:6px;height:6px;background:${CI.orange};border-radius:1px}
-.logowort{font-family:'Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.01em;color:#fff;white-space:nowrap}
+  padding:7px 10px;border-radius:99px;transition:background .16s}
+.hl-punkt:hover{background:rgba(255,255,255,.14)}
+.navleiste{background:${CI.petrol};border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:80}
+.logowort{font-size:20px;font-weight:800;letter-spacing:-.03em;color:#fff;white-space:nowrap}
+.navleiste .btnleer{background:transparent;color:#fff;border-color:rgba(255,255,255,.32)}
+.navleiste .btnleer:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
 .minileiste{background:${CI.petrol};color:#9FB2C0;font-size:12.5px}
 .minileiste a:hover{color:#fff}
 .navroot{position:relative}
-.navtrigger{display:flex;align-items:center;gap:5px;font-size:14.5px;font-weight:600;color:${CI.text};
+.navtrigger{display:flex;align-items:center;gap:5px;font-size:14.5px;font-weight:600;color:#fff;
   background:none;border:none;cursor:pointer;padding:9px 2px;transition:color .16s}
-.navroot:hover .navtrigger{color:${CI.blau}}
+.navroot:hover .navtrigger{color:#6FC3EF}
 .navroot:hover .pfeil{transform:rotate(180deg)}
-.pfeil{transition:transform .22s;font-size:9px;opacity:.5;display:inline-block}
+.pfeil{transition:transform .22s;font-size:9px;opacity:.6;display:inline-block}
 .navdrop{position:absolute;top:100%;left:-14px;min-width:296px;background:#fff;border:1px solid ${CI.linie};
-  border-radius:12px;box-shadow:0 22px 50px rgba(10,24,35,.16);padding:9px;opacity:0;visibility:hidden;
+  border-radius:14px;box-shadow:0 22px 50px rgba(10,24,36,.28);padding:9px;opacity:0;visibility:hidden;
   transform:translateY(10px);transition:all .22s cubic-bezier(.2,.7,.3,1);z-index:95}
 .navroot:hover .navdrop{opacity:1;visibility:visible;transform:none}
 .navdrop.rechts{left:auto;right:-6px}
-.navitem{display:block;padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:${CI.text};
+.navitem{display:block;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:${CI.text};
   transition:background .16s,padding-left .16s,color .16s}
 .navitem:hover{background:#E7EFF3;color:${CI.blau};padding-left:18px}
 .navitem span{display:block;font-size:11.5px;font-weight:400;color:${CI.textZart};margin-top:2px}
 .navgroup{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${CI.textZart};padding:10px 12px 5px}
 .navtrenner{height:1px;background:${CI.linie};margin:6px 9px}
-.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid ${CI.linie};background:#E7EFF3;
-  color:${CI.blau};font-size:14px;font-weight:800;cursor:pointer;transition:all .18s}
-.avatar:hover{border-color:${CI.blau};transform:translateY(-2px)}
+.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);
+  color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .18s}
+.avatar:hover{border-color:#fff;transform:translateY(-2px)}
 
 .arbeit{background:${CI.grau};color:${CI.text}}
 
@@ -278,9 +272,8 @@ export function Kopf() {
       {/* Hauptleiste */}
       <div className="hauptleiste">
         <div className="wrap" style={{ display: 'flex', alignItems: 'center', gap: 20, minHeight: 56 }}>
-          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <span className="logomarke" aria-hidden="true" />
-            <span className="logowort">websitegenerator<span style={{ color: CI.orangeHell }}>24</span></span>
+          <a href="/" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <span className="logowort">websitegenerator<span style={{ color: '#6FC3EF' }}>24</span></span>
           </a>
           <div style={{ flex: 1 }} />
           <a href={TELEFON_LINK} className="hl-punkt minihide"><i className="fa-solid fa-phone" aria-hidden="true" />{TELEFON}</a>

@@ -47,56 +47,56 @@ export default function Startseite() {
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + CSS }} />
       <Kopf />
 
-      {/* ═══ DOMAINPRÜFER — Herzstück, volle Breite ═══ */}
-      <section className="domainband">
-        <div className="wrap">
-          <div className="db-innen">
-            <div className="db-tlds">
-              {[['.de', 14.90], ['.com', 24.90], ['.net', 24.90], ['.org', 24.90]].map(([t, p]) => (
-                <span key={t}><b>{t}</b><em>{eur(p)} € / Jahr</em></span>
-              ))}
-            </div>
-            <div className="db-feld">
-              <i className="fa-solid fa-globe" aria-hidden="true" />
-              <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
-                placeholder="Wunsch-Domain eingeben …" aria-label="Wunschname für die Domain" />
-              <button onClick={pruefen} disabled={laedt}>
-                {laedt ? 'Prüft …' : 'Domain prüfen'}<i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-              </button>
+      {/* ═══ HERO — Foto + Domain-Check als Herzstück ═══ */}
+      <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
+        <div className="wrap" style={{ paddingTop: 54, paddingBottom: 54 }}>
+          <div className="hgrid">
+            <Slider dauer={9500} folien={[
+              <HeroFolie key="m" art="mieten" starten={starten} />,
+              <HeroFolie key="k" art="kaufen" starten={starten} />,
+            ]} />
+
+            {/* Domain-Check — bewusst das größte Element im Hero */}
+            <div className="dcheck">
+              <span className="dcheck-label"><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Ist dein Wunschname noch frei?</span>
+              <div className="dcheck-feld">
+                <i className="fa-solid fa-globe" aria-hidden="true" />
+                <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
+                  placeholder="z. B. deinefirma" aria-label="Wunschname für die Domain" />
+                <button onClick={pruefen} disabled={laedt}>
+                  {laedt ? <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> : <>Prüfen<i className="fa-solid fa-magnifying-glass" aria-hidden="true" /></>}
+                </button>
+              </div>
+
+              {!fehler && !daten && (
+                <div className="dcheck-tlds">
+                  {[['.de', 14.90], ['.com', 24.90], ['.net', 24.90], ['.org', 24.90]].map(([t, p]) => (
+                    <span key={t}><b>{t}</b><em>{eur(p)} €/Jahr</em></span>
+                  ))}
+                </div>
+              )}
+
+              {(fehler || daten) && (
+                <div className="dcheck-ergebnis">
+                  {fehler && <p className="db-fehler">{fehler}</p>}
+                  {daten && freie.slice(0, 3).map((e, i) => (
+                    <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
+                      <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                      <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5 }}>{e.domain}</span>
+                      <span className="tr-frei">frei</span>
+                      <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '9px 15px', fontSize: 13 }}>
+                        Nehmen<i className="fa-solid fa-arrow-right" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                  {daten && belegte.length > 0 && <p className="db-belegt">Schon vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
+                  {daten && freie.length === 0 && <p className="db-belegt">Alle geprüften Adressen sind belegt — probier eine Alternative.</p>}
+                </div>
+              )}
+
+              <p className="dcheck-hinweis"><i className="fa-solid fa-circle-info" aria-hidden="true" />Bei Miete ist die Domain inklusive. Beim Kauf bringst du sie selbst mit.</p>
             </div>
           </div>
-
-          {(fehler || daten) && (
-            <div className="db-ergebnis">
-              {fehler && <p className="db-fehler">{fehler}</p>}
-              {daten && freie.map((e, i) => (
-                <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
-                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                  <span style={{ flex: 1, fontWeight: 700, fontSize: 15.5 }}>{e.domain}</span>
-                  <span className="tr-frei">frei</span>
-                  <span className="tr-preis">{eur(e.preis || 14.90)} € / Jahr</span>
-                  <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '10px 18px', fontSize: 13.5 }}>
-                    <i className="fa-solid fa-arrow-right" aria-hidden="true" />Diese nehmen
-                  </button>
-                </div>
-              ))}
-              {daten && belegte.length > 0 && <p className="db-belegt">Schon vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
-              {daten && freie.length === 0 && <p className="db-belegt">Alle geprüften Adressen sind belegt — probier einen Zusatz wie den Ort.</p>}
-              {daten && <p className="db-hinweis"><i className="fa-solid fa-circle-info" aria-hidden="true" />Bei einem Mietpaket ist die Domain inklusive. Beim Kauf bringst du Domain und Hosting selbst mit.</p>}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ═══ HERO — Zeichenbrett ═══ */}
-      <section className="band dunkelzone hero">
-        <div className="hero-raster" aria-hidden="true" />
-        <BauplanZeichnung />
-        <div className="wrap" style={{ paddingTop: 60, paddingBottom: 58 }}>
-          <Slider dauer={9500} folien={[
-            <HeroFolie key="m" art="mieten" starten={starten} />,
-            <HeroFolie key="k" art="kaufen" starten={starten} />,
-          ]} />
         </div>
       </section>
 
@@ -559,200 +559,100 @@ export default function Startseite() {
 }
 
 // ── Hero-Folie: Mieten oder Kaufen ──
-// Signaturelement: die Website als Werkzeichnung, die sich selbst aufbaut —
-// statt eines Stockfotos zeigt der Hero, was websitegenerator24 tatsächlich tut.
-function BauplanZeichnung() {
-  return (
-    <svg className="bauplan-svg" viewBox="0 0 380 470" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <g fill="none" stroke="#8AD8DE" strokeWidth="1.2" opacity="0.9">
-        <rect x="30" y="20" width="300" height="430" rx="2" className="bp-linie" style={{ animationDelay: '0ms' }} />
-        <rect x="30" y="20" width="300" height="52" rx="2" className="bp-linie" style={{ animationDelay: '180ms' }} />
-        <circle cx="52" cy="46" r="6" className="bp-linie" style={{ animationDelay: '260ms' }} />
-        <rect x="240" y="36" width="66" height="20" rx="2" className="bp-linie" style={{ animationDelay: '320ms' }} />
-        <rect x="52" y="96" width="256" height="120" rx="2" className="bp-linie" style={{ animationDelay: '400ms' }} />
-        <line x1="52" y1="96" x2="308" y2="216" className="bp-linie" style={{ animationDelay: '520ms' }} />
-        <line x1="308" y1="96" x2="52" y2="216" className="bp-linie" style={{ animationDelay: '560ms' }} />
-        <rect x="52" y="240" width="120" height="70" rx="2" className="bp-linie" style={{ animationDelay: '620ms' }} />
-        <rect x="188" y="240" width="120" height="70" rx="2" className="bp-linie" style={{ animationDelay: '680ms' }} />
-        <rect x="52" y="332" width="256" height="16" rx="2" className="bp-linie" style={{ animationDelay: '740ms' }} />
-        <rect x="52" y="358" width="180" height="10" rx="2" className="bp-linie" style={{ animationDelay: '780ms' }} />
-        <rect x="52" y="400" width="110" height="34" rx="2" className="bp-linie" style={{ animationDelay: '840ms' }} />
-      </g>
-      {/* Maßlinien */}
-      <g className="bp-mass" style={{ animationDelay: '1000ms' }}>
-        <line x1="18" y1="20" x2="18" y2="450" stroke="#8AD8DE" strokeWidth="1" opacity="0.5" />
-        <line x1="14" y1="20" x2="22" y2="20" stroke="#8AD8DE" strokeWidth="1" opacity="0.5" />
-        <line x1="14" y1="450" x2="22" y2="450" stroke="#8AD8DE" strokeWidth="1" opacity="0.5" />
-        <text x="10" y="238" fill="#8AD8DE" fontSize="9" fontFamily="Plexmono, monospace" opacity="0.75" transform="rotate(-90 10 238)">1 SEITE</text>
-      </g>
-      <g className="bp-mass" style={{ animationDelay: '1100ms' }} fontFamily="Plexmono, monospace" fontSize="9" fill="#8AD8DE" opacity="0.75">
-        <text x="52" y="230">↔ 256px · Hero</text>
-        <text x="188" y="330">2 Spalten</text>
-        <text x="52" y="450">CTA</text>
-      </g>
-    </svg>
-  )
-}
-
 function HeroFolie({ art, starten }) {
   const mieten = art === 'mieten'
-  const punkte = mieten
-    ? [['globe', 'Domain inklusive', 'läuft auf deinen Namen'],
-       ['server', 'Hosting & SSL inklusive', 'wir kümmern uns um alles'],
-       ['envelope', 'E-Mail-Adresse', 'unter deiner eigenen Domain'],
-       ['pen-to-square', 'Änderungen kostenlos', 'jederzeit selbst im Editor']]
-    : [['file-zipper', 'Quellcode als ZIP', 'HTML und CSS, gehört dir'],
-       ['bolt', 'Sofort verfügbar', 'direkt nach der Zahlung'],
-       ['building', 'Überall betreibbar', 'bei jedem Anbieter'],
-       ['pen-to-square', 'Änderungen kostenlos', 'jederzeit selbst im Editor']]
+  const fakten = mieten
+    ? [['globe', 'Domain inklusive'], ['server', 'Hosting & SSL'], ['calendar-days', '12 Monate Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
+    : [['file-zipper', 'Quellcode als ZIP'], ['bolt', 'Sofort verfügbar'], ['ban', 'Keine Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
 
   return (
-    <div className="hgrid">
-      <div>
-        <span className="hmarke">
-          <i className={`fa-solid fa-${mieten ? 'globe' : 'download'}`} aria-hidden="true" />
-          {mieten ? 'Website mieten' : 'Website kaufen'}
-        </span>
+    <div>
+      <span className="hmarke">
+        <i className={`fa-solid fa-${mieten ? 'globe' : 'download'}`} aria-hidden="true" />
+        {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
+      </span>
 
-        <h1 className="t1" style={{ color: '#fff', margin: '18px 0 14px' }}>
-          {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
-        </h1>
+      <h1 className="t1" style={{ color: '#fff', margin: '18px 0 14px' }}>
+        {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
+      </h1>
 
-        <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 470, marginBottom: 26 }}>
-          {mieten
-            ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
-            : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
-        </p>
+      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 470, marginBottom: 26 }}>
+        {mieten
+          ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
+          : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
+      </p>
 
-        <div className="hknoepfe">
-          <button className="btnfest" onClick={() => starten(null)} style={{ fontSize: 16, padding: '17px 28px' }}>
-            <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
-            Kostenlos erstellen
-          </button>
-          <a href={mieten ? '/preise#mieten' : '/preise#kaufen'} className="btnleer hell">
-            <i className="fa-solid fa-tags" aria-hidden="true" />
-            {mieten ? 'Mietpakete' : 'Kaufpakete'}
-          </a>
-        </div>
+      <div className="hknoepfe">
+        <button className="btnfest" onClick={() => starten(null)} style={{ fontSize: 16, padding: '17px 30px' }}>
+          <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
+          Kostenlos erstellen
+        </button>
+        <a href={mieten ? '/preise#mieten' : '/preise#kaufen'} className="btnleer hell">
+          <i className="fa-solid fa-tags" aria-hidden="true" />
+          {mieten ? 'Mietpakete ansehen' : 'Kaufpakete ansehen'}
+        </a>
       </div>
 
-      {/* Preiskasten */}
-      <div className="hpreiskasten">
-        <span className="hpk-label">{mieten ? 'Miete ab' : 'Kauf ab'}</span>
-        <div className="hpk-zahl">
-          <span>{eur(mieten ? 19.90 : 89)}</span><em>€</em>
-        </div>
-        <div className="hpk-zeilen">
-          <div><b>{mieten ? 'pro Monat' : 'einmalig'}</b><span>inkl. 19 % MwSt.</span></div>
-          {mieten ? (
-            <>
-              <div><b>12 Monate</b><span>Laufzeit, danach monatlich kündbar</span></div>
-              <div><b>49,00 €</b><span>Einrichtung — entfällt bei Jahreszahlung</span></div>
-            </>
-          ) : (
-            <>
-              <div><b>Keine Laufzeit</b><span>keine Kündigung nötig</span></div>
-              <div><b>Sofort</b><span>ZIP nach der Zahlung herunterladen</span></div>
-            </>
-          )}
-        </div>
-        <ul className="hpk-liste">
-          {punkte.map(([ic, t, u]) => (
-            <li key={t}>
-              <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
-              <span><b>{t}</b><em>{u}</em></span>
-            </li>
-          ))}
-        </ul>
-        <p className="hpk-fuss"><i className="fa-solid fa-lock" aria-hidden="true" />Erstellung kostenlos — Zahlung erst am Ende</p>
-      </div>
+      <ul className="hfakten">
+        {fakten.map(([ic, t]) => (
+          <li key={t}><i className={`fa-solid fa-${ic}`} aria-hidden="true" />{t}</li>
+        ))}
+      </ul>
     </div>
   )
 }
 
 const CSS = `
-/* ══ DOMAINBAND — Herzstück, wie eine Eingabezeile am Zeichenbrett ══ */
-.domainband{background:${CI.petrol};padding:16px 0;border-bottom:1px solid rgba(138,216,222,.16);position:relative}
-.domainband:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
-  background-image:linear-gradient(rgba(138,216,222,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(138,216,222,.09) 1px,transparent 1px);
-  background-size:26px 26px}
-.domainband>.wrap{position:relative}
-.db-innen{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
-.db-tlds{display:flex;gap:22px;flex-wrap:wrap;font-family:'Plexmono',monospace}
-.db-tlds span{display:flex;flex-direction:column;align-items:flex-start;color:#fff;line-height:1.3}
-.db-tlds b{font-size:14.5px;font-weight:500;color:${CI.cyan}}
-.db-tlds em{font-style:normal;font-size:11px;opacity:.68}
-.db-feld{flex:1;min-width:330px;display:flex;align-items:center;gap:0;background:${CI.petrol2};border:1px solid rgba(138,216,222,.3);
-  border-radius:4px;padding:4px 4px 4px 18px}
-.db-feld:focus-within{border-color:${CI.cyan}}
-.db-feld>i{color:${CI.cyan};font-size:13px;margin-right:12px}
-.db-feld input{flex:1;min-width:80px;border:none;outline:none;font-size:15px;font-weight:500;color:#fff;padding:12px 0;
-  background:transparent;font-family:'Plexmono',monospace}
-.db-feld input::placeholder{color:rgba(255,255,255,.4)}
-.db-feld button{background:${CI.orange};color:#fff;border:none;border-radius:3px;padding:13px 22px;font-size:13.5px;
-  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;transition:background .18s}
-.db-feld button:hover{background:${CI.orangeHell}}
-.db-ergebnis{margin-top:14px;background:#fff;border-radius:5px;padding:16px 18px;box-shadow:0 14px 34px rgba(0,0,0,.28)}
-.db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:4px;padding:11px 13px}
-.db-belegt{font-size:13px;color:${CI.textMatt};margin-top:8px;font-family:'Plexmono',monospace}
-.db-hinweis{display:flex;gap:9px;font-size:12.5px;color:${CI.textMatt};margin-top:12px;padding-top:12px;border-top:1px solid ${CI.linie}}
-.db-hinweis i{color:${CI.blau};margin-top:2px}
-.treffer{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:8px;border-radius:4px;
-  background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s;font-family:'Plexmono',monospace}
-.treffer:hover{border-color:${CI.gruen}}
+/* ══ HERO — Foto, links Text, rechts der Domain-Check als Kernstück ══ */
+.hero{position:relative}
+.hgrid{display:grid;grid-template-columns:1fr 460px;gap:56px;align-items:start;position:relative}
+.hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+  border-radius:99px;padding:9px 18px}
+.hknoepfe{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:28px}
+.btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.4);padding:16px 25px;font-size:15.5px}
+.btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
+.hfakten{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;max-width:420px}
+.hfakten li{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500;color:#DCE6EE}
+.hfakten li i{color:#6FC3EF;font-size:13px;width:16px;text-align:center}
+
+/* Domain-Check — größtes, hellstes Element im Hero */
+.dcheck{background:#fff;border-radius:20px;padding:30px 28px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text};
+  animation:dcheckein .7s .15s cubic-bezier(.2,.7,.3,1) backwards}
+@keyframes dcheckein{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.dcheck-label{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:${CI.text};margin-bottom:16px}
+.dcheck-label i{color:${CI.blau}}
+.dcheck-feld{display:flex;align-items:center;gap:0;background:${CI.grau};border:1.5px solid ${CI.linie};border-radius:99px;
+  padding:5px 5px 5px 20px;transition:border-color .18s}
+.dcheck-feld:focus-within{border-color:${CI.blau}}
+.dcheck-feld>i{color:${CI.textZart};font-size:14px;margin-right:10px}
+.dcheck-feld input{flex:1;min-width:0;border:none;outline:none;font-size:15.5px;font-weight:500;color:${CI.text};
+  padding:13px 0;background:transparent}
+.dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:13px 22px;font-size:14px;
+  font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:9px;white-space:nowrap;transition:all .18s}
+.dcheck-feld button:hover{background:${CI.blauDunkel};transform:translateY(-1px)}
+.dcheck-tlds{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.dcheck-tlds span{display:flex;flex-direction:column;align-items:center;gap:2px;background:${CI.grau};border-radius:10px;padding:9px 4px}
+.dcheck-tlds b{font-size:13.5px;font-weight:700;color:${CI.text}}
+.dcheck-tlds em{font-style:normal;font-size:10.5px;color:${CI.textMatt}}
+.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.dcheck-hinweis{display:flex;gap:8px;font-size:12px;color:${CI.textMatt};margin-top:16px;padding-top:14px;border-top:1px solid ${CI.linie}}
+.dcheck-hinweis i{color:${CI.blau};margin-top:2px}
+.db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:10px;padding:11px 13px}
+.db-belegt{font-size:12.5px;color:${CI.textMatt}}
+.treffer{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;
+  background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s}
+.treffer:hover{border-color:${CI.gruen};transform:translateX(3px)}
 .treffer>i{color:${CI.gruen};font-size:15px}
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
-.tr-frei{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
-.tr-preis{font-size:13px;font-weight:600;color:${CI.text}}
-
-/* ══ HERO — Zeichenbrett ══ */
-.hero{position:relative;overflow:hidden}
-.bauplan-svg{position:absolute;top:-10px;right:-30px;width:360px;height:auto;pointer-events:none;opacity:.9}
-.bp-linie{stroke-dasharray:900;stroke-dashoffset:900;animation:bpzeichnen 1.1s cubic-bezier(.2,.7,.3,1) forwards}
-.bp-mass{opacity:0;animation:bpeinblenden .5s ease forwards}
-@keyframes bpzeichnen{to{stroke-dashoffset:0}}
-@keyframes bpeinblenden{to{opacity:1}}
-@media(max-width:1320px){.bauplan-svg{display:none}}
-.hero-raster{position:absolute;inset:0;pointer-events:none;opacity:.55;
-  background-image:linear-gradient(rgba(138,216,222,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(138,216,222,.1) 1px,transparent 1px);
-  background-size:34px 34px;
-  mask-image:linear-gradient(180deg,#000 0%,transparent 78%);-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 78%)}
-.hgrid{display:grid;grid-template-columns:1.1fr 400px;gap:52px;align-items:center;position:relative}
-.hmarke{display:inline-flex;align-items:center;gap:10px;font-family:'Plexmono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.08em;
-  text-transform:uppercase;color:${CI.cyan};background:rgba(138,216,222,.09);border:1px solid rgba(138,216,222,.32);
-  border-radius:3px;padding:8px 15px}
-.hknoepfe{display:flex;gap:13px;flex-wrap:wrap}
-.btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.38);padding:16px 24px;font-size:15.5px}
-.btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
-
-/* Preiskasten im Hero — Datenblatt-Stil */
-.hpreiskasten{background:#fff;border-radius:5px;padding:26px 24px;box-shadow:0 26px 60px rgba(0,0,0,.4);color:${CI.text};position:relative}
-.hpreiskasten:before,.hpreiskasten:after{content:'';position:absolute;width:15px;height:15px;pointer-events:none}
-.hpreiskasten:before{top:-1px;left:-1px;border-top:2px solid ${CI.orange};border-left:2px solid ${CI.orange}}
-.hpreiskasten:after{bottom:-1px;right:-1px;border-bottom:2px solid ${CI.orange};border-right:2px solid ${CI.orange}}
-.hpk-label{font-family:'Plexmono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:${CI.orange}}
-.hpk-zahl{display:flex;align-items:baseline;gap:6px;margin:6px 0 16px;font-family:'Plexmono',monospace}
-.hpk-zahl span{font-size:52px;font-weight:500;letter-spacing:-.02em;line-height:1;color:${CI.text}}
-.hpk-zahl em{font-style:normal;font-size:22px;font-weight:500;color:${CI.textMatt}}
-.hpk-zeilen{display:flex;flex-direction:column;gap:11px;padding-bottom:18px;border-bottom:1px solid ${CI.linie}}
-.hpk-zeilen div{display:flex;flex-direction:column;gap:1px}
-.hpk-zeilen b{font-size:15px;font-weight:700;color:${CI.text}}
-.hpk-zeilen span{font-size:13px;color:${CI.textMatt};line-height:1.45}
-.hpk-liste{list-style:none;display:flex;flex-direction:column;gap:13px;padding:18px 0}
-.hpk-liste li{display:flex;gap:12px;align-items:flex-start}
-.hpk-liste li i{color:${CI.gruen};font-size:14px;width:18px;text-align:center;margin-top:3px;flex-shrink:0;transition:transform .22s}
-.hpk-liste li:hover i{transform:scale(1.22)}
-.hpk-liste span{display:flex;flex-direction:column}
-.hpk-liste b{font-size:14.5px;font-weight:700;color:${CI.text}}
-.hpk-liste em{font-style:normal;font-size:12.5px;color:${CI.textMatt}}
-.hpk-fuss{display:flex;gap:9px;align-items:center;font-size:12.5px;color:${CI.textMatt};padding-top:14px;border-top:1px solid ${CI.linie}}
-.hpk-fuss i{color:${CI.gruen}}
+.tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
+@media(max-width:1060px){.hgrid{grid-template-columns:1fr}.dcheck{max-width:460px}}
 
 /* ══ Leistungskarten ══ */
 .lkarte{padding:28px 26px;height:100%}
-.lkarte i{font-size:19px;color:${CI.blau};background:#E7EFF3;width:48px;height:48px;border-radius:11px;
-  display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:all .26s}
-.lkarte:hover i{background:${CI.orange};color:#fff;transform:translateY(-4px) rotate(-8deg)}
+.lkarte i{font-size:19px;color:${CI.blau};background:#E7EFF3;width:48px;height:48px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:all .3s cubic-bezier(.2,.7,.3,1)}
+.lkarte:hover i{background:${CI.blau};color:#fff;transform:translateY(-4px) scale(1.06)}
 
 /* ══ Preisband dunkel ══ */
 .preisband{display:grid;grid-template-columns:1fr 440px;gap:44px;align-items:center}
@@ -786,7 +686,8 @@ const CSS = `
 .vergleich,.branche{display:grid;grid-template-columns:1.05fr .95fr;background:#fff;border:1px solid ${CI.linie};
   border-radius:16px;overflow:hidden}
 .vergleich-text,.branche-text{padding:38px 36px}
-.vergleich-bild,.branche-bild{min-height:390px;background-size:cover;background-position:center}
+.vergleich-bild,.branche-bild{min-height:390px;background-size:cover;background-position:center;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
+.vergleich:hover .vergleich-bild,.branche:hover .branche-bild{transform:scale(1.05)}
 
 /* ══ Haken ══ */
 .haken{list-style:none;display:flex;flex-direction:column;gap:12px}
@@ -883,18 +784,18 @@ const CSS = `
   .haken.zwei{grid-template-columns:1fr}
   .preisband-karten{grid-template-columns:1fr}
   .wahlleiste{grid-template-columns:1fr}
-  .db-tlds{display:none}
-  .db-feld{min-width:0;width:100%}
+  .dcheck-tlds{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:640px){
   .wrap{padding:0 18px}
-  .hpk-zahl span{font-size:46px}
   .hknoepfe{flex-direction:column;align-items:stretch}
   .hknoepfe .btnfest,.hknoepfe .btnleer{width:100%;justify-content:center}
-  .db-feld{flex-wrap:wrap;border-radius:14px;padding:12px}
-  .db-feld input{width:100%;padding:8px 0}
-  .db-feld button{width:100%;justify-content:center}
-  .hpreiskasten,.trichter-gross{padding:22px 20px}
+  .hfakten{grid-template-columns:1fr}
+  .dcheck{padding:24px 20px}
+  .dcheck-feld{flex-wrap:wrap;border-radius:18px;padding:12px}
+  .dcheck-feld input{width:100%;padding:8px 4px}
+  .dcheck-feld button{width:100%;justify-content:center;margin-top:6px}
+  .trichter-gross{padding:22px 20px}
   .vergleich-text,.branche-text{padding:26px 22px}
   .preis{padding:26px 22px}
   .sorgen{padding:28px 22px}

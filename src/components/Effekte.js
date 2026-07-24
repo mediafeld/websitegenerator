@@ -88,8 +88,8 @@ export function Slider({ folien, dauer = 6500 }) {
           {folien.map((_, k) => (
             <button key={k} onClick={() => setI(k)} aria-label={`Folie ${k + 1}`}
               style={{
-                width: k === i ? 26 : 8, height: 8, borderRadius: 2, border: 'none', cursor: 'pointer',
-                background: k === i ? '#E1591F' : 'rgba(255,255,255,.22)',
+                width: k === i ? 28 : 9, height: 9, borderRadius: 99, border: 'none', cursor: 'pointer',
+                background: k === i ? '#1B93D2' : 'rgba(255,255,255,.25)',
                 transition: 'all .3s cubic-bezier(.2,.7,.3,1)',
               }} />
           ))}
