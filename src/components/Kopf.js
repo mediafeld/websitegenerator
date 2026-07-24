@@ -50,7 +50,7 @@ export const EMAIL = 'info@websitegenerator24.de'
 
 export const BASIS_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#fff;color:${CI.text};font-family:'Roboto',system-ui,sans-serif}
+body{background:#fff;color:${CI.text};font-family:'InterTight',system-ui,sans-serif}
 .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 button{font-family:inherit}
 input,select,textarea{font-family:inherit}
@@ -60,21 +60,25 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid ${CI.blau};outline-offset:3px}
 ::selection{background:${CI.blau};color:#fff}
 
-/* ── Typografie: Roboto, volle Schnittbreite 200–900, Kontrast über Gewicht ── */
-.t1{font-size:clamp(36px,5.4vw,66px);line-height:1.1;letter-spacing:-.025em;font-weight:300}
+/* ── Typografie: Inter Tight, größer, nie ein einzelnes Wort allein in der Zeile ── */
+.t1{font-size:clamp(38px,5.8vw,72px);line-height:1.1;letter-spacing:-.025em;font-weight:300;text-wrap:balance}
 .t1 b{font-weight:800}
-.t2{font-size:clamp(28px,4vw,46px);line-height:1.14;letter-spacing:-.022em;font-weight:300}
+.t2{font-size:clamp(30px,4.4vw,50px);line-height:1.14;letter-spacing:-.022em;font-weight:300;text-wrap:balance}
 .t2 b{font-weight:800}
-.t3{font-size:21px;font-weight:700;letter-spacing:-.012em;line-height:1.3}
+.t3{font-size:23px;font-weight:700;letter-spacing:-.012em;line-height:1.3;text-wrap:balance}
+.display{font-weight:800;letter-spacing:-.02em;line-height:1.22;color:${CI.text};text-wrap:balance}
 .serif{font-weight:300}
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:${CI.blau}}
 .lauf{font-size:16.5px;line-height:1.74;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Verlaufsschrift: Blau ins Dunkle ── */
-.vschrift{color:${CI.blau}}
-.vschrift-hell{color:#6FC3EF}
-.vschrift-bewegt{color:#6FC3EF}
+/* ── Verlaufsschrift: Schwarz → Dunkelblau, kräftig, ohne Unterstrich ── */
+.vschrift{background:linear-gradient(97deg,#0A1824 0%,${CI.blau} 100%);-webkit-background-clip:text;
+  background-clip:text;color:transparent;font-weight:800;text-decoration:none}
+.vschrift-hell{background:linear-gradient(97deg,#fff 0%,#8FD2F5 100%);-webkit-background-clip:text;
+  background-clip:text;color:transparent;font-weight:800;text-decoration:none}
+.vschrift-bewegt{background:linear-gradient(97deg,#fff 0%,#8FD2F5 100%);-webkit-background-clip:text;
+  background-clip:text;color:transparent;font-weight:800;text-decoration:none}
 
 /* ── Animierter Unterstrich ── */
 .strich{position:relative;display:inline-block;padding-bottom:10px}
@@ -88,10 +92,8 @@ a{color:inherit;text-decoration:none}
 .strich-hover:hover:after{width:100%}
 
 /* ── Geister-Überschrift ── */
-.geistkopf{position:relative;padding-top:34px}
-.geist{position:absolute;top:-14px;left:-4px;font-size:clamp(56px,9.4vw,136px);font-weight:800;
-  letter-spacing:-.055em;line-height:.8;color:${CI.geist};white-space:nowrap;pointer-events:none;z-index:0;user-select:none;opacity:.6}
-.dunkelzone .geist{color:rgba(255,255,255,.05)}
+.geistkopf{position:relative}
+.geist{display:none}
 .geistinhalt{position:relative;z-index:1}
 .mitte .geist{left:50%;transform:translateX(-50%)}
 
@@ -143,9 +145,12 @@ a{color:inherit;text-decoration:none}
   font-weight:700;cursor:pointer;display:inline-block;transition:background .18s,transform .18s}
 .btntuerkis:hover{background:${CI.blauDunkel};transform:translateY(-2px)}
 
-/* ── Bewegung ── */
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
+/* ── Bewegung: fliegt beim Scrollen rein, beim Weiterscrollen wieder raus ── */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
 .reveal.an{opacity:1;transform:none}
+.reveal-pop{transform:scale(.9) translateY(16px)}
+.reveal-links{transform:translateX(-32px)}
+.reveal-rechts{transform:translateX(32px)}
 
 /* ── Lauftext ── */
 .laufband{overflow:hidden;padding:15px 0;background:${CI.petrol};color:#9FB2C0}

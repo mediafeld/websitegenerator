@@ -49,7 +49,7 @@ export default function EditorFunktionen() {
         <div className="wrap">
           <div className="karte" style={{ padding: '26px 26px', marginBottom: 34, borderColor: D.blau, borderWidth: 2 }}>
             <h2 className="display" style={{ fontSize: 22, marginBottom: 10 }}>Keine Kosten für Änderungen. Nie.</h2>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.75 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.75 }}>
               Bei einer Agentur kostet jede Textänderung Geld und Zeit. Hier änderst du selbst,
               so oft du willst — neue Öffnungszeiten, neue Preise, neues Teamfoto. Einloggen,
               anklicken, ändern. Das gilt beim Kauf genauso wie bei der Miete.
@@ -63,7 +63,7 @@ export default function EditorFunktionen() {
                 {g.punkte.map(([t, u]) => (
                   <div key={t} className="karte fkarte" style={{ padding: '20px 20px' }}>
                     <h3 className="display" style={{ fontSize: 16, marginBottom: 7, letterSpacing: '-.02em' }}>{t}</h3>
-                    <p style={{ fontSize: 13.8, color: D.grau, lineHeight: 1.65 }}>{u}</p>
+                    <p style={{ fontSize: 13.8, color: D.textMatt, lineHeight: 1.65 }}>{u}</p>
                   </div>
                 ))}
               </div>

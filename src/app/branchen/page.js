@@ -13,7 +13,7 @@ export default function Branchen() {
       titel="Inhalte, die zur Branche passen."
       einleitung="Ein Restaurant braucht eine Speisekarte, eine Kanzlei Rechtsgebiete, ein Handwerksbetrieb den Notdienst. Wähle deine Branche und sieh, welche Bereiche du bekommst."
       css={`
-        .chip{background:#fff;border:1px solid ${D.linie};border-radius:99px;padding:9px 15px;font-size:13px;font-weight:600;color:${D.grau};cursor:pointer;transition:all .16s}
+        .chip{background:#fff;border:1px solid ${D.linie};border-radius:99px;padding:9px 15px;font-size:13px;font-weight:600;color:${D.textMatt};cursor:pointer;transition:all .16s}
         .chip:hover{border-color:${D.blau};color:${D.blau};transform:translateY(-1px)}
         .bkarte{overflow:hidden;transition:transform .2s,box-shadow .2s}
         .bkarte:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(10,24,36,.1)}
@@ -36,7 +36,7 @@ export default function Branchen() {
           <div className="karte zweispalt" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', overflow: 'hidden' }}>
             <div style={{ padding: '32px 30px' }}>
               <h2 className="display" style={{ fontSize: 24, marginBottom: 12 }}>{aktiv.label}</h2>
-              <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.72, marginBottom: 22 }}>{aktiv.text}</p>
+              <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.72, marginBottom: 22 }}>{aktiv.text}</p>
               <p className="eyebrow" style={{ color: D.grauHell, marginBottom: 12 }}>Diese Bereiche bekommst du</p>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 26 }}>
                 {aktiv.bereiche.map(t => (
@@ -58,7 +58,7 @@ export default function Branchen() {
       <section style={{ padding: '30px 0 10px' }}>
         <div className="wrap">
           <h2 className="display" style={{ fontSize: 26, marginBottom: 8 }}>Alle Branchen im Überblick</h2>
-          <p style={{ fontSize: 15, color: D.grau, marginBottom: 24 }}>Klick auf eine Branche, um sie oben anzusehen.</p>
+          <p style={{ fontSize: 15, color: D.textMatt, marginBottom: 24 }}>Klick auf eine Branche, um sie oben anzusehen.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: 16 }}>
             {BRANCHEN_INFO.map(b => (
               <button key={b.id} onClick={() => { setAktiv(b); window.scrollTo({ top: 200, behavior: 'smooth' }) }}
@@ -68,7 +68,7 @@ export default function Branchen() {
                 </div>
                 <div style={{ padding: '14px 16px 16px' }}>
                   <strong style={{ fontSize: 15, display: 'block', marginBottom: 4 }}>{b.label}</strong>
-                  <span style={{ fontSize: 13, color: D.grau, lineHeight: 1.55 }}>{b.bereiche.length} Bereiche</span>
+                  <span style={{ fontSize: 13, color: D.textMatt, lineHeight: 1.55 }}>{b.bereiche.length} Bereiche</span>
                 </div>
               </button>
             ))}

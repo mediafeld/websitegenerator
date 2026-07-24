@@ -58,7 +58,7 @@ export default function LoginSeite() {
   const unter = modus === 'login' ? 'zu Ihrem Kundenbereich' : modus === 'registrieren' ? 'kostenlos und in einer Minute' : 'Wir senden Ihnen einen Link'
 
   return (
-    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Roboto",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"InterTight",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
@@ -92,7 +92,7 @@ export default function LoginSeite() {
                 websitegenerator<span style={{ color: CI.blau }}>24</span>
               </a>
               <h1 style={{ fontSize: 26, fontWeight: 800, marginTop: 20, letterSpacing: '-.035em' }}>{titel}</h1>
-              <p style={{ fontSize: 14, color: D.grau, marginTop: 5 }}>{unter}</p>
+              <p style={{ fontSize: 14, color: D.textMatt, marginTop: 5 }}>{unter}</p>
             </div>
 
             {modus === 'registrieren' && (
@@ -141,7 +141,7 @@ export default function LoginSeite() {
             <div style={{ borderTop: `1px solid ${D.linie}`, marginTop: 22, paddingTop: 20, textAlign: 'center' }}>
               {modus === 'login' ? (
                 <>
-                  <p style={{ fontSize: 13.5, color: D.grau, marginBottom: 8 }}>Neu hier?</p>
+                  <p style={{ fontSize: 13.5, color: D.textMatt, marginBottom: 8 }}>Neu hier?</p>
                   <button className="llink" style={{ fontSize: 14.5, fontWeight: 700 }} onClick={() => { setModus('registrieren'); setFehler(''); setHinweis('') }}>
                     Kostenlos Konto erstellen
                   </button>
@@ -155,7 +155,7 @@ export default function LoginSeite() {
           </div>
 
           {/* Hilfe darunter */}
-          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: D.grau, lineHeight: 1.8 }}>
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: D.textMatt, lineHeight: 1.8 }}>
             Probleme beim Anmelden?{' '}
             <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: CI.blau, fontWeight: 600 }}>{EMAIL}</a>
             <br />

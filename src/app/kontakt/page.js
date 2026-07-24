@@ -29,7 +29,7 @@ export default function Kontakt() {
       css={`
         .feld{width:100%;padding:12px 14px;font-size:14px;border:2px solid ${D.linie};border-radius:10px;outline:none;transition:border-color .16s;background:#fff}
         .feld:focus{border-color:${D.blau}}
-        .beschr{display:block;font-size:12px;font-weight:700;color:${D.grau};margin-bottom:6px}
+        .beschr{display:block;font-size:12px;font-weight:700;color:${D.textMatt};margin-bottom:6px}
         @media(max-width:860px){.kontaktgrid{grid-template-columns:1fr !important}}
       `}
     >
@@ -39,7 +39,7 @@ export default function Kontakt() {
             {gesendet ? (
               <>
                 <h2 className="display" style={{ fontSize: 22, marginBottom: 10 }}>Dein E-Mail-Programm ist geöffnet.</h2>
-                <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.7, marginBottom: 18 }}>
+                <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.7, marginBottom: 18 }}>
                   Bitte die Nachricht dort noch absenden. Falls sich nichts geöffnet hat,
                   schreib direkt an <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.blau, fontWeight: 600 }}>{EMAIL}</a>.
                 </p>
@@ -66,7 +66,7 @@ export default function Kontakt() {
                 </div>
                 <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 18 }}>
                   <input type="checkbox" checked={f.ok} onChange={e => upd('ok', e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: D.blau, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12.5, color: D.grau, lineHeight: 1.6 }}>
+                  <span style={{ fontSize: 12.5, color: D.textMatt, lineHeight: 1.6 }}>
                     Ich habe die <a className="link-u" href="/datenschutz" style={{ color: D.blau }}>Datenschutzerklärung</a> gelesen
                     und bin damit einverstanden, dass meine Angaben zur Bearbeitung meiner Anfrage verarbeitet werden. *
                   </span>
@@ -85,7 +85,7 @@ export default function Kontakt() {
           <div>
             <div className="karte" style={{ padding: 24, marginBottom: 16 }}>
               <h3 className="display" style={{ fontSize: 17, marginBottom: 14 }}>Direkt erreichbar</h3>
-              <div style={{ fontSize: 14, color: D.grau, lineHeight: 2.1 }}>
+              <div style={{ fontSize: 14, color: D.textMatt, lineHeight: 2.1 }}>
                 <a className="link-u" href={TELEFON_LINK} style={{ fontWeight: 700, color: D.dunkel }}>{TELEFON}</a><br />
                 <a className="link-u" href={`mailto:${EMAIL}`}>{EMAIL}</a><br />
                 Mo. – Fr., 9 – 18 Uhr<br />
@@ -94,7 +94,7 @@ export default function Kontakt() {
             </div>
             <div className="karte" style={{ padding: 24 }}>
               <h3 className="display" style={{ fontSize: 17, marginBottom: 10 }}>Vielleicht schneller</h3>
-              <p style={{ fontSize: 13.8, color: D.grau, lineHeight: 1.7, marginBottom: 14 }}>
+              <p style={{ fontSize: 13.8, color: D.textMatt, lineHeight: 1.7, marginBottom: 14 }}>
                 Viele Fragen sind in der Hilfe schon beantwortet — Kosten, Ablauf, Eigentum, Kündigung.
               </p>
               <a href="/hilfe" className="btnleer">Zur Hilfe &amp; FAQ</a>

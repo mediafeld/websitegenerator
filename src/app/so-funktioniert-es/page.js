@@ -34,7 +34,7 @@ export default function SoFunktioniertEs() {
                   <h2 className="display" style={{ fontSize: 21, letterSpacing: '-.025em' }}>{s.t}</h2>
                   <span style={{ fontSize: 11.5, fontWeight: 700, color: D.blau, background: D.blauZart, borderRadius: 99, padding: '3px 10px' }}>{s.dauer}</span>
                 </div>
-                <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.7, marginBottom: 16 }}>{s.u}</p>
+                <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.7, marginBottom: 16 }}>{s.u}</p>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {s.punkte.map(p => (
                     <li key={p} style={{ display: 'flex', gap: 9, fontSize: 14, color: '#41506B' }}>
@@ -53,7 +53,7 @@ export default function SoFunktioniertEs() {
         <div className="wrap" style={{ maxWidth: 860 }}>
           <div className="karte" style={{ padding: '30px 28px', borderColor: D.blau, borderWidth: 2 }}>
             <h2 className="display" style={{ fontSize: 23, marginBottom: 12 }}>Du bleibst selbst am Steuer.</h2>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.75, marginBottom: 18 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.75, marginBottom: 18 }}>
               Das ist der wichtigste Unterschied zur Agentur: Änderungen an deiner Website machst du
               selbst — jederzeit, so oft du willst, ohne Zusatzkosten. Neue Öffnungszeiten,
               neuer Preis, neues Foto vom Team? Einloggen, anklicken, ändern, fertig.
@@ -66,7 +66,7 @@ export default function SoFunktioniertEs() {
               ].map(([t, u]) => (
                 <div key={t} style={{ background: D.paper, borderRadius: 12, padding: '16px 16px' }}>
                   <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 5 }}>{t}</strong>
-                  <span style={{ fontSize: 13.5, color: D.grau, lineHeight: 1.6 }}>{u}</span>
+                  <span style={{ fontSize: 13.5, color: D.textMatt, lineHeight: 1.6 }}>{u}</span>
                 </div>
               ))}
             </div>

@@ -33,7 +33,7 @@ export default function PasswortNeu() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Roboto",system-ui,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"InterTight",system-ui,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
@@ -54,7 +54,7 @@ export default function PasswortNeu() {
             Passwort geändert. Du wirst weitergeleitet…
           </div>
         ) : !bereit ? (
-          <div style={{ fontSize: 14, color: D.grau, lineHeight: 1.7, textAlign: 'center' }}>
+          <div style={{ fontSize: 14, color: D.textMatt, lineHeight: 1.7, textAlign: 'center' }}>
             <p style={{ marginBottom: 14 }}>
               Dieser Link ist ungültig oder abgelaufen. Links zum Zurücksetzen gelten eine Stunde.
             </p>

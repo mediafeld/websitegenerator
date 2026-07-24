@@ -1,8 +1,10 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-// Blendet Elemente beim Scrollen ein (gestaffelt möglich)
-export function Reveal({ children, verzug = 0, style, className = '' }) {
+// Blendet Elemente beim Scrollen ein — und wieder aus, wenn sie den Bildschirm verlassen
+// (in beide Richtungen: fliegt rein beim Runter-, wieder raus beim Hochscrollen).
+// art: 'hoch' (Standard, von unten) | 'pop' (skaliert auf) | 'links' | 'rechts'
+export function Reveal({ children, verzug = 0, style, className = '', art = 'hoch' }) {
   const ref = useRef(null)
   const [an, setAn] = useState(false)
 
@@ -11,15 +13,15 @@ export function Reveal({ children, verzug = 0, style, className = '' }) {
     if (!el) return
     if (typeof IntersectionObserver === 'undefined') { setAn(true); return }
     const beob = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setAn(true); beob.disconnect() }
+      setAn(e.isIntersecting)
     }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' })
     beob.observe(el)
     return () => beob.disconnect()
   }, [])
 
   return (
-    <div ref={ref} className={`reveal ${an ? 'an' : ''} ${className}`}
-      style={{ transitionDelay: `${verzug}ms`, ...style }}>
+    <div ref={ref} className={`reveal reveal-${art} ${an ? 'an' : ''} ${className}`}
+      style={{ transitionDelay: an ? `${verzug}ms` : '0ms', ...style }}>
       {children}
     </div>
   )

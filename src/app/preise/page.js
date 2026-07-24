@@ -12,7 +12,7 @@ export default function PreiseSeite() {
   const liste = modus === 'kaufen' ? KAUF : MIETE
 
   return (
-    <div style={{ background: '#fff', color: D.text, fontFamily: '"Roboto",system-ui,sans-serif', minHeight: '100vh' }}>
+    <div style={{ background: '#fff', color: D.text, fontFamily: '"InterTight",system-ui,sans-serif', minHeight: '100vh' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
@@ -43,7 +43,7 @@ export default function PreiseSeite() {
             {[['kaufen', 'Kaufen · einmalig'], ['mieten', 'Mieten · monatlich']].map(([id, t]) => (
               <button key={id} onClick={() => setModus(id)} style={{
                 border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
-                background: modus === id ? D.blau : 'transparent', color: modus === id ? '#fff' : D.grau, transition: 'all .15s',
+                background: modus === id ? D.blau : 'transparent', color: modus === id ? '#fff' : D.textMatt, transition: 'all .15s',
               }}>{t}</button>
             ))}
           </div>
@@ -59,10 +59,10 @@ export default function PreiseSeite() {
                   <span style={{ fontSize: 17, fontWeight: 700, color: D.textMatt }}>€</span>
                   <span style={{ fontSize: 12.5, color: D.grauHell, marginLeft: 4 }}>{modus === 'kaufen' ? 'einmalig' : '/ Monat'}</span>
                 </div>
-                <p style={{ fontSize: 11.5, color: D.grauHell, margin: '6px 0 18px' }}>
+                <p style={{ fontSize: 11.5, color: D.textMatt, margin: '6px 0 18px' }}>
                   {modus === 'kaufen' ? 'inkl. MwSt. · Einmalzahlung' : `inkl. MwSt. · oder ${eur(p.jahr)} € im Jahr (10 statt 12 Monate)`}
                 </p>
-                {p.fuer && <p style={{ fontSize: 13, color: D.grau, fontStyle: 'italic', marginBottom: 16, lineHeight: 1.55 }}>Für: {p.fuer}</p>}
+                {p.fuer && <p style={{ fontSize: 13, color: D.textMatt, fontStyle: 'italic', marginBottom: 16, lineHeight: 1.55 }}>Für: {p.fuer}</p>}
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24, flex: 1 }}>
                   {p.punkte.map(t => (
                     <li key={t} style={{ display: 'flex', gap: 9, fontSize: 14, color: D.text, lineHeight: 1.5 }}>
@@ -127,7 +127,7 @@ export default function PreiseSeite() {
         <div className="wrap" style={{ maxWidth: 900 }}>
           <div className="karte" style={{ padding: '26px 24px' }}>
             <h2 className="display" style={{ fontSize: 22, marginBottom: 10 }}>Vertrag kündigen</h2>
-            <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.7, marginBottom: 16 }}>
+            <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.7, marginBottom: 16 }}>
               Mietverträge laufen zwölf Monate und sind danach monatlich kündbar. Du kündigst
               in deinem Kontobereich oder per E-Mail – ohne Begründung, ohne Anruf.
               Nach der Kündigung kannst du deine Website als ZIP herunterladen und die Domain

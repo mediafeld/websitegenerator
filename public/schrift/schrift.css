@@ -1,58 +1,51 @@
-/* Roboto – lokal ausgeliefert, keine Verbindung zu Google (DSGVO).
-   Einzige Schriftart der Seite, volle Schnittbreite 200–900. */
+/* Inter Tight – lokal ausgeliefert, keine Verbindung zu Google (DSGVO).
+   Einzige Schriftart der Seite. */
 @font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 200;
-  font-display: swap;
-  src: url(/schrift/roboto-200.woff2) format('woff2');
-}
-@font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 300;
   font-display: swap;
-  src: url(/schrift/roboto-300.woff2) format('woff2');
+  src: url(/schrift/intertight-300.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/schrift/roboto-400.woff2) format('woff2');
+  src: url(/schrift/intertight-400.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/schrift/roboto-500.woff2) format('woff2');
+  src: url(/schrift/intertight-500.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url(/schrift/roboto-600.woff2) format('woff2');
+  src: url(/schrift/intertight-600.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url(/schrift/roboto-700.woff2) format('woff2');
+  src: url(/schrift/intertight-700.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url(/schrift/roboto-800.woff2) format('woff2');
+  src: url(/schrift/intertight-800.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Roboto';
+  font-family: 'InterTight';
   font-style: normal;
   font-weight: 900;
   font-display: swap;
-  src: url(/schrift/roboto-900.woff2) format('woff2');
+  src: url(/schrift/intertight-900.woff2) format('woff2');
 }

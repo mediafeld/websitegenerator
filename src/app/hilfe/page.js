@@ -44,7 +44,7 @@ export default function Hilfe() {
                       <span style={{ flex: 1 }}>{q.f}</span>
                       <span className="plus" aria-hidden="true" style={{ color: D.blau, fontSize: 19, fontWeight: 700, lineHeight: 1 }}>+</span>
                     </summary>
-                    <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.78, marginTop: 12 }}>{q.a}</p>
+                    <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.78, marginTop: 12 }}>{q.a}</p>
                   </details>
                 ))}
               </div>
@@ -52,14 +52,14 @@ export default function Hilfe() {
           })}
 
           {gefiltert.length === 0 && (
-            <div className="karte" style={{ padding: 24, fontSize: 14.5, color: D.grau, lineHeight: 1.7 }}>
+            <div className="karte" style={{ padding: 24, fontSize: 14.5, color: D.textMatt, lineHeight: 1.7 }}>
               Zu „{suche}" haben wir keine Antwort gefunden. Frag uns direkt — telefonisch oder per E-Mail.
             </div>
           )}
 
           <div className="karte" style={{ padding: '26px 26px', marginTop: 10, marginBottom: 60, borderColor: D.blau, borderWidth: 2 }}>
             <h2 className="display" style={{ fontSize: 20, marginBottom: 10 }}>Frage nicht beantwortet?</h2>
-            <p style={{ fontSize: 14.5, color: D.grau, lineHeight: 1.7, marginBottom: 16 }}>
+            <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.7, marginBottom: 16 }}>
               Ruf an — Mo. bis Fr. von 9 bis 18 Uhr geht jemand ans Telefon.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

@@ -14,12 +14,12 @@ export default function UeberUns() {
         <div className="wrap" style={{ maxWidth: 800 }}>
           <div className="karte" style={{ padding: '30px 30px', marginBottom: 22 }}>
             <h2 className="display" style={{ fontSize: 23, marginBottom: 14 }}>Warum es das gibt</h2>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.78, marginBottom: 14 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.78, marginBottom: 14 }}>
               Viele kleine Betriebe stehen vor derselben Wahl: einen Baukasten selbst zusammenklicken,
               der am Ende aussieht wie tausend andere — oder eine Agentur beauftragen, was
               schnell vierstellig wird und Wochen dauert.
             </p>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.78 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.78 }}>
               Wir haben den Weg dazwischen gebaut: Du beantwortest Fragen zu deinem Betrieb, und
               daraus entsteht eine Website mit passenden Texten und Bildern. Danach kannst du alles
               selbst ändern. Kein Abo für Kleinigkeiten, keine Wartezeit, kein Anruf nötig.
@@ -34,20 +34,20 @@ export default function UeberUns() {
             ].map(([t, u]) => (
               <div key={t} className="karte karte-hover" style={{ padding: '20px 20px' }}>
                 <h3 className="display" style={{ fontSize: 16.5, marginBottom: 7 }}>{t}</h3>
-                <p style={{ fontSize: 13.8, color: D.grau, lineHeight: 1.65 }}>{u}</p>
+                <p style={{ fontSize: 13.8, color: D.textMatt, lineHeight: 1.65 }}>{u}</p>
               </div>
             ))}
           </div>
 
           <div className="karte" style={{ padding: '30px 30px', marginBottom: 22 }}>
             <h2 className="display" style={{ fontSize: 23, marginBottom: 14 }}>Wie die Website entsteht</h2>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.78, marginBottom: 14 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.78, marginBottom: 14 }}>
               Wir setzen künstliche Intelligenz für Texte und Bilder ein — das sagen wir offen,
               statt es zu verschweigen. Der Aufbau, die Blöcke und die Gestaltung sind dagegen von
               Hand entworfen: Deshalb sieht das Ergebnis nicht aus wie ein zufällig
               zusammengewürfelter Entwurf.
             </p>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.78 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.78 }}>
               Was die KI nicht kann, sagen wir auch: Sie kennt deinen Betrieb nicht persönlich.
               Deshalb solltest du die Texte durchlesen und dort nachschärfen, wo es auf Details
               ankommt — bei Preisen, Leistungen und rechtlichen Angaben besonders.
@@ -56,7 +56,7 @@ export default function UeberUns() {
 
           <div className="karte" style={{ padding: '30px 30px' }}>
             <h2 className="display" style={{ fontSize: 23, marginBottom: 14 }}>Kontakt</h2>
-            <p style={{ fontSize: 15, color: D.grau, lineHeight: 1.75, marginBottom: 16 }}>
+            <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.75, marginBottom: 16 }}>
               Fragen vor dem Start? Ruf an oder schreib — Mo. bis Fr. von 9 bis 18 Uhr.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

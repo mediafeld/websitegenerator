@@ -8,7 +8,7 @@ export const FONT_LINK = '/schrift/schrift.css'
 // Gemeinsames Gerüst für alle Unterseiten
 export function Seite({ eyebrow, titel, titelLeicht, einleitung, children, css = '' }) {
   return (
-    <div style={{ background: '#fff', color: CI.text, fontFamily: '"Roboto",system-ui,sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: '#fff', color: CI.text, fontFamily: '"InterTight",system-ui,sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + css }} />

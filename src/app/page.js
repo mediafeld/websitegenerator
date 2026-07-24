@@ -41,28 +41,28 @@ export default function Startseite() {
   const belegte = daten?.ergebnisse?.filter(e => !e.frei) || []
 
   return (
-    <div style={{ background: '#fff', color: CI.text, fontFamily: '"Roboto",system-ui,sans-serif', overflowX: 'hidden' }}>
+    <div style={{ background: '#fff', color: CI.text, fontFamily: '"InterTight",system-ui,sans-serif', overflowX: 'hidden' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + CSS }} />
       <Kopf />
 
-      {/* ═══ HERO — Foto + Domain-Check als Herzstück ═══ */}
+      {/* ═══ HERO — Foto + Domain-Check als zentriertes Herzstück ═══ */}
       <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
-        <div className="wrap" style={{ paddingTop: 54, paddingBottom: 54 }}>
-          <div className="hgrid">
+        <div className="wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
+          <div className="hmitte">
             <Slider dauer={9500} folien={[
               <HeroFolie key="m" art="mieten" starten={starten} />,
               <HeroFolie key="k" art="kaufen" starten={starten} />,
             ]} />
 
-            {/* Domain-Check — bewusst das größte Element im Hero */}
+            {/* Domain-Check — bewusst das größte, zentrierte Element im Hero */}
             <div className="dcheck">
               <span className="dcheck-label"><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Ist dein Wunschname noch frei?</span>
               <div className="dcheck-feld">
-                <i className="fa-solid fa-globe" aria-hidden="true" />
+                <span className="dcheck-www">www.</span>
                 <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
-                  placeholder="z. B. deinefirma" aria-label="Wunschname für die Domain" />
+                  placeholder="deinefirma" aria-label="Wunschname für die Domain" />
                 <button onClick={pruefen} disabled={laedt}>
                   {laedt ? <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> : <>Prüfen<i className="fa-solid fa-magnifying-glass" aria-hidden="true" /></>}
                 </button>
@@ -82,7 +82,7 @@ export default function Startseite() {
                   {daten && freie.slice(0, 3).map((e, i) => (
                     <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
                       <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                      <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5 }}>{e.domain}</span>
+                      <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5, textAlign: 'left' }}>{e.domain}</span>
                       <span className="tr-frei">frei</span>
                       <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '9px 15px', fontSize: 13 }}>
                         Nehmen<i className="fa-solid fa-arrow-right" aria-hidden="true" />
@@ -94,7 +94,7 @@ export default function Startseite() {
                 </div>
               )}
 
-              <p className="dcheck-hinweis"><i className="fa-solid fa-circle-info" aria-hidden="true" />Bei Miete ist die Domain inklusive. Beim Kauf bringst du sie selbst mit.</p>
+              <p className="dcheck-hinweis"><i className="fa-solid fa-lock" aria-hidden="true" />SSL-verschlüsselt &amp; DSGVO-konform geprüft. Bei Miete ist die Domain inklusive, beim Kauf bringst du sie selbst mit.</p>
             </div>
           </div>
         </div>
@@ -361,7 +361,7 @@ export default function Startseite() {
             </div>
           </Reveal>
 
-          <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, alignItems: 'stretch' }}>
+          <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28, alignItems: 'stretch', paddingTop: 14 }}>
             {(modus === 'mieten' ? MIETE : KAUF).map((p, i) => (
               <Reveal key={p.id} verzug={i * 90}>
                 <div className={`karte karte-hover preis ${p.beliebt ? 'preis-top' : ''}`}>
@@ -566,23 +566,23 @@ function HeroFolie({ art, starten }) {
     : [['file-zipper', 'Quellcode als ZIP'], ['bolt', 'Sofort verfügbar'], ['ban', 'Keine Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
 
   return (
-    <div>
+    <div style={{ textAlign: 'center' }}>
       <span className="hmarke">
         <i className={`fa-solid fa-${mieten ? 'globe' : 'download'}`} aria-hidden="true" />
         {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
       </span>
 
-      <h1 className="t1" style={{ color: '#fff', margin: '18px 0 14px' }}>
+      <h1 className="t1" style={{ color: '#fff', margin: '18px auto 14px', maxWidth: 760 }}>
         {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
       </h1>
 
-      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 470, marginBottom: 26 }}>
+      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 560, margin: '0 auto 26px' }}>
         {mieten
           ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
           : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
       </p>
 
-      <div className="hknoepfe">
+      <div className="hknoepfe" style={{ justifyContent: 'center' }}>
         <button className="btnfest" onClick={() => starten(null)} style={{ fontSize: 16, padding: '17px 30px' }}>
           <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
           Kostenlos erstellen
@@ -593,7 +593,7 @@ function HeroFolie({ art, starten }) {
         </a>
       </div>
 
-      <ul className="hfakten">
+      <ul className="hfakten" style={{ margin: '0 auto', justifyContent: 'center' }}>
         {fakten.map(([ic, t]) => (
           <li key={t}><i className={`fa-solid fa-${ic}`} aria-hidden="true" />{t}</li>
         ))}
@@ -603,29 +603,30 @@ function HeroFolie({ art, starten }) {
 }
 
 const CSS = `
-/* ══ HERO — Foto, links Text, rechts der Domain-Check als Kernstück ══ */
+/* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
 .hero{position:relative}
-.hgrid{display:grid;grid-template-columns:1fr 460px;gap:56px;align-items:start;position:relative}
+.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:760px;margin:0 auto}
 .hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
   border-radius:99px;padding:9px 18px}
 .hknoepfe{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:28px}
 .btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.4);padding:16px 25px;font-size:15.5px}
 .btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
-.hfakten{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;max-width:420px}
+.hfakten{list-style:none;display:flex;flex-wrap:wrap;gap:10px 26px;max-width:520px;margin-bottom:38px}
 .hfakten li{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500;color:#DCE6EE}
 .hfakten li i{color:#6FC3EF;font-size:13px;width:16px;text-align:center}
 
-/* Domain-Check — größtes, hellstes Element im Hero */
-.dcheck{background:#fff;border-radius:20px;padding:30px 28px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text};
+/* Domain-Check — zentriert, größtes und hellstes Element im Hero */
+.dcheck{background:#fff;border-radius:20px;padding:32px 36px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text};
+  width:100%;max-width:600px;margin:0 auto;
   animation:dcheckein .7s .15s cubic-bezier(.2,.7,.3,1) backwards}
 @keyframes dcheckein{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.dcheck-label{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:${CI.text};margin-bottom:16px}
+.dcheck-label{display:flex;align-items:center;justify-content:center;gap:9px;font-size:16px;font-weight:700;color:${CI.text};margin-bottom:18px}
 .dcheck-label i{color:${CI.blau}}
 .dcheck-feld{display:flex;align-items:center;gap:0;background:${CI.grau};border:1.5px solid ${CI.linie};border-radius:99px;
   padding:5px 5px 5px 20px;transition:border-color .18s}
 .dcheck-feld:focus-within{border-color:${CI.blau}}
-.dcheck-feld>i{color:${CI.textZart};font-size:14px;margin-right:10px}
+.dcheck-www{color:${CI.textZart};font-size:15.5px;font-weight:600;margin-right:2px;user-select:none}
 .dcheck-feld input{flex:1;min-width:0;border:none;outline:none;font-size:15.5px;font-weight:500;color:${CI.text};
   padding:13px 0;background:transparent}
 .dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:13px 22px;font-size:14px;
@@ -635,9 +636,9 @@ const CSS = `
 .dcheck-tlds span{display:flex;flex-direction:column;align-items:center;gap:2px;background:${CI.grau};border-radius:10px;padding:9px 4px}
 .dcheck-tlds b{font-size:13.5px;font-weight:700;color:${CI.text}}
 .dcheck-tlds em{font-style:normal;font-size:10.5px;color:${CI.textMatt}}
-.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px}
-.dcheck-hinweis{display:flex;gap:8px;font-size:12px;color:${CI.textMatt};margin-top:16px;padding-top:14px;border-top:1px solid ${CI.linie}}
-.dcheck-hinweis i{color:${CI.blau};margin-top:2px}
+.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12px;color:${CI.textMatt};margin-top:16px;padding-top:14px;border-top:1px solid ${CI.linie}}
+.dcheck-hinweis i{color:${CI.gruen};margin-top:2px;flex-shrink:0}
 .db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:10px;padding:11px 13px}
 .db-belegt{font-size:12.5px;color:${CI.textMatt}}
 .treffer{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;
@@ -646,7 +647,7 @@ const CSS = `
 .treffer>i{color:${CI.gruen};font-size:15px}
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
 .tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
-@media(max-width:1060px){.hgrid{grid-template-columns:1fr}.dcheck{max-width:460px}}
+@media(max-width:640px){.dcheck{padding:26px 22px}.dcheck-tlds{grid-template-columns:repeat(2,1fr)}}
 
 /* ══ Leistungskarten ══ */
 .lkarte{padding:28px 26px;height:100%}
@@ -690,11 +691,14 @@ const CSS = `
 .vergleich:hover .vergleich-bild,.branche:hover .branche-bild{transform:scale(1.05)}
 
 /* ══ Haken ══ */
-.haken{list-style:none;display:flex;flex-direction:column;gap:12px}
-.haken li{display:flex;gap:12px;font-size:14.8px;line-height:1.5;color:${CI.text}}
-.haken li i{color:${CI.blau};font-size:12px;margin-top:4px;flex-shrink:0}
-.haken.gruen li i{color:${CI.gruen};font-size:14px;margin-top:2px}
+.haken{list-style:none;display:flex;flex-direction:column;gap:13px}
+.haken li{display:flex;align-items:center;gap:12px;font-size:14.8px;line-height:1.5;color:${CI.text}}
+.haken li i{color:${CI.blau};font-size:11px;flex-shrink:0;width:22px;height:22px;border-radius:50%;
+  background:#E7EFF3;display:flex;align-items:center;justify-content:center}
+.haken.gruen li i{color:${CI.gruen};background:#E7F7EC;font-size:12px}
 .dunkelzone .haken li,.sorgen .haken li{color:#DCE6EE}
+.preis-top .haken li{color:#fff}
+.preis-top .haken.gruen li i{background:rgba(255,255,255,.14);color:#8FE6B4}
 .haken.zwei{display:grid;grid-template-columns:1fr 1fr;gap:11px 24px}
 
 /* ══ Schritt-Karten ══ */
@@ -718,26 +722,41 @@ const CSS = `
 .reiter-aus:hover{border-color:${CI.orange};color:${CI.orange}}
 
 /* ══ Preiskarten ══ */
-.preis{padding:32px 28px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden}
-.preis-top{border-color:${CI.orange};box-shadow:0 18px 42px rgba(245,146,0,.16)}
-.eckband{position:absolute;top:0;right:0;background:${CI.orange};color:#fff;font-size:10.5px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;padding:7px 15px;border-radius:0 0 0 11px}
+.preis{padding:34px 30px;display:flex;flex-direction:column;height:100%;position:relative;overflow:visible;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
+.preis-top{background:linear-gradient(165deg,${CI.petrol},#0D2231);border-color:${CI.petrol};color:#fff;
+  transform:scale(1.045);box-shadow:0 26px 60px rgba(10,24,36,.35);z-index:2}
+.preis-top.karte-hover:hover{transform:scale(1.045) translateY(-6px);box-shadow:0 30px 66px rgba(10,24,36,.4)}
+.preis-top .t3{color:#fff}
+.preis-top .klein{color:#A9C2D2}
+.eckband{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:${CI.blau};color:#fff;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:8px 18px;border-radius:99px;
+  box-shadow:0 8px 18px rgba(27,147,210,.4);white-space:nowrap}
 .zahlweise{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;border-radius:99px;padding:7px 14px}
 .zw-mieten{color:${CI.blau};background:#E7EFF3;border:1px solid rgba(27,147,210,.3)}
 .zw-kaufen{color:${CI.gruen};background:#F1FAF4;border:1px solid rgba(31,157,85,.3)}
-.preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:12px;padding:20px;margin-bottom:22px}
+.preis-top .zw-mieten,.preis-top .zw-kaufen{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.24)}
+.preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:14px;padding:22px;margin-bottom:22px}
+.preis-top .preisblock{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
 .preiszeile{display:flex;align-items:baseline;gap:7px;font-size:15px;color:${CI.textMatt}}
-.preiszeile b{font-size:clamp(42px,5vw,52px);font-weight:700;letter-spacing:-.035em;color:${CI.text};line-height:1}
+.preiszeile b{font-size:clamp(44px,5vw,54px);font-weight:800;letter-spacing:-.035em;color:${CI.text};line-height:1}
 .preiszeile.hell b{color:#fff}
 .preiszeile.hell{color:#A9C2D2;justify-content:center}
 .preis-unter{display:flex;flex-direction:column;gap:1px;margin-top:8px}
 .preis-unter strong{font-size:16px;font-weight:700;color:${CI.text}}
 .preis-unter span{font-size:13px;color:${CI.textMatt}}
+.preis-top .preis-unter strong{color:#fff}
+.preis-top .preis-unter span{color:#A9C2D2}
 .preis-fakten{display:flex;flex-direction:column;gap:12px;margin-top:16px;padding-top:15px;border-top:1px solid ${CI.linie}}
+.preis-top .preis-fakten{border-top-color:rgba(255,255,255,.16)}
 .preis-fakten span{display:flex;gap:11px;font-size:13.5px;color:${CI.textMatt};line-height:1.45}
 .preis-fakten i{color:${CI.blau};font-size:12px;margin-top:3px;flex-shrink:0;width:14px;text-align:center}
 .preis-fakten b{display:block;color:${CI.text};font-weight:700;font-size:14.5px}
+.preis-top .preis-fakten span{color:#C7D6E0}
+.preis-top .preis-fakten b{color:#fff}
+.preis-top .preis-fakten i{color:#6FC3EF}
+.preis-top .btnleer{background:#fff;color:${CI.petrol};border-color:#fff}
+.preis-top .btnleer:hover{background:${CI.grau}}
 
 /* ══ Keine-Sorgen ══ */
 .sorgen{margin-top:28px;display:grid;grid-template-columns:1fr 310px;gap:36px;align-items:center;position:relative;
@@ -775,7 +794,7 @@ const CSS = `
 
 /* ══ MOBIL ══ */
 @media(max-width:1060px){
-  .hgrid,.preisband,.anfrage{grid-template-columns:1fr;gap:32px}
+  .preisband,.anfrage{grid-template-columns:1fr;gap:32px}
   .sorgen{grid-template-columns:1fr;gap:26px}
 }
 @media(max-width:860px){
