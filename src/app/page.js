@@ -374,7 +374,7 @@ export default function Startseite() {
                   <p className="klein" style={{ marginBottom: 18 }}>{p.kurz}</p>
 
                   <div className="preisblock">
-                    <div className="preiszeile"><span>ab</span><b>{eur(p.preis)}</b><span>€</span></div>
+                    <div className={`preiszeile ${p.beliebt ? 'hell' : ''}`}><span>ab</span><b>{eur(p.preis)}</b><span>€</span></div>
                     <div className="preis-unter">
                       <strong>{modus === 'mieten' ? 'pro Monat' : 'einmalig'}</strong>
                       <span>inkl. 19 % MwSt.</span>
@@ -382,13 +382,13 @@ export default function Startseite() {
                     <div className="preis-fakten">
                       {modus === 'mieten' ? (
                         <>
-                          <span><i className="fa-solid fa-calendar-days" aria-hidden="true" /><b>12 Monate</b> Laufzeit, danach monatlich kündbar</span>
-                          <span><i className="fa-solid fa-piggy-bank" aria-hidden="true" />Jahreszahlung: <b>{eur(p.jahr)} €</b> — 2 Monate gratis</span>
+                          <span><i className="fa-solid fa-calendar-days" aria-hidden="true" /><em><b>12 Monate</b> Laufzeit, danach monatlich kündbar</em></span>
+                          <span><i className="fa-solid fa-piggy-bank" aria-hidden="true" /><em>Jahreszahlung: <b>{eur(p.jahr)} €</b> — 2 Monate gratis</em></span>
                         </>
                       ) : (
                         <>
-                          <span><i className="fa-solid fa-ban" aria-hidden="true" /><b>Keine Laufzeit</b>, kein Abo, keine Kündigung</span>
-                          <span><i className="fa-solid fa-file-zipper" aria-hidden="true" />ZIP <b>sofort</b> nach Zahlung</span>
+                          <span><i className="fa-solid fa-ban" aria-hidden="true" /><em><b>Keine Laufzeit</b>, kein Abo, keine Kündigung</em></span>
+                          <span><i className="fa-solid fa-file-zipper" aria-hidden="true" /><em>ZIP <b>sofort</b> nach Zahlung</em></span>
                         </>
                       )}
                     </div>
@@ -572,11 +572,11 @@ function HeroFolie({ art, starten }) {
         {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
       </span>
 
-      <h1 className="t1" style={{ color: '#fff', margin: '18px auto 14px', maxWidth: 760 }}>
+      <h1 className="t1" style={{ color: '#fff', margin: '18px auto 14px', maxWidth: 880 }}>
         {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
       </h1>
 
-      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 560, margin: '0 auto 26px' }}>
+      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 620, margin: '0 auto 26px', fontSize: 18 }}>
         {mieten
           ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
           : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
@@ -605,39 +605,40 @@ function HeroFolie({ art, starten }) {
 const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
 .hero{position:relative}
-.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:760px;margin:0 auto}
+.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:1160px;margin:0 auto}
 .hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
   border-radius:99px;padding:9px 18px}
 .hknoepfe{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:28px}
 .btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.4);padding:16px 25px;font-size:15.5px}
 .btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
-.hfakten{list-style:none;display:flex;flex-wrap:wrap;gap:10px 26px;max-width:520px;margin-bottom:38px}
-.hfakten li{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500;color:#DCE6EE}
+.hfakten{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:10px 30px;max-width:640px;margin-bottom:40px}
+.hfakten li{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:500;color:#DCE6EE}
 .hfakten li i{color:#6FC3EF;font-size:13px;width:16px;text-align:center}
 
-/* Domain-Check — zentriert, größtes und hellstes Element im Hero */
-.dcheck{background:#fff;border-radius:20px;padding:32px 36px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text};
-  width:100%;max-width:600px;margin:0 auto;
+/* Domain-Check — breit, zentriert, größtes und hellstes Element im Hero */
+.dcheck{background:#fff;border-radius:24px;padding:40px 56px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text};
+  width:100%;max-width:900px;margin:0 auto;
   animation:dcheckein .7s .15s cubic-bezier(.2,.7,.3,1) backwards}
 @keyframes dcheckein{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.dcheck-label{display:flex;align-items:center;justify-content:center;gap:9px;font-size:16px;font-weight:700;color:${CI.text};margin-bottom:18px}
+.dcheck-label{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:700;color:${CI.text};margin-bottom:22px}
 .dcheck-label i{color:${CI.blau}}
 .dcheck-feld{display:flex;align-items:center;gap:0;background:${CI.grau};border:1.5px solid ${CI.linie};border-radius:99px;
-  padding:5px 5px 5px 20px;transition:border-color .18s}
+  padding:6px 6px 6px 26px;transition:border-color .18s}
 .dcheck-feld:focus-within{border-color:${CI.blau}}
-.dcheck-www{color:${CI.textZart};font-size:15.5px;font-weight:600;margin-right:2px;user-select:none}
-.dcheck-feld input{flex:1;min-width:0;border:none;outline:none;font-size:15.5px;font-weight:500;color:${CI.text};
-  padding:13px 0;background:transparent}
-.dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:13px 22px;font-size:14px;
+.dcheck-www{color:${CI.textZart};font-size:17px;font-weight:600;margin-right:2px;user-select:none}
+.dcheck-feld input{flex:1;min-width:0;border:none;outline:none;font-size:17px;font-weight:500;color:${CI.text};
+  padding:15px 0;background:transparent}
+.dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:15px 28px;font-size:15px;
   font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:9px;white-space:nowrap;transition:all .18s}
 .dcheck-feld button:hover{background:${CI.blauDunkel};transform:translateY(-1px)}
-.dcheck-tlds{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
-.dcheck-tlds span{display:flex;flex-direction:column;align-items:center;gap:2px;background:${CI.grau};border-radius:10px;padding:9px 4px}
-.dcheck-tlds b{font-size:13.5px;font-weight:700;color:${CI.text}}
-.dcheck-tlds em{font-style:normal;font-size:10.5px;color:${CI.textMatt}}
-.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left}
-.dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12px;color:${CI.textMatt};margin-top:16px;padding-top:14px;border-top:1px solid ${CI.linie}}
+.dcheck-tlds{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
+.dcheck-tlds span{display:flex;flex-direction:column;align-items:center;gap:3px;background:${CI.grau};border-radius:12px;padding:13px 6px;transition:all .18s}
+.dcheck-tlds span:hover{background:#E7EFF3;transform:translateY(-2px)}
+.dcheck-tlds b{font-size:15px;font-weight:700;color:${CI.text}}
+.dcheck-tlds em{font-style:normal;font-size:11.5px;color:${CI.textMatt}}
+.dcheck-ergebnis{margin-top:18px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12.5px;color:${CI.textMatt};margin-top:18px;padding-top:16px;border-top:1px solid ${CI.linie}}
 .dcheck-hinweis i{color:${CI.gruen};margin-top:2px;flex-shrink:0}
 .db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:10px;padding:11px 13px}
 .db-belegt{font-size:12.5px;color:${CI.textMatt}}
@@ -647,6 +648,7 @@ const CSS = `
 .treffer>i{color:${CI.gruen};font-size:15px}
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
 .tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
+@media(max-width:900px){.dcheck{max-width:640px;padding:32px 28px}}
 @media(max-width:640px){.dcheck{padding:26px 22px}.dcheck-tlds{grid-template-columns:repeat(2,1fr)}}
 
 /* ══ Leistungskarten ══ */
@@ -667,8 +669,8 @@ const CSS = `
 .pband-unter{font-size:12.5px;color:#9FB2C0;line-height:1.6;flex:1}
 
 /* ══ Große Auswahlknöpfe ══ */
-.wahlleiste{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;max-width:860px}
-.grosswahl{display:flex;align-items:center;gap:16px;text-align:left;border-radius:12px;padding:20px 22px;
+.wahlleiste{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+.grosswahl{display:flex;align-items:center;gap:16px;text-align:left;border-radius:12px;padding:20px 22px;width:100%;
   cursor:pointer;transition:all .24s;border:2px solid}
 .grosswahl i{font-size:21px;width:46px;height:46px;border-radius:11px;display:flex;align-items:center;
   justify-content:center;flex-shrink:0;transition:all .24s}
@@ -716,10 +718,10 @@ const CSS = `
 
 /* ══ Reiter ══ */
 .reiter{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:26px}
-.reiter-an,.reiter-aus{border-radius:8px;padding:11px 18px;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s;border:1.5px solid}
-.reiter-an{background:${CI.petrol};color:#fff;border-color:${CI.petrol}}
+.reiter-an,.reiter-aus{border-radius:99px;padding:11px 20px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid}
+.reiter-an{background:${CI.blau};color:#fff;border-color:${CI.blau};box-shadow:0 10px 22px rgba(27,147,210,.28)}
 .reiter-aus{background:#fff;color:${CI.textMatt};border-color:${CI.linie}}
-.reiter-aus:hover{border-color:${CI.orange};color:${CI.orange}}
+.reiter-aus:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
 
 /* ══ Preiskarten ══ */
 .preis{padding:34px 30px;display:flex;flex-direction:column;height:100%;position:relative;overflow:visible;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
@@ -749,9 +751,10 @@ const CSS = `
 .preis-top .preis-unter span{color:#A9C2D2}
 .preis-fakten{display:flex;flex-direction:column;gap:12px;margin-top:16px;padding-top:15px;border-top:1px solid ${CI.linie}}
 .preis-top .preis-fakten{border-top-color:rgba(255,255,255,.16)}
-.preis-fakten span{display:flex;gap:11px;font-size:13.5px;color:${CI.textMatt};line-height:1.45}
+.preis-fakten span{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:${CI.textMatt};line-height:1.45}
 .preis-fakten i{color:${CI.blau};font-size:12px;margin-top:3px;flex-shrink:0;width:14px;text-align:center}
-.preis-fakten b{display:block;color:${CI.text};font-weight:700;font-size:14.5px}
+.preis-fakten em{font-style:normal;display:block}
+.preis-fakten b{font-weight:700;color:${CI.text}}
 .preis-top .preis-fakten span{color:#C7D6E0}
 .preis-top .preis-fakten b{color:#fff}
 .preis-top .preis-fakten i{color:#6FC3EF}

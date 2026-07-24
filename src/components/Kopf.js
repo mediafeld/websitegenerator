@@ -72,28 +72,29 @@ a{color:inherit;text-decoration:none}
 .lauf{font-size:16.5px;line-height:1.74;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Verlaufsschrift: Schwarz → Dunkelblau, kräftig, ohne Unterstrich ── */
-.vschrift{background:linear-gradient(97deg,#0A1824 0%,${CI.blau} 100%);-webkit-background-clip:text;
-  background-clip:text;color:transparent;font-weight:800;text-decoration:none}
-.vschrift-hell{background:linear-gradient(97deg,#fff 0%,#8FD2F5 100%);-webkit-background-clip:text;
-  background-clip:text;color:transparent;font-weight:800;text-decoration:none}
-.vschrift-bewegt{background:linear-gradient(97deg,#fff 0%,#8FD2F5 100%);-webkit-background-clip:text;
-  background-clip:text;color:transparent;font-weight:800;text-decoration:none}
-
-/* ── Animierter Unterstrich ── */
-.strich{position:relative;display:inline-block;padding-bottom:10px}
-.strich:after{content:'';position:absolute;left:0;bottom:0;height:4px;width:0;border-radius:3px;
-  background:${CI.blau};animation:strichauf 1.1s .25s cubic-bezier(.2,.7,.3,1) forwards}
-.reveal.an .strich:after{animation:strichauf 1.1s .3s cubic-bezier(.2,.7,.3,1) forwards}
+/* ── Hervorhebung: fett + einmal einziehender dünner Orange-Strich, wie bei mediafeld.de ── */
+.vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:5px}
+.vschrift:after{content:'';position:absolute;left:1px;bottom:0;height:3px;width:0;border-radius:2px;background:#E1591F}
+.reveal.an .vschrift:after{animation:strichauf 1s .35s cubic-bezier(.2,.7,.3,1) forwards}
+.vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:5px}
+.vschrift-hell:after{content:'';position:absolute;left:1px;bottom:0;height:3px;width:0;border-radius:2px;background:#E1591F}
+.reveal.an .vschrift-hell:after{animation:strichauf 1s .35s cubic-bezier(.2,.7,.3,1) forwards}
+.vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:5px}
+.vschrift-bewegt:after{content:'';position:absolute;left:1px;bottom:0;height:3px;width:0;border-radius:2px;background:#E1591F}
+.reveal.an .vschrift-bewegt:after{animation:strichauf 1s .35s cubic-bezier(.2,.7,.3,1) forwards}
 @keyframes strichauf{from{width:0}to{width:100%}}
+
+/* ── Unterstrich beim Hover (z. B. Links) ── */
 .strich-hover{position:relative}
 .strich-hover:after{content:'';position:absolute;left:0;bottom:-4px;height:2.5px;width:0;border-radius:2px;
   background:${CI.blau};transition:width .35s cubic-bezier(.2,.7,.3,1)}
 .strich-hover:hover:after{width:100%}
 
 /* ── Geister-Überschrift ── */
-.geistkopf{position:relative}
-.geist{display:none}
+.geistkopf{position:relative;padding-top:30px}
+.geist{position:absolute;top:-10px;left:-4px;font-size:clamp(52px,8.6vw,124px);font-weight:800;
+  letter-spacing:-.05em;line-height:.8;color:#DCE4E9;white-space:nowrap;pointer-events:none;z-index:0;user-select:none}
+.dunkelzone .geist{color:rgba(255,255,255,.055)}
 .geistinhalt{position:relative;z-index:1}
 .mitte .geist{left:50%;transform:translateX(-50%)}
 
