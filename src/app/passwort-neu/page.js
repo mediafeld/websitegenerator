@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
-import { D, BASIS_CSS, EMAIL } from '@/components/Kopf'
+import { D, CI, VERLAUF, BASIS_CSS, EMAIL } from '@/components/Kopf'
 
 export default function PasswortNeu() {
   const router = useRouter()
@@ -44,7 +44,7 @@ export default function PasswortNeu() {
       ` }} />
       <div style={{ width: '100%', maxWidth: 430, background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 18, padding: '38px 36px', boxShadow: '0 14px 44px rgba(10,24,36,.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <a href="/" className="display" style={{ fontSize: 20 }}>websitegenerator<span style={{ color: D.akzent }}>24</span></a>
+          <a href="/" className="display" style={{ fontSize: 20 }}>websitegenerator<span style={{ color: CI.violett }}>24</span></a>
           <h1 className="display" style={{ fontSize: 23, marginTop: 18 }}>Neues Passwort</h1>
         </div>
 
@@ -77,7 +77,7 @@ export default function PasswortNeu() {
         )}
 
         <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 20, textAlign: 'center', lineHeight: 1.7 }}>
-          Probleme? <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.akzent }}>{EMAIL}</a>
+          Probleme? <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: CI.violett }}>{EMAIL}</a>
         </p>
       </div>
     </div>

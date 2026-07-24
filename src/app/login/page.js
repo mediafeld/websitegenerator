@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
-import { D, BASIS_CSS, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
+import { D, CI, VERLAUF, BASIS_CSS, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 
 export default function LoginSeite() {
   const router = useRouter()
@@ -67,8 +67,8 @@ export default function LoginSeite() {
         .lwrap{position:relative}
         .lwrap i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:${D.grauHell};font-size:14px;pointer-events:none;transition:color .16s}
         .lwrap:focus-within i{color:${D.blau}}
-        .lknopf{width:100%;background:${D.akzent};color:#fff;border:none;border-radius:11px;padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;transition:background .16s,transform .16s,box-shadow .16s}
-        .lknopf:hover{background:${D.akzentHell};transform:translateY(-2px);box-shadow:0 10px 26px rgba(29,78,216,.3)}
+        .lknopf{width:100%;background:${VERLAUF};background-size:200% 100%;color:#fff;border:none;border-radius:11px;padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;transition:background .16s,transform .16s,box-shadow .16s}
+        .lknopf:hover{background-position:100% 50%;transform:translateY(-2px);box-shadow:0 10px 26px rgba(29,78,216,.3)}
         .lknopf:disabled{opacity:.6;cursor:wait;transform:none}
         .llink{background:none;border:none;color:${D.blau};font-size:13.5px;font-weight:600;cursor:pointer;padding:3px}
         .llink:hover{text-decoration:underline}
@@ -89,7 +89,7 @@ export default function LoginSeite() {
             {/* Logo */}
             <div style={{ textAlign: 'center', marginBottom: 26 }}>
               <a href="/" className="display" style={{ fontSize: 21, letterSpacing: '-.045em' }}>
-                websitegenerator<span style={{ color: D.blau }}>24</span>
+                websitegenerator<span className="verlauf">24</span>
               </a>
               <h1 className="display" style={{ fontSize: 25, marginTop: 20, letterSpacing: '-.03em' }}>{titel}</h1>
               <p style={{ fontSize: 14, color: D.grau, marginTop: 5 }}>{unter}</p>
@@ -157,7 +157,7 @@ export default function LoginSeite() {
           {/* Hilfe darunter */}
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: D.grau, lineHeight: 1.8 }}>
             Probleme beim Anmelden?{' '}
-            <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.akzent, fontWeight: 600 }}>{EMAIL}</a>
+            <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: CI.violett, fontWeight: 600 }}>{EMAIL}</a>
             <br />
             <a className="link-u" href="/hilfe">Hilfe &amp; FAQ</a> · <a className="link-u" href="/datenschutz">Datenschutz</a> · <a className="link-u" href="/impressum">Impressum</a>
           </div>

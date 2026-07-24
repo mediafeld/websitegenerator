@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
+import { Kopf, D, BASIS_CSS, CI, VERLAUF } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { Reveal, Zaehler, Slider } from '@/components/Effekte'
@@ -67,32 +67,34 @@ export default function Startseite() {
       <Kopf />
 
       {/* ══════ HERO ══════ */}
-      <section id="domain" className="dunkelzone" style={{ position: 'relative', overflow: 'hidden', paddingTop: 58, paddingBottom: 62 }}>
-        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `radial-gradient(760px 380px at 78% 12%, rgba(232,54,93,.16), transparent 66%), radial-gradient(620px 320px at 8% 84%, rgba(18,179,160,.13), transparent 66%)` }} />
-        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,.075) 1px, transparent 1px)', backgroundSize: '26px 26px', maskImage: 'linear-gradient(180deg,#000,transparent 72%)', WebkitMaskImage: 'linear-gradient(180deg,#000,transparent 72%)' }} />
+      <section id="domain" className="weich-unten" style={{ position: 'relative', overflow: 'hidden', paddingTop: 56, paddingBottom: 104 }}>
+        <div className="mesh" aria-hidden="true" />
+        <div className="punkte" aria-hidden="true" />
+        <div className="wolke" style={{ width: 520, height: 520, background: CI.blau, opacity: .17, top: -170, left: -140 }} aria-hidden="true" />
+        <div className="wolke" style={{ width: 460, height: 460, background: CI.violett, opacity: .15, top: 30, right: -150, animationDelay: '-7s' }} aria-hidden="true" />
+        <div className="wolke" style={{ width: 380, height: 380, background: CI.tuerkis, opacity: .13, bottom: -120, left: '42%', animationDelay: '-13s' }} aria-hidden="true" />
 
         <div className="wrap" style={{ position: 'relative' }}>
           <Slider folien={folien} />
 
-          {/* Domain-Leiste */}
           <Reveal verzug={120}>
-            <div style={{ maxWidth: 700, margin: '48px auto 0' }}>
-              <p className="eyebrow" style={{ color: '#7EE8DA', textAlign: 'center', marginBottom: 13 }}>
-                <i className="fa-solid fa-bolt" style={{ marginRight: 8 }} aria-hidden="true" />Ist dein Wunschname noch frei?
+            <div style={{ maxWidth: 720, margin: '52px auto 0' }}>
+              <p className="eyebrow verlauf" style={{ textAlign: 'center', marginBottom: 14 }}>
+                Ist dein Wunschname noch frei?
               </p>
               <div className="adresszeile">
-                <span style={{ fontSize: 13, color: '#8494AE', whiteSpace: 'nowrap' }}>https://</span>
+                <span style={{ fontSize: 13, color: CI.textZart, whiteSpace: 'nowrap' }}>https://</span>
                 <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
                   placeholder="dein-firmenname" aria-label="Wunschname für die Domain"
-                  style={{ flex: 1, minWidth: 110, border: 'none', outline: 'none', fontSize: 18, fontWeight: 700, color: D.text, background: 'transparent', padding: '10px 0' }} />
+                  style={{ flex: 1, minWidth: 110, border: 'none', outline: 'none', fontSize: 19, fontWeight: 600, color: CI.textStark, background: 'transparent', padding: '11px 0' }} />
                 {!name && <span className="caret" aria-hidden="true" />}
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#8494AE' }}>.de</span>
-                <button className="btnfest" onClick={pruefen} disabled={laedt} style={{ padding: '12px 22px', whiteSpace: 'nowrap', opacity: laedt ? .6 : 1 }}>
+                <span style={{ fontSize: 15.5, fontWeight: 600, color: CI.textZart }}>.de</span>
+                <button className="btnfest" onClick={pruefen} disabled={laedt} style={{ padding: '13px 24px', whiteSpace: 'nowrap', opacity: laedt ? .6 : 1 }}>
                   {laedt ? 'Prüft…' : 'Prüfen'}
                 </button>
               </div>
-              <p style={{ fontSize: 12.5, color: D.textMattDunkel, marginTop: 12, textAlign: 'center' }}>
-                Amtliche Prüfung bei der Registrierungsstelle — kein Zwischenspeicher, keine Schätzung.
+              <p style={{ fontSize: 12.5, color: CI.textZart, marginTop: 13, textAlign: 'center' }}>
+                Amtliche Prüfung bei der Registrierungsstelle — keine Schätzung, kein Zwischenspeicher.
               </p>
             </div>
           </Reveal>
@@ -100,31 +102,31 @@ export default function Startseite() {
           {fehler && <div className="hinweis">{fehler}</div>}
 
           {daten && (
-            <div style={{ maxWidth: 700, margin: '24px auto 0' }}>
+            <div style={{ maxWidth: 720, margin: '24px auto 0' }}>
               {freie.map((e, i) => (
-                <div key={e.domain} className="treffer" style={{ borderColor: i === 0 ? D.tuerkis : D.linie }}>
-                  <i className="fa-solid fa-circle-check" style={{ color: '#7EE8DA', fontSize: 16 }} aria-hidden="true" />
-                  <span style={{ flex: 1, minWidth: 150, fontSize: 17, fontWeight: 800, letterSpacing: '-.02em', color: '#fff' }}>{e.domain}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#7EE8DA', letterSpacing: '.08em', textTransform: 'uppercase' }}>frei</span>
-                  <button className="btntuerkis" onClick={() => starten(e.domain)} style={{ padding: '11px 18px', fontSize: 13.5, whiteSpace: 'nowrap' }}>
+                <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
+                  <i className="fa-solid fa-circle-check" style={{ color: CI.tuerkis, fontSize: 17 }} aria-hidden="true" />
+                  <span style={{ flex: 1, minWidth: 150, fontSize: 18, fontWeight: 700, letterSpacing: '-.025em' }}>{e.domain}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: CI.tuerkis, letterSpacing: '.1em', textTransform: 'uppercase' }}>frei</span>
+                  <button className="btntuerkis" onClick={() => starten(e.domain)} style={{ padding: '11px 19px', fontSize: 13.5, whiteSpace: 'nowrap' }}>
                     Diese nehmen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 9 }} aria-hidden="true" />
                   </button>
-                  <div style={{ flexBasis: '100%', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 6 }}>
+                  <div style={{ flexBasis: '100%', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 7 }}>
                     <span className="marke-tuerkis"><i className="fa-solid fa-check" style={{ marginRight: 6 }} aria-hidden="true" />Bei Miete inklusive</span>
-                    <span style={{ fontSize: 12.5, color: D.textMattDunkel }}>Beim Kauf bringst du Domain und Hosting selbst mit.</span>
+                    <span style={{ fontSize: 12.5, color: CI.textMatt }}>Beim Kauf bringst du Domain und Hosting selbst mit.</span>
                   </div>
                 </div>
               ))}
               {belegte.length > 0 && (
-                <p style={{ fontSize: 12.5, color: D.textMattDunkel, marginTop: 12 }}>
-                  <i className="fa-solid fa-circle-xmark" style={{ marginRight: 8, color: '#FF8AA0' }} aria-hidden="true" />
+                <p style={{ fontSize: 12.5, color: CI.textMatt, marginTop: 12 }}>
+                  <i className="fa-solid fa-circle-xmark" style={{ marginRight: 8, color: CI.violett }} aria-hidden="true" />
                   Schon vergeben: {belegte.map(e => e.domain).join(' · ')}
                 </p>
               )}
               {freie.length === 0 && (
-                <div className="karte" style={{ padding: 20, fontSize: 14, color: D.textMattDunkel, lineHeight: 1.7 }}>
+                <div className="karte" style={{ padding: 22, fontSize: 14.5, color: CI.textMatt, lineHeight: 1.75 }}>
                   Alle geprüften Adressen sind belegt. Probier einen Zusatz — den Ort oder die Leistung, etwa „mueller-sanitaer-berlin".
-                  <div style={{ marginTop: 14 }}><button className="btnfest" onClick={() => starten(null)}>Ohne Domain starten</button></div>
+                  <div style={{ marginTop: 15 }}><button className="btnfest" onClick={() => starten(null)}>Ohne Domain starten</button></div>
                 </div>
               )}
             </div>
@@ -140,7 +142,7 @@ export default function Startseite() {
               {['Erstellung kostenlos', 'Domain inklusive', 'Kein Abo beim Kauf', 'Änderungen gratis', 'ZIP zum Mitnehmen',
                 'Server in Deutschland', 'Ohne Cookie-Banner', 'Telefonisch erreichbar'].map(t => (
                 <span key={t} style={{ color: D.grau }}>
-                  <span style={{ marginRight: 12, color: D.akzent, fontWeight: 900 }}>✦</span>{t}
+                  <span className="verlauf" style={{ marginRight: 12, fontWeight: 900 }}>✦</span>{t}
                 </span>
               ))}
             </span>
@@ -153,24 +155,24 @@ export default function Startseite() {
         <div className="wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 26, textAlign: 'center' }}>
           {[[10, 'Minuten bis zur Website', ''], [10, 'Branchen mit eigenen Inhalten', ''], [15, 'Blocktypen im Editor', '+'], [0, 'Euro für Änderungen', '']].map(([z, t, s], i) => (
             <Reveal key={t} verzug={i * 90}>
-              <div className="display" style={{ fontSize: 'clamp(38px,5vw,58px)', color: D.akzent }}>
+              <div className="display verlauf" style={{ fontSize: 'clamp(44px,5.8vw,72px)' }}>
                 <Zaehler bis={z} suffix={s} />
               </div>
-              <p style={{ fontSize: 13.5, color: D.textMatt, marginTop: 6 }}>{t}</p>
+              <p style={{ fontSize: 14, fontWeight: 500, color: CI.textMatt, marginTop: 8 }}>{t}</p>
             </Reveal>
           ))}
         </div>
       </section>
 
       {/* ══════ ABLAUF ══════ */}
-      <section className="hellgrau" style={{ padding: '70px 0', borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
-        <div className="wrap">
+      <section className="grauflaeche weich-oben weich-unten" style={{ padding: '96px 0 100px', position: 'relative' }}>
+        <div className="wrap" style={{ position: 'relative' }}>
           <Reveal>
-            <p className="eyebrow" style={{ marginBottom: 14 }}>01 — Ablauf</p>
-            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
-              Drei Schritte.<br /><span className="leicht">Eine Sitzung.</span>
+            <p className="eyebrow verlauf" style={{ marginBottom: 14 }}>01 — Ablauf</p>
+            <h2 className="display" style={{ fontSize: 'clamp(36px,6vw,72px)', marginBottom: 16 }}>
+              <span className="haar">Drei Schritte.</span><br /><span className="verlauf">Eine Sitzung.</span>
             </h2>
-            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 560, marginBottom: 40, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 17.5, fontWeight: 200, color: CI.textMatt, maxWidth: 580, marginBottom: 44, lineHeight: 1.72 }}>
               Vom leeren Blatt zur fertigen Website — ohne Termin und ohne Warteschleife.
             </p>
           </Reveal>
@@ -183,8 +185,8 @@ export default function Startseite() {
                     <span className="display" style={{ fontSize: 30, color: D.linie }}>{s.nr}</span>
                   </div>
                   <span className="marke-tuerkis" style={{ marginBottom: 12, display: 'inline-block' }}>{s.dauer}</span>
-                  <h3 className="display" style={{ fontSize: 21, marginBottom: 10 }}>{s.t}</h3>
-                  <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.72 }}>{s.u}</p>
+                  <h3 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-.03em', marginBottom: 11 }}>{s.t}</h3>
+                  <p style={{ fontSize: 14.5, fontWeight: 300, color: CI.textMatt, lineHeight: 1.75 }}>{s.u}</p>
                 </div>
               </Reveal>
             ))}
@@ -197,11 +199,11 @@ export default function Startseite() {
       <section id="preise" style={{ padding: '74px 0 78px' }}>
         <div className="wrap" style={{ position: 'relative' }}>
           <Reveal>
-            <p className="eyebrow" style={{ marginBottom: 14 }}>02 — Preise</p>
-            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
-              Mieten oder <span className="leicht">kaufen.</span>
+            <p className="eyebrow verlauf" style={{ marginBottom: 14 }}>02 — Preise</p>
+            <h2 className="display" style={{ fontSize: 'clamp(36px,6vw,72px)', marginBottom: 16 }}>
+              <span className="haar">Mieten oder </span><span className="verlauf">kaufen.</span>
             </h2>
-            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 620, marginBottom: 28, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 17.5, fontWeight: 200, color: CI.textMatt, maxWidth: 640, marginBottom: 30, lineHeight: 1.72 }}>
               Die Erstellung ist immer kostenlos. Danach entscheidest du:
               <strong style={{ color: D.text }}> mieten und sofort online</strong> mit Domain, Hosting und E-Mail —
               oder <strong style={{ color: D.text }}>einmalig kaufen</strong> und das ZIP herunterladen.
@@ -221,11 +223,11 @@ export default function Startseite() {
               <Reveal key={p.id} verzug={i * 110}>
                 <div className={`karte karte-hover preis ${p.beliebt ? 'preis-top' : ''}`}>
                   {p.beliebt && <span className="eckband">TOP</span>}
-                  <h3 className="display" style={{ fontSize: 22, marginBottom: 5 }}>{p.name}</h3>
+                  <h3 style={{ fontSize: 23, fontWeight: 700, letterSpacing: '-.03em', marginBottom: 6 }}>{p.name}</h3>
                   <p style={{ fontSize: 13.5, color: D.grau, marginBottom: 22 }}>{p.kurz}</p>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: D.textMatt, marginTop: 14 }}>ab</span>
-                    <span className="display" style={{ fontSize: 'clamp(44px,5.6vw,60px)', color: D.text }}>{String(p.preis).replace('.', ',')}</span>
+                    <span className="display verlauf" style={{ fontSize: 'clamp(48px,6vw,68px)' }}>{String(p.preis).replace('.', ',')}</span>
                     <span style={{ fontSize: 22, fontWeight: 800, color: D.textMatt, marginTop: 10 }}>€</span>
                   </div>
                   <p style={{ fontSize: 12.5, color: D.grauHell, margin: '2px 0 22px' }}>
@@ -255,9 +257,9 @@ export default function Startseite() {
                 <div style={{ flex: '1 1 320px' }}>
                   <span className="marke-gold"><i className="fa-solid fa-crown" style={{ marginRight: 8 }} aria-hidden="true" />Rundum betreut</span>
                   <h3 className="display" style={{ fontSize: 'clamp(28px,4vw,42px)', margin: '16px 0 12px' }}>
-                    Keine-Sorgen-<span style={{ color: '#FF8AA0' }}>Paket</span>
+                    <span className="haar">Keine-Sorgen-</span><span className="verlauf">Paket</span>
                   </h3>
-                  <p style={{ fontSize: 15.5, color: D.textMatt, lineHeight: 1.72, marginBottom: 22, maxWidth: 460 }}>
+                  <p style={{ fontSize: 16, fontWeight: 300, color: '#CFC9F2', lineHeight: 1.75, marginBottom: 24, maxWidth: 470 }}>
                     {SORGENFREI.kurz}. Für alle, die sich um gar nichts kümmern wollen —
                     wir übernehmen auch die Änderungen für dich.
                   </p>
@@ -298,14 +300,14 @@ export default function Startseite() {
       </section>
 
       {/* ══════ KONTROLLE ══════ */}
-      <section className="hellgrau" style={{ padding: '70px 0', borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
-        <div className="wrap">
+      <section className="grauflaeche weich-oben weich-unten" style={{ padding: '96px 0 100px', position: 'relative' }}>
+        <div className="wrap" style={{ position: 'relative' }}>
           <Reveal>
-            <p className="eyebrow" style={{ marginBottom: 14 }}>03 — Kontrolle</p>
-            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
-              Änderungen kosten nichts. <span className="leicht">Nie.</span>
+            <p className="eyebrow verlauf" style={{ marginBottom: 14 }}>03 — Kontrolle</p>
+            <h2 className="display" style={{ fontSize: 'clamp(36px,6vw,72px)', marginBottom: 16 }}>
+              <span className="haar">Änderungen kosten nichts.</span> <span className="verlauf">Nie.</span>
             </h2>
-            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 660, marginBottom: 38, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 17.5, fontWeight: 200, color: CI.textMatt, maxWidth: 680, marginBottom: 42, lineHeight: 1.72 }}>
               Bei einer Agentur kostet jede Textänderung Geld und Wartezeit. Hier änderst du selbst:
               neue Öffnungszeiten, neue Preise, neues Teamfoto — einloggen, anklicken, ändern.
             </p>
@@ -319,8 +321,8 @@ export default function Startseite() {
               <Reveal key={t} verzug={i * 110}>
                 <div className="karte karte-hover ikarte" style={{ padding: '28px 26px', height: '100%' }}>
                   <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
-                  <h3 className="display" style={{ fontSize: 20, marginBottom: 9 }}>{t}</h3>
-                  <p style={{ fontSize: 14.3, color: D.textMatt, lineHeight: 1.72 }}>{u}</p>
+                  <h3 style={{ fontSize: 21, fontWeight: 700, letterSpacing: '-.03em', marginBottom: 10 }}>{t}</h3>
+                  <p style={{ fontSize: 14.8, fontWeight: 300, color: CI.textMatt, lineHeight: 1.75 }}>{u}</p>
                 </div>
               </Reveal>
             ))}
@@ -333,11 +335,11 @@ export default function Startseite() {
       <section style={{ padding: '70px 0' }}>
         <div className="wrap">
           <Reveal>
-            <p className="eyebrow" style={{ marginBottom: 14 }}>04 — Branchen</p>
-            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
-              Inhalte, die zur <span className="leicht">Branche passen.</span>
+            <p className="eyebrow verlauf" style={{ marginBottom: 14 }}>04 — Branchen</p>
+            <h2 className="display" style={{ fontSize: 'clamp(36px,6vw,72px)', marginBottom: 16 }}>
+              <span className="haar">Inhalte, die zur</span><br /><span className="verlauf">Branche passen.</span>
             </h2>
-            <p style={{ fontSize: 16, color: D.textMatt, maxWidth: 620, marginBottom: 26, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 17.5, fontWeight: 200, color: CI.textMatt, maxWidth: 640, marginBottom: 28, lineHeight: 1.72 }}>
               Ein Restaurant braucht eine Speisekarte, eine Kanzlei Rechtsgebiete, ein Handwerksbetrieb den Notdienst.
             </p>
             <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 24 }}>
@@ -349,8 +351,8 @@ export default function Startseite() {
           <Reveal>
             <div className="karte bkarte zweispalt" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', overflow: 'hidden' }}>
               <div style={{ padding: '34px 32px' }}>
-                <h3 className="display" style={{ fontSize: 26, marginBottom: 12 }}>{branche.label}</h3>
-                <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.75, marginBottom: 22 }}>{branche.text}</p>
+                <h3 style={{ fontSize: 27, fontWeight: 700, letterSpacing: '-.035em', marginBottom: 13 }}>{branche.label}</h3>
+                <p style={{ fontSize: 15.5, fontWeight: 300, color: CI.textMatt, lineHeight: 1.78, marginBottom: 24 }}>{branche.text}</p>
                 <ul className="pliste">
                   {branche.bereiche.map(t => <li key={t}><i className="fa-solid fa-check" aria-hidden="true" />{t}</li>)}
                 </ul>
@@ -380,22 +382,22 @@ export default function Startseite() {
           ].map(([ic, t, u], i) => (
             <Reveal key={t} verzug={i * 90}>
               <i className={`fa-solid fa-${ic}`} style={{ fontSize: 20, color: '#7EE8DA', marginBottom: 13, display: 'block' }} aria-hidden="true" />
-              <h3 className="display" style={{ fontSize: 17.5, marginBottom: 8 }}>{t}</h3>
-              <p style={{ fontSize: 13.8, color: D.textMattDunkel, lineHeight: 1.7 }}>{u}</p>
+              <h3 style={{ fontSize: 18.5, fontWeight: 600, letterSpacing: '-.025em', marginBottom: 9 }}>{t}</h3>
+              <p style={{ fontSize: 14.2, fontWeight: 300, color: '#B4B0DC', lineHeight: 1.75 }}>{u}</p>
             </Reveal>
           ))}
         </div>
       </section>
 
       {/* ══════ FRAGEN ══════ */}
-      <section className="hellgrau" style={{ padding: '70px 0', borderTop: `1px solid ${D.linie}` }}>
-        <div className="wrap" style={{ maxWidth: 820 }}>
+      <section className="grauflaeche weich-oben" style={{ padding: '96px 0 100px', position: 'relative' }}>
+        <div className="wrap" style={{ maxWidth: 840, position: 'relative' }}>
           <Reveal>
-            <p className="eyebrow" style={{ marginBottom: 14 }}>05 — Fragen</p>
-            <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
-              Häufige <span className="leicht">Fragen.</span>
+            <p className="eyebrow verlauf" style={{ marginBottom: 14 }}>05 — Fragen</p>
+            <h2 className="display" style={{ fontSize: 'clamp(36px,6vw,72px)', marginBottom: 16 }}>
+              <span className="haar">Häufige</span> <span className="verlauf">Fragen.</span>
             </h2>
-            <p style={{ fontSize: 16, color: D.textMatt, marginBottom: 28, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 17.5, fontWeight: 200, color: CI.textMatt, marginBottom: 30, lineHeight: 1.72 }}>
               Die wichtigsten hier — alle weiteren in der <a className="link-u" href="/hilfe" style={{ color: D.tuerkis, fontWeight: 600 }}>Hilfe</a>.
             </p>
           </Reveal>
@@ -422,7 +424,7 @@ export default function Startseite() {
               <div style={{ position: 'relative' }}>
                 <img src="/platzhalter/rakete.svg" alt="" aria-hidden="true" style={{ width: 78, marginBottom: 18 }} />
                 <h2 className="display" style={{ fontSize: 'clamp(30px,4.6vw,50px)', marginBottom: 14 }}>
-                  Schauen kostet <span style={{ color: '#FF8AA0' }}>nichts.</span>
+                  <span className="haar">Schauen kostet</span> <span className="verlauf-bewegt">nichts.</span>
                 </h2>
                 <p style={{ fontSize: 16, color: '#E4D8FF', maxWidth: 500, margin: '0 auto 30px', lineHeight: 1.7 }}>
                   Geh die Fragen durch und sieh dir das Ergebnis an. Bezahlt wird erst, wenn dir die Website gefällt.
@@ -449,10 +451,11 @@ function Folie({ ober, zeile1, zeile2, text, bild, alt, starten, knopf, ziel }) 
     <div className="folie">
       <div>
         <span className="marke-neon">{ober}</span>
-        <h1 className="display" style={{ fontSize: 'clamp(40px,7vw,84px)', margin: '20px 0 20px' }}>
-          {zeile1}<br /><span style={{ color: '#FF8AA0' }}>{zeile2}</span>
+        <h1 className="display" style={{ fontSize: 'clamp(46px,8.4vw,110px)', margin: '22px 0 22px' }}>
+          <span className="haar" style={{ display: 'block', letterSpacing: '-.03em' }}>{zeile1}</span>
+          <span className="verlauf-bewegt">{zeile2}</span>
         </h1>
-        <p style={{ fontSize: 17.5, color: D.textMatt, lineHeight: 1.7, maxWidth: 520, marginBottom: 32 }}>{text}</p>
+        <p style={{ fontSize: 18, fontWeight: 300, color: CI.textMatt, lineHeight: 1.72, maxWidth: 520, marginBottom: 34 }}>{text}</p>
         <div style={{ display: 'flex', gap: 13, flexWrap: 'wrap' }}>
           <button className="btnfest" onClick={() => starten(null)} style={{ padding: '15px 28px', fontSize: 15.5 }}>
             Kostenlos erstellen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 10 }} aria-hidden="true" />
@@ -461,89 +464,94 @@ function Folie({ ober, zeile1, zeile2, text, bild, alt, starten, knopf, ziel }) 
         </div>
       </div>
       <div className="folie-bild">
-        <img src={bild} alt={alt} style={{ width: '100%', maxWidth: 440 }} />
+        <img src={bild} alt={alt} className="schwebe" style={{ width: '100%', maxWidth: 460 }} />
       </div>
     </div>
   )
 }
 
 const CSS = `
-.folie{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;min-height:400px}
-.folie-bild{display:flex;justify-content:center;animation:wippen 8s ease-in-out infinite}
-@keyframes wippen{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.marke-neon{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
-  color:#7EE8DA;border:1px solid rgba(126,232,218,.4);background:rgba(126,232,218,.09);border-radius:99px;padding:7px 15px}
-.marke-tuerkis{display:inline-block;font-size:11.5px;font-weight:700;color:${D.tuerkis};background:${D.tuerkisZart};
-  border:1px solid rgba(18,179,160,.28);border-radius:99px;padding:4px 12px}
-.dunkelzone .marke-tuerkis{color:#7EE8DA;background:rgba(126,232,218,.1);border-color:rgba(126,232,218,.3)}
-.marke-gold{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
-  color:#FFC46B;background:rgba(255,196,107,.12);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:6px 14px}
+.folie{display:grid;grid-template-columns:1.06fr .94fr;gap:48px;align-items:center;min-height:440px}
+.folie-bild{display:flex;justify-content:center}
+.marke-neon{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;
+  color:${CI.violett};border:1px solid ${CI.violett}38;background:#F5F1FE;border-radius:99px;padding:8px 16px}
+.marke-tuerkis{display:inline-block;font-size:11.5px;font-weight:700;color:${CI.tuerkis};background:#E4F8F8;
+  border:1px solid ${CI.tuerkis}40;border-radius:99px;padding:5px 13px}
+.marke-gold{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:#8FF0F0;background:rgba(18,200,200,.14);border:1px solid rgba(18,200,200,.4);border-radius:99px;padding:7px 15px}
 
-.adresszeile{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid ${D.linie};
-  border-radius:14px;padding:9px 10px 9px 18px;box-shadow:0 16px 44px rgba(0,0,0,.28);transition:box-shadow .2s}
-.adresszeile:focus-within{box-shadow:0 0 0 4px rgba(232,54,93,.22),0 16px 44px rgba(0,0,0,.28)}
-.caret{display:inline-block;width:2px;height:1.05em;background:${D.akzent};vertical-align:-.16em;animation:blink 1.1s step-end infinite}
+.adresszeile{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid ${CI.grauLinie};
+  border-radius:16px;padding:10px 11px 10px 20px;box-shadow:0 22px 54px rgba(43,98,240,.16);transition:box-shadow .25s,transform .25s}
+.adresszeile:focus-within{box-shadow:0 0 0 4px ${CI.violett}22,0 22px 54px rgba(43,98,240,.2);transform:translateY(-2px)}
+.caret{display:inline-block;width:2px;height:1.05em;background:${CI.violett};vertical-align:-.16em;animation:blink 1.1s step-end infinite}
 @keyframes blink{50%{opacity:0}}
-.hinweis{max-width:700px;margin:22px auto 0;padding:15px 17px;font-size:13.5px;color:#FFD9A3;
-  background:rgba(255,196,107,.1);border:1px solid rgba(255,196,107,.3);border-radius:12px;line-height:1.6}
-.treffer{display:flex;align-items:center;gap:13px;padding:16px 18px;margin-bottom:10px;border-radius:13px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);flex-wrap:wrap;transition:transform .2s,background .2s}
-.treffer:hover{transform:translateX(3px);background:rgba(255,255,255,.1)}
+.hinweis{max-width:720px;margin:22px auto 0;padding:16px 18px;font-size:13.5px;color:#6B4B00;
+  background:#FFF8E6;border:1px solid #FBE3A2;border-radius:14px;line-height:1.65}
+.treffer{display:flex;align-items:center;gap:14px;padding:17px 19px;margin-bottom:11px;border-radius:16px;
+  background:#fff;border:1px solid ${CI.grauLinie};flex-wrap:wrap;transition:transform .25s,box-shadow .25s,border-color .25s}
+.treffer:hover{transform:translateX(5px) translateY(-2px);box-shadow:0 18px 42px rgba(43,98,240,.14);border-color:${CI.tuerkis}66}
+.treffer-erst{border-color:${CI.tuerkis};box-shadow:0 14px 36px rgba(18,200,200,.16)}
 
-.stufe-ic{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;
-  background:${D.akzentZart};color:${D.akzent};font-size:19px;transition:transform .22s cubic-bezier(.2,.7,.3,1),background .2s,color .2s}
-.stufe:hover .stufe-ic{transform:translateY(-3px);background:${D.akzent};color:#fff}
-.ikarte i{font-size:20px;color:${D.tuerkis};background:${D.tuerkisZart};
-  width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;
-  transition:transform .22s cubic-bezier(.2,.7,.3,1),background .2s,color .2s}
-.ikarte:hover i{transform:translateY(-3px);background:${D.tuerkis};color:#fff}
+.stufe-ic{width:56px;height:56px;border-radius:17px;display:flex;align-items:center;justify-content:center;
+  background:${VERLAUF};background-size:200% 100%;color:#fff;font-size:21px;
+  box-shadow:0 12px 28px rgba(123,63,228,.28);transition:transform .35s cubic-bezier(.2,.7,.3,1),background-position .5s}
+.stufe:hover .stufe-ic{transform:rotate(-10deg) scale(1.12);background-position:100% 50%}
+.ikarte i{font-size:22px;color:#fff;background:${VERLAUF};background-size:200% 100%;
+  width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;
+  box-shadow:0 12px 26px rgba(43,98,240,.26);transition:transform .35s cubic-bezier(.2,.7,.3,1),background-position .5s}
+.ikarte:hover i{transform:rotate(10deg) scale(1.12);background-position:100% 50%}
 
-.chip{background:#fff;border:1px solid ${D.linie};border-radius:99px;padding:10px 17px;font-size:13px;
-  font-weight:600;color:${D.grau};cursor:pointer;transition:all .18s}
-.chip:hover{border-color:${D.akzent};color:${D.akzent};transform:translateY(-2px)}
-.chip-an{background:${D.akzent};color:#fff;border-color:${D.akzent};box-shadow:0 8px 20px rgba(232,54,93,.26)}
-.bbild{transition:transform .8s cubic-bezier(.2,.7,.3,1)}
-.bkarte:hover .bbild{transform:scale(1.06)}
+.chip{background:#fff;border:1px solid ${CI.grauLinie};border-radius:99px;padding:11px 18px;font-size:13px;
+  font-weight:600;color:${CI.textMatt};cursor:pointer;transition:all .22s}
+.chip:hover{border-color:${CI.violett};color:${CI.violett};transform:translateY(-3px)}
+.chip-an{background:${VERLAUF};color:#fff;border-color:transparent;box-shadow:0 10px 24px rgba(123,63,228,.3)}
+.bbild{transition:transform 1s cubic-bezier(.2,.7,.3,1)}
+.bkarte:hover .bbild{transform:scale(1.08) rotate(1deg)}
 
-.umschalter{display:inline-flex;background:#fff;border:1px solid ${D.linie};border-radius:12px;padding:5px;margin-bottom:32px;flex-wrap:wrap}
-.um-an,.um-aus{border:none;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
-.um-an{background:${D.akzent};color:#fff;box-shadow:0 8px 20px rgba(232,54,93,.26)}
-.um-aus{background:transparent;color:${D.grau}}
-.um-aus:hover{color:${D.text}}
+.umschalter{display:inline-flex;background:#fff;border:1px solid ${CI.grauLinie};border-radius:14px;padding:5px;
+  margin-bottom:36px;flex-wrap:wrap;box-shadow:0 8px 22px rgba(20,17,58,.06)}
+.um-an,.um-aus{border:none;border-radius:11px;padding:13px 24px;font-size:14.5px;font-weight:700;cursor:pointer;transition:all .25s}
+.um-an{background:${VERLAUF};color:#fff;box-shadow:0 10px 24px rgba(123,63,228,.3)}
+.um-aus{background:transparent;color:${CI.textMatt}}
+.um-aus:hover{color:${CI.textStark}}
 
-.preis{padding:32px 28px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden;background:#fff}
-.preis-top{border-color:${D.akzent};box-shadow:0 14px 40px rgba(232,54,93,.14)}
-.eckband{position:absolute;top:15px;right:-38px;width:130px;text-align:center;transform:rotate(45deg);
-  background:${D.akzent};color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.13em;padding:5px 0}
-.pliste{list-style:none;display:flex;flex-direction:column;gap:11px;flex:1}
-.pliste li{display:flex;gap:11px;font-size:14px;color:${D.text};line-height:1.55}
-.pliste li i{color:${D.tuerkis};font-size:11px;margin-top:5px;flex-shrink:0}
-.dunkelzone .pliste li,.sorgenfrei .pliste li{color:#E6EBF5}
-.sorgenfrei .pliste li i{color:#7EE8DA}
-.zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+.preis{padding:36px 30px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden;background:#fff}
+.preis-top{border-color:${CI.violett}66;box-shadow:0 22px 54px rgba(123,63,228,.16)}
+.eckband{position:absolute;top:16px;right:-40px;width:134px;text-align:center;transform:rotate(45deg);
+  background:${VERLAUF};color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.14em;padding:6px 0}
+.pliste{list-style:none;display:flex;flex-direction:column;gap:12px;flex:1}
+.pliste li{display:flex;gap:12px;font-size:14.5px;color:${CI.textStark};line-height:1.55;font-weight:400}
+.pliste li i{color:${CI.tuerkis};font-size:11px;margin-top:5px;flex-shrink:0}
+.sorgenfrei .pliste li{color:#E9E7FA}
+.sorgenfrei .pliste li i{color:#8FF0F0}
+.zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:11px 24px}
 
-.sorgenfrei{position:relative;margin-top:26px;border-radius:20px;overflow:hidden;
-  background:linear-gradient(135deg,${D.dunkel},${D.dunkel2});border:1px solid rgba(255,255,255,.14);color:#fff}
-.sorgen-glanz{position:absolute;inset:0;background:radial-gradient(680px 300px at 88% 0%,rgba(232,54,93,.22),transparent 64%)}
-.sorgen-innen{position:relative;display:flex;gap:34px;padding:38px 34px;flex-wrap:wrap;align-items:center}
-.sorgen-preis{flex:0 0 268px;text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
-  border-radius:16px;padding:26px 24px}
+.sorgenfrei{position:relative;margin-top:28px;border-radius:24px;overflow:hidden;color:#fff;
+  background:linear-gradient(120deg,${CI.anker},#1B1150 46%,#0E2E4E)}
+.sorgen-glanz{position:absolute;inset:0;background:radial-gradient(700px 320px at 86% 0%,${CI.violett}55,transparent 62%),
+  radial-gradient(520px 260px at 12% 100%,${CI.tuerkis}3D,transparent 62%)}
+.sorgen-innen{position:relative;display:flex;gap:36px;padding:42px 36px;flex-wrap:wrap;align-items:center}
+.sorgen-preis{flex:0 0 276px;text-align:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+  border-radius:18px;padding:28px 26px;backdrop-filter:blur(6px)}
 
-.frage{padding:17px 20px;margin-bottom:10px;background:#fff;transition:border-color .18s,box-shadow .18s}
-.frage summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;font-size:16px;font-weight:700}
+.frage{padding:19px 22px;margin-bottom:11px;background:#fff;transition:border-color .22s,box-shadow .22s,transform .22s}
+.frage summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:15px;font-size:16.5px;font-weight:600}
 .frage summary::-webkit-details-marker{display:none}
-.frage:hover{border-color:#D6DEEC;box-shadow:0 8px 22px rgba(16,26,51,.07)}
-.frage[open]{border-color:${D.akzent}}
-.frage[open] .plus{transform:rotate(45deg)}
-.plus{transition:transform .22s;display:inline-block;color:${D.akzent};font-size:21px;font-weight:700;line-height:1}
-.frage p{font-size:14.8px;color:${D.textMatt};line-height:1.82;margin-top:14px}
+.frage:hover{border-color:${CI.violett}55;box-shadow:0 12px 30px rgba(20,17,58,.08);transform:translateY(-2px)}
+.frage[open]{border-color:${CI.violett}}
+.frage[open] .plus{transform:rotate(135deg)}
+.plus{transition:transform .32s cubic-bezier(.2,.7,.3,1);display:inline-block;font-size:22px;font-weight:300;line-height:1;color:${CI.violett}}
+.frage p{font-size:15px;color:${CI.textMatt};line-height:1.85;margin-top:15px;font-weight:300}
 
-.abschluss{position:relative;overflow:hidden;border-radius:22px;padding:56px 34px;text-align:center;color:#fff;
-  background:linear-gradient(135deg,${D.dunkel},${D.dunkel2} 60%,#1D3A6B)}
+.abschluss{position:relative;overflow:hidden;border-radius:26px;padding:64px 34px;text-align:center;color:#fff;
+  background:linear-gradient(120deg,${CI.anker},#1B1150 44%,#0E2E4E)}
+.abschluss:before{content:'';position:absolute;inset:0;
+  background:radial-gradient(620px 300px at 20% 0%,${CI.blau}4D,transparent 62%),
+             radial-gradient(560px 280px at 84% 100%,${CI.tuerkis}40,transparent 62%)}
 
 @media(max-width:900px){
-  .folie{grid-template-columns:1fr;gap:26px;text-align:center;min-height:0}
-  .folie-bild img{max-width:260px}
+  .folie{grid-template-columns:1fr;gap:28px;text-align:center;min-height:0}
+  .folie-bild img{max-width:280px}
   .folie .marke-neon{margin:0 auto}
   .folie p{margin-left:auto;margin-right:auto}
   .folie>div>div{justify-content:center}

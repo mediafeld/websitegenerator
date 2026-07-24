@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Kopf, D, BASIS_CSS } from '@/components/Kopf'
+import { Kopf, D, BASIS_CSS, CI, VERLAUF } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN } from '@/lib/preise'
@@ -24,13 +24,14 @@ export default function PreiseSeite() {
       ` }} />
       <Kopf aktiv="Preise" />
 
-      <section className="dunkelzone" style={{ padding: '56px 0 52px' }}>
-        <div className="wrap">
-          <a href="/" style={{ fontSize: 13, color: D.textMattDunkel, display: 'inline-block', marginBottom: 18 }} className="link-u">← Zurück zur Startseite</a>
-          <p className="eyebrow" style={{ color: '#7EE8DA', marginBottom: 14 }}>Preise</p>
-          <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,52px)', marginBottom: 16 }}>Alles, was es kostet.</h1>
-          <p style={{ fontSize: 16.5, color: D.textMattDunkel, maxWidth: 620, lineHeight: 1.68 }}>
-            <strong style={{ color: '#fff' }}>Die Erstellung ist immer kostenlos</strong> — du siehst deine Website,
+      <section className="weich-unten" style={{ padding: '56px 0 80px', position: 'relative', overflow: 'hidden' }}>
+        <div className="mesh" aria-hidden="true" /><div className="punkte" aria-hidden="true" />
+        <div className="wrap" style={{ position: 'relative' }}>
+          <a href="/" style={{ fontSize: 13, color: CI.textMatt, display: 'inline-block', marginBottom: 18 }} className="link-u">← Zurück zur Startseite</a>
+          <p className="eyebrow verlauf" style={{ marginBottom: 14 }}>Preise</p>
+          <h1 className="display" style={{ fontSize: 'clamp(36px,6vw,74px)', marginBottom: 18 }}><span className="haar">Alles, was es</span> <span className="verlauf">kostet.</span></h1>
+          <p style={{ fontSize: 16.5, color: CI.textMatt, maxWidth: 660, lineHeight: 1.75, fontWeight: 300 }}>
+            <strong style={{ color: CI.textStark }}>Die Erstellung ist immer kostenlos</strong> — du siehst deine Website,
             bevor du zahlst. Danach entscheidest du: mieten und online gehen (Domain, Hosting und E-Mail inklusive)
             oder einmalig kaufen und alle Dateien mitnehmen. Alle Beträge inklusive 19 % Mehrwertsteuer.
           </p>

@@ -1,5 +1,5 @@
 'use client'
-import { D, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
+import { D, CI, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 
 const SPALTEN = [
   { titel: 'Produkt', links: [
@@ -43,13 +43,13 @@ export function Fuss() {
         <div className="spalten2" style={{ display: 'grid', gridTemplateColumns: '1fr 2.7fr', gap: 40, paddingBottom: 42 }}>
           <div>
             <div className="display" style={{ fontSize: 18, marginBottom: 12 }}>
-              websitegenerator<span style={{ color: '#FF8AA0' }}>24</span>
+              websitegenerator<span className="verlauf">24</span>
             </div>
-            <p style={{ fontSize: 13.5, color: D.textMattDunkel, lineHeight: 1.7, maxWidth: 290, marginBottom: 18 }}>
+            <p style={{ fontSize: 13.5, color: '#A9A6D0', lineHeight: 1.7, maxWidth: 290, marginBottom: 18 }}>
               Website-Baukasten mit KI für kleine Betriebe. Angaben machen, Website erhalten,
               selbst weiterpflegen — ohne laufende Kosten für Änderungen.
             </p>
-            <div style={{ fontSize: 13, color: D.textMattDunkel, lineHeight: 2 }}>
+            <div style={{ fontSize: 13, color: '#A9A6D0', lineHeight: 2 }}>
               <a className="link-u" href={TELEFON_LINK} style={{ fontWeight: 600, color: '#fff' }}>{TELEFON}</a><br />
               <a className="link-u" href={`mailto:${EMAIL}`}>{EMAIL}</a><br />
               Mo. – Fr., 9 – 18 Uhr<br />
@@ -60,10 +60,10 @@ export function Fuss() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(128px,1fr))', gap: 22 }}>
             {SPALTEN.map(s => (
               <div key={s.titel}>
-                <h3 className="eyebrow" style={{ color: '#8DA0BE', marginBottom: 13 }}>{s.titel}</h3>
+                <h3 className="eyebrow" style={{ color: '#8A86B8', marginBottom: 13 }}>{s.titel}</h3>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
                   {s.links.map(([href, t]) => (
-                    <li key={href + t}><a href={href} style={{ fontSize: 13.5, color: '#D5DEEC' }} className="link-u">{t}</a></li>
+                    <li key={href + t}><a href={href} style={{ fontSize: 13.5, color: '#D8D5F0' }} className="link-u">{t}</a></li>
                   ))}
                 </ul>
               </div>
@@ -71,7 +71,7 @@ export function Fuss() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.13)', paddingTop: 20, paddingBottom: 30, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', fontSize: 12.5, color: '#8DA0BE' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,.13)', paddingTop: 20, paddingBottom: 30, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', fontSize: 12.5, color: '#8A86B8' }}>
           <span>© {new Date().getFullYear()} websitegenerator24.de</span>
           <span style={{ color: 'rgba(255,255,255,.28)' }}>·</span>
           <span>Alle Preise inkl. 19 % MwSt.</span>
