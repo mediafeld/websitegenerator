@@ -33,7 +33,7 @@ export default function PasswortNeu() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: D.dunkel, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
@@ -42,9 +42,9 @@ export default function PasswortNeu() {
         .lwrap{position:relative;margin-bottom:13px}
         .lwrap i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:${D.grauHell};font-size:14px}
       ` }} />
-      <div style={{ width: '100%', maxWidth: 430, background: D.karte, border: `1px solid ${D.linie}`, borderRadius: 18, padding: '38px 36px', boxShadow: '0 14px 44px rgba(10,24,36,.08)' }}>
+      <div style={{ width: '100%', maxWidth: 430, background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 18, padding: '38px 36px', boxShadow: '0 14px 44px rgba(10,24,36,.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <a href="/" className="display" style={{ fontSize: 20 }}>websitegenerator<span style={{ color: D.tuerkis }}>24</span></a>
+          <a href="/" className="display" style={{ fontSize: 20 }}>websitegenerator<span style={{ color: D.akzent }}>24</span></a>
           <h1 className="display" style={{ fontSize: 23, marginTop: 18 }}>Neues Passwort</h1>
         </div>
 
@@ -54,7 +54,7 @@ export default function PasswortNeu() {
             Passwort geändert. Du wirst weitergeleitet…
           </div>
         ) : !bereit ? (
-          <div style={{ fontSize: 14, color: D.textMatt, lineHeight: 1.7, textAlign: 'center' }}>
+          <div style={{ fontSize: 14, color: D.grau, lineHeight: 1.7, textAlign: 'center' }}>
             <p style={{ marginBottom: 14 }}>
               Dieser Link ist ungültig oder abgelaufen. Links zum Zurücksetzen gelten eine Stunde.
             </p>
@@ -77,7 +77,7 @@ export default function PasswortNeu() {
         )}
 
         <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 20, textAlign: 'center', lineHeight: 1.7 }}>
-          Probleme? <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.tuerkis }}>{EMAIL}</a>
+          Probleme? <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.akzent }}>{EMAIL}</a>
         </p>
       </div>
     </div>

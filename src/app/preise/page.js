@@ -12,7 +12,7 @@ export default function PreiseSeite() {
   const liste = modus === 'kaufen' ? KAUF : MIETE
 
   return (
-    <div style={{ background: D.dunkel, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
+    <div style={{ background: '#fff', color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', minHeight: '100vh' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
@@ -24,12 +24,12 @@ export default function PreiseSeite() {
       ` }} />
       <Kopf aktiv="Preise" />
 
-      <section style={{ background: D.dunkel, color: '#fff', padding: '56px 0 50px' }}>
+      <section className="dunkelzone" style={{ padding: '56px 0 52px' }}>
         <div className="wrap">
-          <a href="/" style={{ fontSize: 13, color: D.grauHell, display: 'inline-block', marginBottom: 18 }} className="link-u">← Zurück zur Startseite</a>
-          <p className="eyebrow" style={{ color: D.tuerkis, marginBottom: 14 }}>Preise</p>
+          <a href="/" style={{ fontSize: 13, color: D.textMattDunkel, display: 'inline-block', marginBottom: 18 }} className="link-u">← Zurück zur Startseite</a>
+          <p className="eyebrow" style={{ color: '#7EE8DA', marginBottom: 14 }}>Preise</p>
           <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,52px)', marginBottom: 16 }}>Alles, was es kostet.</h1>
-          <p style={{ fontSize: 16.5, color: D.textMatt, maxWidth: 620, lineHeight: 1.68 }}>
+          <p style={{ fontSize: 16.5, color: D.textMattDunkel, maxWidth: 620, lineHeight: 1.68 }}>
             <strong style={{ color: '#fff' }}>Die Erstellung ist immer kostenlos</strong> — du siehst deine Website,
             bevor du zahlst. Danach entscheidest du: mieten und online gehen (Domain, Hosting und E-Mail inklusive)
             oder einmalig kaufen und alle Dateien mitnehmen. Alle Beträge inklusive 19 % Mehrwertsteuer.
@@ -39,7 +39,7 @@ export default function PreiseSeite() {
 
       <section style={{ padding: '48px 0 24px' }}>
         <div className="wrap">
-          <div style={{ display: 'inline-flex', background: D.karte, border: `1px solid ${D.linie}`, borderRadius: 11, padding: 4, marginBottom: 28 }}>
+          <div style={{ display: 'inline-flex', background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 11, padding: 4, marginBottom: 28 }}>
             {[['kaufen', 'Kaufen · einmalig'], ['mieten', 'Mieten · monatlich']].map(([id, t]) => (
               <button key={id} onClick={() => setModus(id)} style={{
                 border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',

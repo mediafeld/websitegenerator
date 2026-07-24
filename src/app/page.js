@@ -60,18 +60,16 @@ export default function Startseite() {
   ]
 
   return (
-    <div style={{ background: D.dunkel, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', overflowX: 'hidden' }}>
+    <div style={{ background: '#fff', color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', overflowX: 'hidden' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + CSS }} />
       <Kopf />
 
       {/* ══════ HERO ══════ */}
-      <section id="domain" style={{ position: 'relative', overflow: 'hidden', paddingTop: 62, paddingBottom: 66 }}>
-        <div className="blase" style={{ width: 460, height: 460, background: D.magenta, top: -140, left: -110 }} aria-hidden="true" />
-        <div className="blase" style={{ width: 400, height: 400, background: D.lila, top: 40, right: -120, animationDelay: '-5s' }} aria-hidden="true" />
-        <div className="blase" style={{ width: 320, height: 320, background: D.tuerkis, bottom: -90, left: '38%', animationDelay: '-9s', opacity: .35 }} aria-hidden="true" />
-        <div className="gitter" aria-hidden="true" />
+      <section id="domain" className="dunkelzone" style={{ position: 'relative', overflow: 'hidden', paddingTop: 58, paddingBottom: 62 }}>
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `radial-gradient(760px 380px at 78% 12%, rgba(232,54,93,.16), transparent 66%), radial-gradient(620px 320px at 8% 84%, rgba(18,179,160,.13), transparent 66%)` }} />
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,.075) 1px, transparent 1px)', backgroundSize: '26px 26px', maskImage: 'linear-gradient(180deg,#000,transparent 72%)', WebkitMaskImage: 'linear-gradient(180deg,#000,transparent 72%)' }} />
 
         <div className="wrap" style={{ position: 'relative' }}>
           <Slider folien={folien} />
@@ -79,21 +77,21 @@ export default function Startseite() {
           {/* Domain-Leiste */}
           <Reveal verzug={120}>
             <div style={{ maxWidth: 700, margin: '48px auto 0' }}>
-              <p className="eyebrow" style={{ color: D.tuerkis, textAlign: 'center', marginBottom: 13 }}>
+              <p className="eyebrow" style={{ color: '#7EE8DA', textAlign: 'center', marginBottom: 13 }}>
                 <i className="fa-solid fa-bolt" style={{ marginRight: 8 }} aria-hidden="true" />Ist dein Wunschname noch frei?
               </p>
               <div className="adresszeile">
-                <span style={{ fontSize: 13, color: D.grauHell, whiteSpace: 'nowrap' }}>https://</span>
+                <span style={{ fontSize: 13, color: '#8494AE', whiteSpace: 'nowrap' }}>https://</span>
                 <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
                   placeholder="dein-firmenname" aria-label="Wunschname für die Domain"
                   style={{ flex: 1, minWidth: 110, border: 'none', outline: 'none', fontSize: 18, fontWeight: 700, color: D.text, background: 'transparent', padding: '10px 0' }} />
                 {!name && <span className="caret" aria-hidden="true" />}
-                <span style={{ fontSize: 15, fontWeight: 700, color: D.grauHell }}>.de</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#8494AE' }}>.de</span>
                 <button className="btnfest" onClick={pruefen} disabled={laedt} style={{ padding: '12px 22px', whiteSpace: 'nowrap', opacity: laedt ? .6 : 1 }}>
                   {laedt ? 'Prüft…' : 'Prüfen'}
                 </button>
               </div>
-              <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 12, textAlign: 'center' }}>
+              <p style={{ fontSize: 12.5, color: D.textMattDunkel, marginTop: 12, textAlign: 'center' }}>
                 Amtliche Prüfung bei der Registrierungsstelle — kein Zwischenspeicher, keine Schätzung.
               </p>
             </div>
@@ -105,26 +103,26 @@ export default function Startseite() {
             <div style={{ maxWidth: 700, margin: '24px auto 0' }}>
               {freie.map((e, i) => (
                 <div key={e.domain} className="treffer" style={{ borderColor: i === 0 ? D.tuerkis : D.linie }}>
-                  <i className="fa-solid fa-circle-check" style={{ color: D.tuerkis, fontSize: 16 }} aria-hidden="true" />
-                  <span style={{ flex: 1, minWidth: 150, fontSize: 17, fontWeight: 800, letterSpacing: '-.02em' }}>{e.domain}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: D.tuerkis, letterSpacing: '.08em', textTransform: 'uppercase' }}>frei</span>
+                  <i className="fa-solid fa-circle-check" style={{ color: '#7EE8DA', fontSize: 16 }} aria-hidden="true" />
+                  <span style={{ flex: 1, minWidth: 150, fontSize: 17, fontWeight: 800, letterSpacing: '-.02em', color: '#fff' }}>{e.domain}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#7EE8DA', letterSpacing: '.08em', textTransform: 'uppercase' }}>frei</span>
                   <button className="btntuerkis" onClick={() => starten(e.domain)} style={{ padding: '11px 18px', fontSize: 13.5, whiteSpace: 'nowrap' }}>
                     Diese nehmen<i className="fa-solid fa-arrow-right" style={{ marginLeft: 9 }} aria-hidden="true" />
                   </button>
                   <div style={{ flexBasis: '100%', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 6 }}>
                     <span className="marke-tuerkis"><i className="fa-solid fa-check" style={{ marginRight: 6 }} aria-hidden="true" />Bei Miete inklusive</span>
-                    <span style={{ fontSize: 12.5, color: D.grauHell }}>Beim Kauf bringst du Domain und Hosting selbst mit.</span>
+                    <span style={{ fontSize: 12.5, color: D.textMattDunkel }}>Beim Kauf bringst du Domain und Hosting selbst mit.</span>
                   </div>
                 </div>
               ))}
               {belegte.length > 0 && (
-                <p style={{ fontSize: 12.5, color: D.grauHell, marginTop: 12 }}>
-                  <i className="fa-solid fa-circle-xmark" style={{ marginRight: 8, color: '#FF6B8A' }} aria-hidden="true" />
+                <p style={{ fontSize: 12.5, color: D.textMattDunkel, marginTop: 12 }}>
+                  <i className="fa-solid fa-circle-xmark" style={{ marginRight: 8, color: '#FF8AA0' }} aria-hidden="true" />
                   Schon vergeben: {belegte.map(e => e.domain).join(' · ')}
                 </p>
               )}
               {freie.length === 0 && (
-                <div className="karte" style={{ padding: 20, fontSize: 14, color: D.textMatt, lineHeight: 1.7 }}>
+                <div className="karte" style={{ padding: 20, fontSize: 14, color: D.textMattDunkel, lineHeight: 1.7 }}>
                   Alle geprüften Adressen sind belegt. Probier einen Zusatz — den Ort oder die Leistung, etwa „mueller-sanitaer-berlin".
                   <div style={{ marginTop: 14 }}><button className="btnfest" onClick={() => starten(null)}>Ohne Domain starten</button></div>
                 </div>
@@ -141,8 +139,8 @@ export default function Startseite() {
             <span key={k} style={{ display: 'flex', gap: 44 }}>
               {['Erstellung kostenlos', 'Domain inklusive', 'Kein Abo beim Kauf', 'Änderungen gratis', 'ZIP zum Mitnehmen',
                 'Server in Deutschland', 'Ohne Cookie-Banner', 'Telefonisch erreichbar'].map(t => (
-                <span key={t} style={{ color: D.textMatt }}>
-                  <span className="neon" style={{ marginRight: 12, fontWeight: 900 }}>✦</span>{t}
+                <span key={t} style={{ color: D.grau }}>
+                  <span style={{ marginRight: 12, color: D.akzent, fontWeight: 900 }}>✦</span>{t}
                 </span>
               ))}
             </span>
@@ -151,11 +149,11 @@ export default function Startseite() {
       </div>
 
       {/* ══════ ZAHLEN ══════ */}
-      <section style={{ padding: '54px 0' }}>
+      <section style={{ padding: '58px 0' }}>
         <div className="wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 26, textAlign: 'center' }}>
           {[[10, 'Minuten bis zur Website', ''], [10, 'Branchen mit eigenen Inhalten', ''], [15, 'Blocktypen im Editor', '+'], [0, 'Euro für Änderungen', '']].map(([z, t, s], i) => (
             <Reveal key={t} verzug={i * 90}>
-              <div className="display neon" style={{ fontSize: 'clamp(40px,5.4vw,62px)' }}>
+              <div className="display" style={{ fontSize: 'clamp(38px,5vw,58px)', color: D.akzent }}>
                 <Zaehler bis={z} suffix={s} />
               </div>
               <p style={{ fontSize: 13.5, color: D.textMatt, marginTop: 6 }}>{t}</p>
@@ -165,10 +163,10 @@ export default function Startseite() {
       </section>
 
       {/* ══════ ABLAUF ══════ */}
-      <section style={{ padding: '58px 0', position: 'relative' }}>
+      <section className="hellgrau" style={{ padding: '70px 0', borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
         <div className="wrap">
           <Reveal>
-            <p className="eyebrow neon" style={{ marginBottom: 14 }}>01 — Ablauf</p>
+            <p className="eyebrow" style={{ marginBottom: 14 }}>01 — Ablauf</p>
             <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
               Drei Schritte.<br /><span className="leicht">Eine Sitzung.</span>
             </h2>
@@ -182,7 +180,7 @@ export default function Startseite() {
                 <div className="karte karte-hover stufe" style={{ padding: '28px 26px', height: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                     <span className="stufe-ic"><i className={`fa-solid fa-${s.ic}`} aria-hidden="true" /></span>
-                    <span className="display neon" style={{ fontSize: 34, opacity: .85 }}>{s.nr}</span>
+                    <span className="display" style={{ fontSize: 30, color: D.linie }}>{s.nr}</span>
                   </div>
                   <span className="marke-tuerkis" style={{ marginBottom: 12, display: 'inline-block' }}>{s.dauer}</span>
                   <h3 className="display" style={{ fontSize: 21, marginBottom: 10 }}>{s.t}</h3>
@@ -196,11 +194,10 @@ export default function Startseite() {
       </section>
 
       {/* ══════ PREISE ══════ */}
-      <section id="preise" style={{ padding: '58px 0 66px', position: 'relative', overflow: 'hidden' }}>
-        <div className="blase" style={{ width: 420, height: 420, background: D.lila, top: 120, left: -160, opacity: .3 }} aria-hidden="true" />
+      <section id="preise" style={{ padding: '74px 0 78px' }}>
         <div className="wrap" style={{ position: 'relative' }}>
           <Reveal>
-            <p className="eyebrow neon" style={{ marginBottom: 14 }}>02 — Preise</p>
+            <p className="eyebrow" style={{ marginBottom: 14 }}>02 — Preise</p>
             <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
               Mieten oder <span className="leicht">kaufen.</span>
             </h2>
@@ -225,10 +222,10 @@ export default function Startseite() {
                 <div className={`karte karte-hover preis ${p.beliebt ? 'preis-top' : ''}`}>
                   {p.beliebt && <span className="eckband">TOP</span>}
                   <h3 className="display" style={{ fontSize: 22, marginBottom: 5 }}>{p.name}</h3>
-                  <p style={{ fontSize: 13, color: D.grauHell, marginBottom: 22 }}>{p.kurz}</p>
+                  <p style={{ fontSize: 13.5, color: D.grau, marginBottom: 22 }}>{p.kurz}</p>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: D.textMatt, marginTop: 14 }}>ab</span>
-                    <span className="display neon" style={{ fontSize: 'clamp(46px,6vw,64px)' }}>{String(p.preis).replace('.', ',')}</span>
+                    <span className="display" style={{ fontSize: 'clamp(44px,5.6vw,60px)', color: D.text }}>{String(p.preis).replace('.', ',')}</span>
                     <span style={{ fontSize: 22, fontWeight: 800, color: D.textMatt, marginTop: 10 }}>€</span>
                   </div>
                   <p style={{ fontSize: 12.5, color: D.grauHell, margin: '2px 0 22px' }}>
@@ -258,7 +255,7 @@ export default function Startseite() {
                 <div style={{ flex: '1 1 320px' }}>
                   <span className="marke-gold"><i className="fa-solid fa-crown" style={{ marginRight: 8 }} aria-hidden="true" />Rundum betreut</span>
                   <h3 className="display" style={{ fontSize: 'clamp(28px,4vw,42px)', margin: '16px 0 12px' }}>
-                    Keine-Sorgen-<span className="neon">Paket</span>
+                    Keine-Sorgen-<span style={{ color: '#FF8AA0' }}>Paket</span>
                   </h3>
                   <p style={{ fontSize: 15.5, color: D.textMatt, lineHeight: 1.72, marginBottom: 22, maxWidth: 460 }}>
                     {SORGENFREI.kurz}. Für alle, die sich um gar nichts kümmern wollen —
@@ -272,7 +269,7 @@ export default function Startseite() {
                   <img src="/platzhalter/formen.svg" alt="" aria-hidden="true" style={{ width: 96, opacity: .8, marginBottom: 14 }} />
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, justifyContent: 'center' }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: D.textMatt, marginTop: 14 }}>ab</span>
-                    <span className="display neon" style={{ fontSize: 'clamp(48px,7vw,72px)' }}>{String(SORGENFREI.preis).replace('.', ',')}</span>
+                    <span className="display" style={{ fontSize: 'clamp(46px,6.4vw,66px)', color: '#fff' }}>{String(SORGENFREI.preis).replace('.', ',')}</span>
                     <span style={{ fontSize: 24, fontWeight: 800, color: D.textMatt, marginTop: 10 }}>€</span>
                   </div>
                   <p style={{ fontSize: 13, color: D.grauHell, marginBottom: 20 }}>
@@ -301,10 +298,10 @@ export default function Startseite() {
       </section>
 
       {/* ══════ KONTROLLE ══════ */}
-      <section style={{ padding: '58px 0', background: D.dunkel2, borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
+      <section className="hellgrau" style={{ padding: '70px 0', borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
         <div className="wrap">
           <Reveal>
-            <p className="eyebrow neon" style={{ marginBottom: 14 }}>03 — Kontrolle</p>
+            <p className="eyebrow" style={{ marginBottom: 14 }}>03 — Kontrolle</p>
             <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
               Änderungen kosten nichts. <span className="leicht">Nie.</span>
             </h2>
@@ -333,10 +330,10 @@ export default function Startseite() {
       </section>
 
       {/* ══════ BRANCHEN ══════ */}
-      <section style={{ padding: '58px 0' }}>
+      <section style={{ padding: '70px 0' }}>
         <div className="wrap">
           <Reveal>
-            <p className="eyebrow neon" style={{ marginBottom: 14 }}>04 — Branchen</p>
+            <p className="eyebrow" style={{ marginBottom: 14 }}>04 — Branchen</p>
             <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
               Inhalte, die zur <span className="leicht">Branche passen.</span>
             </h2>
@@ -373,7 +370,7 @@ export default function Startseite() {
       </section>
 
       {/* ══════ VERTRAUEN ══════ */}
-      <section style={{ padding: '58px 0', background: D.dunkel2, borderTop: `1px solid ${D.linie}`, borderBottom: `1px solid ${D.linie}` }}>
+      <section className="dunkelzone" style={{ padding: '66px 0' }}>
         <div className="wrap" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 28 }}>
           {[
             ['headset', 'Telefonisch erreichbar', 'Kein Ticketsystem. Mo. bis Fr. von 9 bis 18 Uhr geht jemand ans Telefon.'],
@@ -382,19 +379,19 @@ export default function Startseite() {
             ['cookie-bite', 'Ohne Cookie-Banner', 'Kein Tracking, keine Werbe-Cookies. Schriften und Icons liegen bei uns.'],
           ].map(([ic, t, u], i) => (
             <Reveal key={t} verzug={i * 90}>
-              <i className={`fa-solid fa-${ic}`} style={{ fontSize: 20, color: D.tuerkis, marginBottom: 13, display: 'block' }} aria-hidden="true" />
+              <i className={`fa-solid fa-${ic}`} style={{ fontSize: 20, color: '#7EE8DA', marginBottom: 13, display: 'block' }} aria-hidden="true" />
               <h3 className="display" style={{ fontSize: 17.5, marginBottom: 8 }}>{t}</h3>
-              <p style={{ fontSize: 13.8, color: D.textMatt, lineHeight: 1.7 }}>{u}</p>
+              <p style={{ fontSize: 13.8, color: D.textMattDunkel, lineHeight: 1.7 }}>{u}</p>
             </Reveal>
           ))}
         </div>
       </section>
 
       {/* ══════ FRAGEN ══════ */}
-      <section style={{ padding: '58px 0' }}>
+      <section className="hellgrau" style={{ padding: '70px 0', borderTop: `1px solid ${D.linie}` }}>
         <div className="wrap" style={{ maxWidth: 820 }}>
           <Reveal>
-            <p className="eyebrow neon" style={{ marginBottom: 14 }}>05 — Fragen</p>
+            <p className="eyebrow" style={{ marginBottom: 14 }}>05 — Fragen</p>
             <h2 className="display" style={{ fontSize: 'clamp(32px,5.4vw,58px)', marginBottom: 14 }}>
               Häufige <span className="leicht">Fragen.</span>
             </h2>
@@ -422,11 +419,10 @@ export default function Startseite() {
         <div className="wrap">
           <Reveal>
             <div className="abschluss">
-              <div className="gitter" style={{ height: '70%', opacity: .5 }} aria-hidden="true" />
               <div style={{ position: 'relative' }}>
                 <img src="/platzhalter/rakete.svg" alt="" aria-hidden="true" style={{ width: 78, marginBottom: 18 }} />
                 <h2 className="display" style={{ fontSize: 'clamp(30px,4.6vw,50px)', marginBottom: 14 }}>
-                  Schauen kostet <span className="neon">nichts.</span>
+                  Schauen kostet <span style={{ color: '#FF8AA0' }}>nichts.</span>
                 </h2>
                 <p style={{ fontSize: 16, color: '#E4D8FF', maxWidth: 500, margin: '0 auto 30px', lineHeight: 1.7 }}>
                   Geh die Fragen durch und sieh dir das Ergebnis an. Bezahlt wird erst, wenn dir die Website gefällt.
@@ -453,8 +449,8 @@ function Folie({ ober, zeile1, zeile2, text, bild, alt, starten, knopf, ziel }) 
     <div className="folie">
       <div>
         <span className="marke-neon">{ober}</span>
-        <h1 className="display" style={{ fontSize: 'clamp(44px,8vw,96px)', margin: '20px 0 20px' }}>
-          {zeile1}<br /><span className="neon">{zeile2}</span>
+        <h1 className="display" style={{ fontSize: 'clamp(40px,7vw,84px)', margin: '20px 0 20px' }}>
+          {zeile1}<br /><span style={{ color: '#FF8AA0' }}>{zeile2}</span>
         </h1>
         <p style={{ fontSize: 17.5, color: D.textMatt, lineHeight: 1.7, maxWidth: 520, marginBottom: 32 }}>{text}</p>
         <div style={{ display: 'flex', gap: 13, flexWrap: 'wrap' }}>
@@ -472,81 +468,82 @@ function Folie({ ober, zeile1, zeile2, text, bild, alt, starten, knopf, ziel }) 
 }
 
 const CSS = `
-.folie{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;min-height:430px}
-.folie-bild{display:flex;justify-content:center;animation:wippen 7s ease-in-out infinite}
-@keyframes wippen{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-16px) rotate(1.5deg)}}
-.marke-neon{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
-  color:${D.tuerkis};border:1px solid ${D.tuerkis}55;background:rgba(34,231,208,.09);border-radius:99px;padding:7px 15px}
-.marke-tuerkis{display:inline-block;font-size:11.5px;font-weight:800;color:${D.tuerkis};background:rgba(34,231,208,.1);
-  border:1px solid rgba(34,231,208,.32);border-radius:99px;padding:4px 12px}
-.marke-gold{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
-  color:${D.gold};background:rgba(255,177,61,.12);border:1px solid rgba(255,177,61,.4);border-radius:99px;padding:6px 14px}
+.folie{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;min-height:400px}
+.folie-bild{display:flex;justify-content:center;animation:wippen 8s ease-in-out infinite}
+@keyframes wippen{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.marke-neon{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:#7EE8DA;border:1px solid rgba(126,232,218,.4);background:rgba(126,232,218,.09);border-radius:99px;padding:7px 15px}
+.marke-tuerkis{display:inline-block;font-size:11.5px;font-weight:700;color:${D.tuerkis};background:${D.tuerkisZart};
+  border:1px solid rgba(18,179,160,.28);border-radius:99px;padding:4px 12px}
+.dunkelzone .marke-tuerkis{color:#7EE8DA;background:rgba(126,232,218,.1);border-color:rgba(126,232,218,.3)}
+.marke-gold{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+  color:#FFC46B;background:rgba(255,196,107,.12);border:1px solid rgba(255,196,107,.35);border-radius:99px;padding:6px 14px}
 
-.adresszeile{display:flex;align-items:center;gap:11px;background:${D.karte};border:1.5px solid ${D.linie};
-  border-radius:16px;padding:10px 11px 10px 19px;box-shadow:0 0 0 1px rgba(255,47,185,.12),0 22px 60px rgba(0,0,0,.5);transition:border-color .2s,box-shadow .2s}
-.adresszeile:focus-within{border-color:${D.magenta};box-shadow:0 0 0 4px rgba(255,47,185,.16),0 22px 60px rgba(0,0,0,.5)}
-.caret{display:inline-block;width:2px;height:1.05em;background:${D.magenta};vertical-align:-.16em;animation:blink 1.1s step-end infinite}
+.adresszeile{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid ${D.linie};
+  border-radius:14px;padding:9px 10px 9px 18px;box-shadow:0 16px 44px rgba(0,0,0,.28);transition:box-shadow .2s}
+.adresszeile:focus-within{box-shadow:0 0 0 4px rgba(232,54,93,.22),0 16px 44px rgba(0,0,0,.28)}
+.caret{display:inline-block;width:2px;height:1.05em;background:${D.akzent};vertical-align:-.16em;animation:blink 1.1s step-end infinite}
 @keyframes blink{50%{opacity:0}}
-.hinweis{max-width:700px;margin:22px auto 0;padding:15px 17px;font-size:13.5px;color:${D.gold};
-  background:rgba(255,177,61,.08);border:1px solid rgba(255,177,61,.3);border-radius:13px;line-height:1.6}
-.treffer{display:flex;align-items:center;gap:13px;padding:16px 18px;margin-bottom:10px;border-radius:14px;
-  background:${D.karte};border:1.5px solid;flex-wrap:wrap;transition:transform .2s,box-shadow .2s}
-.treffer:hover{transform:translateX(4px);box-shadow:0 0 30px rgba(34,231,208,.18)}
+.hinweis{max-width:700px;margin:22px auto 0;padding:15px 17px;font-size:13.5px;color:#FFD9A3;
+  background:rgba(255,196,107,.1);border:1px solid rgba(255,196,107,.3);border-radius:12px;line-height:1.6}
+.treffer{display:flex;align-items:center;gap:13px;padding:16px 18px;margin-bottom:10px;border-radius:13px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);flex-wrap:wrap;transition:transform .2s,background .2s}
+.treffer:hover{transform:translateX(3px);background:rgba(255,255,255,.1)}
 
-.stufe-ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,${D.magenta},${D.lila});color:#fff;font-size:19px;
-  box-shadow:0 8px 26px rgba(255,47,185,.36);transition:transform .24s cubic-bezier(.2,.7,.3,1)}
-.stufe:hover .stufe-ic{transform:scale(1.12) rotate(-8deg)}
-.ikarte i{font-size:21px;color:${D.tuerkis};background:rgba(34,231,208,.1);border:1px solid rgba(34,231,208,.28);
+.stufe-ic{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:${D.akzentZart};color:${D.akzent};font-size:19px;transition:transform .22s cubic-bezier(.2,.7,.3,1),background .2s,color .2s}
+.stufe:hover .stufe-ic{transform:translateY(-3px);background:${D.akzent};color:#fff}
+.ikarte i{font-size:20px;color:${D.tuerkis};background:${D.tuerkisZart};
   width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;
-  transition:transform .24s cubic-bezier(.2,.7,.3,1),background .2s,color .2s}
-.ikarte:hover i{transform:scale(1.12) rotate(-8deg);background:${D.tuerkis};color:#04121A}
+  transition:transform .22s cubic-bezier(.2,.7,.3,1),background .2s,color .2s}
+.ikarte:hover i{transform:translateY(-3px);background:${D.tuerkis};color:#fff}
 
-.chip{background:${D.karte};border:1px solid ${D.linie};border-radius:99px;padding:10px 17px;font-size:13px;
-  font-weight:600;color:${D.textMatt};cursor:pointer;transition:all .18s}
-.chip:hover{border-color:${D.tuerkis};color:${D.tuerkis};transform:translateY(-2px)}
-.chip-an{background:linear-gradient(96deg,${D.magenta},${D.lila});color:#fff;border-color:transparent;box-shadow:0 8px 24px rgba(255,47,185,.35)}
+.chip{background:#fff;border:1px solid ${D.linie};border-radius:99px;padding:10px 17px;font-size:13px;
+  font-weight:600;color:${D.grau};cursor:pointer;transition:all .18s}
+.chip:hover{border-color:${D.akzent};color:${D.akzent};transform:translateY(-2px)}
+.chip-an{background:${D.akzent};color:#fff;border-color:${D.akzent};box-shadow:0 8px 20px rgba(232,54,93,.26)}
 .bbild{transition:transform .8s cubic-bezier(.2,.7,.3,1)}
-.bkarte:hover .bbild{transform:scale(1.07)}
+.bkarte:hover .bbild{transform:scale(1.06)}
 
-.umschalter{display:inline-flex;background:${D.karte};border:1px solid ${D.linie};border-radius:14px;padding:5px;margin-bottom:32px;flex-wrap:wrap}
-.um-an,.um-aus{border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s}
-.um-an{background:linear-gradient(96deg,${D.magenta},${D.lila});color:#fff;box-shadow:0 8px 24px rgba(255,47,185,.35)}
-.um-aus{background:transparent;color:${D.textMatt}}
+.umschalter{display:inline-flex;background:#fff;border:1px solid ${D.linie};border-radius:12px;padding:5px;margin-bottom:32px;flex-wrap:wrap}
+.um-an,.um-aus{border:none;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.um-an{background:${D.akzent};color:#fff;box-shadow:0 8px 20px rgba(232,54,93,.26)}
+.um-aus{background:transparent;color:${D.grau}}
 .um-aus:hover{color:${D.text}}
 
-.preis{padding:32px 28px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden}
-.preis-top{border-color:${D.magenta};box-shadow:0 0 0 1px ${D.magenta}44,0 18px 46px rgba(255,47,185,.2)}
-.eckband{position:absolute;top:16px;right:-38px;width:130px;text-align:center;transform:rotate(45deg);
-  background:linear-gradient(96deg,${D.gold},${D.magenta});color:#1A0630;font-size:11px;font-weight:900;
-  letter-spacing:.14em;padding:5px 0}
+.preis{padding:32px 28px;display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden;background:#fff}
+.preis-top{border-color:${D.akzent};box-shadow:0 14px 40px rgba(232,54,93,.14)}
+.eckband{position:absolute;top:15px;right:-38px;width:130px;text-align:center;transform:rotate(45deg);
+  background:${D.akzent};color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.13em;padding:5px 0}
 .pliste{list-style:none;display:flex;flex-direction:column;gap:11px;flex:1}
-.pliste li{display:flex;gap:11px;font-size:14px;color:${D.text};line-height:1.55;opacity:.92}
+.pliste li{display:flex;gap:11px;font-size:14px;color:${D.text};line-height:1.55}
 .pliste li i{color:${D.tuerkis};font-size:11px;margin-top:5px;flex-shrink:0}
+.dunkelzone .pliste li,.sorgenfrei .pliste li{color:#E6EBF5}
+.sorgenfrei .pliste li i{color:#7EE8DA}
 .zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
 
-.sorgenfrei{position:relative;margin-top:26px;border-radius:22px;overflow:hidden;
-  background:linear-gradient(140deg,#1B0A46,#2A0C55 55%,#0E2A3C);border:1.5px solid rgba(255,177,61,.34)}
-.sorgen-glanz{position:absolute;inset:0;background:radial-gradient(700px 300px at 88% 0%,rgba(255,177,61,.2),transparent 65%)}
+.sorgenfrei{position:relative;margin-top:26px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(135deg,${D.dunkel},${D.dunkel2});border:1px solid rgba(255,255,255,.14);color:#fff}
+.sorgen-glanz{position:absolute;inset:0;background:radial-gradient(680px 300px at 88% 0%,rgba(232,54,93,.22),transparent 64%)}
 .sorgen-innen{position:relative;display:flex;gap:34px;padding:38px 34px;flex-wrap:wrap;align-items:center}
-.sorgen-preis{flex:0 0 268px;text-align:center;background:rgba(11,4,32,.55);border:1px solid ${D.linie};
-  border-radius:18px;padding:26px 24px}
+.sorgen-preis{flex:0 0 268px;text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  border-radius:16px;padding:26px 24px}
 
-.frage{padding:17px 20px;margin-bottom:10px;transition:border-color .18s,box-shadow .18s}
+.frage{padding:17px 20px;margin-bottom:10px;background:#fff;transition:border-color .18s,box-shadow .18s}
 .frage summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;font-size:16px;font-weight:700}
 .frage summary::-webkit-details-marker{display:none}
-.frage:hover{border-color:${D.tuerkis}}
-.frage[open]{border-color:${D.magenta}}
+.frage:hover{border-color:#D6DEEC;box-shadow:0 8px 22px rgba(16,26,51,.07)}
+.frage[open]{border-color:${D.akzent}}
 .frage[open] .plus{transform:rotate(45deg)}
-.plus{transition:transform .22s;display:inline-block;color:${D.magenta};font-size:21px;font-weight:700;line-height:1}
+.plus{transition:transform .22s;display:inline-block;color:${D.akzent};font-size:21px;font-weight:700;line-height:1}
 .frage p{font-size:14.8px;color:${D.textMatt};line-height:1.82;margin-top:14px}
 
-.abschluss{position:relative;overflow:hidden;border-radius:24px;padding:56px 34px;text-align:center;
-  background:linear-gradient(140deg,#2B0B5A,#5B1090 48%,#0B3C4A);border:1px solid rgba(255,255,255,.14)}
+.abschluss{position:relative;overflow:hidden;border-radius:22px;padding:56px 34px;text-align:center;color:#fff;
+  background:linear-gradient(135deg,${D.dunkel},${D.dunkel2} 60%,#1D3A6B)}
 
 @media(max-width:900px){
   .folie{grid-template-columns:1fr;gap:26px;text-align:center;min-height:0}
-  .folie-bild img{max-width:280px}
+  .folie-bild img{max-width:260px}
   .folie .marke-neon{margin:0 auto}
   .folie p{margin-left:auto;margin-right:auto}
   .folie>div>div{justify-content:center}

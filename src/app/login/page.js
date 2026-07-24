@@ -58,24 +58,24 @@ export default function LoginSeite() {
   const unter = modus === 'login' ? 'zu Ihrem Kundenbereich' : modus === 'registrieren' ? 'kostenlos und in einer Minute' : 'Wir senden Ihnen einen Link'
 
   return (
-    <div style={{ minHeight: '100vh', background: D.dunkel, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: D.hellgrau, color: D.text, fontFamily: '"Inter Tight",system-ui,sans-serif', display: 'flex', flexDirection: 'column' }}>
       <link href="/schrift/schrift.css" rel="stylesheet" />
       <link href="/fa/css/all.min.css" rel="stylesheet" />
       <style dangerouslySetInnerHTML={{ __html: BASIS_CSS + `
-        .lfeld{width:100%;padding:14px 16px 14px 44px;font-size:15px;border:2px solid ${D.linie};border-radius:11px;outline:none;transition:border-color .16s,box-shadow .16s;background:${D.dunkel2};color:${D.text}}
+        .lfeld{width:100%;padding:14px 16px 14px 44px;font-size:15px;border:2px solid ${D.linie};border-radius:11px;outline:none;transition:border-color .16s,box-shadow .16s;background:#fff;color:${D.text}}
         .lfeld:focus{border-color:${D.blau};box-shadow:0 0 0 4px ${D.blau}18}
         .lwrap{position:relative}
         .lwrap i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:${D.grauHell};font-size:14px;pointer-events:none;transition:color .16s}
         .lwrap:focus-within i{color:${D.blau}}
-        .lknopf{width:100%;background:linear-gradient(96deg,${D.magenta},${D.lila});color:#fff;border:none;border-radius:11px;padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;transition:background .16s,transform .16s,box-shadow .16s}
-        .lknopf:hover{filter:brightness(1.1);transform:translateY(-2px);box-shadow:0 10px 26px rgba(29,78,216,.3)}
+        .lknopf{width:100%;background:${D.akzent};color:#fff;border:none;border-radius:11px;padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;transition:background .16s,transform .16s,box-shadow .16s}
+        .lknopf:hover{background:${D.akzentHell};transform:translateY(-2px);box-shadow:0 10px 26px rgba(29,78,216,.3)}
         .lknopf:disabled{opacity:.6;cursor:wait;transform:none}
         .llink{background:none;border:none;color:${D.blau};font-size:13.5px;font-weight:600;cursor:pointer;padding:3px}
         .llink:hover{text-decoration:underline}
       ` }} />
 
       {/* Schmale Kopfzeile */}
-      <div style={{ background: '#07021A', color: D.textMatt, fontSize: 12.5 }}>
+      <div style={{ background: D.dunkel, color: D.textMattDunkel, fontSize: 12.5 }}>
         <div className="wrap" style={{ height: 40, display: 'flex', alignItems: 'center', gap: 16 }}>
           <a href="/" style={{ fontWeight: 600 }}><i className="fa-solid fa-arrow-left" style={{ marginRight: 8 }} aria-hidden="true" />Zurück zur Website</a>
           <div style={{ flex: 1 }} />
@@ -85,14 +85,14 @@ export default function LoginSeite() {
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '44px 22px' }}>
         <div style={{ width: '100%', maxWidth: 430 }}>
-          <div style={{ background: D.karte, border: `1px solid ${D.linie}`, borderRadius: 18, padding: '38px 36px', boxShadow: '0 24px 70px rgba(0,0,0,.55)' }}>
+          <div style={{ background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 18, padding: '38px 36px', boxShadow: '0 16px 46px rgba(16,26,51,.09)' }}>
             {/* Logo */}
             <div style={{ textAlign: 'center', marginBottom: 26 }}>
               <a href="/" className="display" style={{ fontSize: 21, letterSpacing: '-.045em' }}>
                 websitegenerator<span style={{ color: D.blau }}>24</span>
               </a>
               <h1 className="display" style={{ fontSize: 25, marginTop: 20, letterSpacing: '-.03em' }}>{titel}</h1>
-              <p style={{ fontSize: 14, color: D.textMatt, marginTop: 5 }}>{unter}</p>
+              <p style={{ fontSize: 14, color: D.grau, marginTop: 5 }}>{unter}</p>
             </div>
 
             {modus === 'registrieren' && (
@@ -141,7 +141,7 @@ export default function LoginSeite() {
             <div style={{ borderTop: `1px solid ${D.linie}`, marginTop: 22, paddingTop: 20, textAlign: 'center' }}>
               {modus === 'login' ? (
                 <>
-                  <p style={{ fontSize: 13.5, color: D.textMatt, marginBottom: 8 }}>Neu hier?</p>
+                  <p style={{ fontSize: 13.5, color: D.grau, marginBottom: 8 }}>Neu hier?</p>
                   <button className="llink" style={{ fontSize: 14.5, fontWeight: 700 }} onClick={() => { setModus('registrieren'); setFehler(''); setHinweis('') }}>
                     Kostenlos Konto erstellen
                   </button>
@@ -155,9 +155,9 @@ export default function LoginSeite() {
           </div>
 
           {/* Hilfe darunter */}
-          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: D.textMatt, lineHeight: 1.8 }}>
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: D.grau, lineHeight: 1.8 }}>
             Probleme beim Anmelden?{' '}
-            <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.tuerkis, fontWeight: 600 }}>{EMAIL}</a>
+            <a className="link-u" href={`mailto:${EMAIL}`} style={{ color: D.akzent, fontWeight: 600 }}>{EMAIL}</a>
             <br />
             <a className="link-u" href="/hilfe">Hilfe &amp; FAQ</a> · <a className="link-u" href="/datenschutz">Datenschutz</a> · <a className="link-u" href="/impressum">Impressum</a>
           </div>
