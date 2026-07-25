@@ -49,6 +49,11 @@ export default function Startseite() {
 
       {/* ═══ HERO — Foto + Domain-Check als zentriertes Herzstück ═══ */}
       <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
+        <div className="hero-mesh" aria-hidden="true">
+          <span className="blob blob-a" />
+          <span className="blob blob-b" />
+          <span className="blob blob-c" />
+        </div>
         <div className="wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
           <div className="hmitte">
             <Slider dauer={9500} folien={[
@@ -604,7 +609,17 @@ function HeroFolie({ art, starten }) {
 
 const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
-.hero{position:relative}
+.hero{position:relative;overflow:hidden}
+.hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(64px);opacity:.5;mix-blend-mode:screen;will-change:transform}
+.blob-a{width:540px;height:540px;background:radial-gradient(circle,#54BCEF,transparent 68%);top:-160px;left:-90px;animation:driftA 27s ease-in-out infinite}
+.blob-b{width:620px;height:620px;background:radial-gradient(circle,#1B93D2,transparent 68%);bottom:-220px;right:-120px;animation:driftB 33s ease-in-out infinite}
+.blob-c{width:420px;height:420px;background:radial-gradient(circle,#8FD2F5,transparent 68%);top:35%;left:52%;animation:driftC 23s ease-in-out infinite}
+@keyframes driftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,50px) scale(1.18)}}
+@keyframes driftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-35px) scale(1.12)}}
+@keyframes driftC{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-45px,55px) scale(1.1)}}
+@media(prefers-reduced-motion:reduce){.hero-mesh .blob{animation:none}}
+@media(max-width:700px){.hero-mesh{opacity:.6}.blob-c{display:none}}
 .hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:1480px;margin:0 auto;width:100%}
 .hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:11px 22px;
