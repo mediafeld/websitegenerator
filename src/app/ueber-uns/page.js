@@ -11,7 +11,7 @@ export default function UeberUns() {
       einleitung="websitegenerator24.de ist ein Baukasten für kleine Betriebe, die eine ordentliche Website brauchen — ohne Agenturbudget und ohne monatliche Gebühren für jede Textänderung."
     >
       <section style={{ padding: '52px 0 20px' }}>
-        <div className="wrap" style={{ maxWidth: 800 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <div className="karte" style={{ padding: '30px 30px', marginBottom: 22 }}>
             <h2 className="display" style={{ fontSize: 23, marginBottom: 14 }}>Warum es das gibt</h2>
             <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.78, marginBottom: 14 }}>

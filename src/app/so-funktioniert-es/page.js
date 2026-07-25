@@ -25,7 +25,7 @@ export default function SoFunktioniertEs() {
       `}
     >
       <section style={{ padding: '54px 0 20px' }}>
-        <div className="wrap" style={{ maxWidth: 860 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           {SCHRITTE.map(s => (
             <div key={s.nr} className="stufe">
               <div className="nr">{s.nr}</div>
@@ -50,7 +50,7 @@ export default function SoFunktioniertEs() {
 
       {/* Volle Kontrolle */}
       <section style={{ padding: '30px 0 10px' }}>
-        <div className="wrap" style={{ maxWidth: 860 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <div className="karte" style={{ padding: '30px 28px', borderColor: D.blau, borderWidth: 2 }}>
             <h2 className="display" style={{ fontSize: 23, marginBottom: 12 }}>Du bleibst selbst am Steuer.</h2>
             <p style={{ fontSize: 15, color: D.textMatt, lineHeight: 1.75, marginBottom: 18 }}>

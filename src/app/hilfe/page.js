@@ -29,7 +29,7 @@ export default function Hilfe() {
       `}
     >
       <section style={{ padding: '46px 0 20px' }}>
-        <div className="wrap" style={{ maxWidth: 840 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <input className="suchfeld" placeholder="In der Hilfe suchen …" value={suche} onChange={e => setSuche(e.target.value)} style={{ marginBottom: 34 }} />
 
           {GRUPPEN_REIHE.map(g => {

@@ -374,10 +374,10 @@ export default function Startseite() {
                   <p className="klein" style={{ marginBottom: 18 }}>{p.kurz}</p>
 
                   <div className="preisblock">
-                    <div className={`preiszeile ${p.beliebt ? 'hell' : ''}`}><span>ab</span><b>{eur(p.preis)}</b><span>€</span></div>
+                    <div className={`preiszeile ${p.beliebt ? 'hell' : ''}`}><span>ab</span><b>{eur(p.preis)}</b><span>€ *</span></div>
                     <div className="preis-unter">
                       <strong>{modus === 'mieten' ? 'pro Monat' : 'einmalig'}</strong>
-                      <span>inkl. 19 % MwSt.</span>
+                      <span>* inkl. 19 % MwSt.</span>
                     </div>
                     <div className="preis-fakten">
                       {modus === 'mieten' ? (
@@ -424,9 +424,9 @@ export default function Startseite() {
                 </ul>
               </div>
               <div className="sorgen-preis">
-                <div className="preiszeile hell"><span>ab</span><b>{eur(SORGENFREI.preis)}</b><span>€</span></div>
+                <div className="preiszeile hell"><span>ab</span><b>{eur(SORGENFREI.preis)}</b><span>€ *</span></div>
                 <p className="klein" style={{ color: '#9FB2C0', marginBottom: 18 }}>
-                  <strong style={{ color: '#fff', fontSize: 15 }}>pro Monat</strong> inkl. 19 % MwSt.<br />oder {eur(SORGENFREI.jahr)} € im Jahr · 12 Monate Laufzeit
+                  <strong style={{ color: '#fff', fontSize: 15 }}>pro Monat</strong> * inkl. 19 % MwSt.<br />oder {eur(SORGENFREI.jahr)} € im Jahr · 12 Monate Laufzeit
                 </p>
                 <button className="btnfest" onClick={() => starten(null)} style={{ width: '100%' }}><i className="fa-solid fa-shield-halved" aria-hidden="true" />Sorgenfrei starten</button>
                 <a href="/preise#sorgenfrei" className="btnleer" style={{ width: '100%', textAlign: 'center', marginTop: 10, background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.34)' }}><i className="fa-solid fa-list-check" aria-hidden="true" />Was ist enthalten?</a>
@@ -447,7 +447,7 @@ export default function Startseite() {
 
       {/* ═══ 9 · FRAGEN ═══ */}
       <section className="band band-grau" style={{ padding: '84px 0 88px' }}>
-        <div className="wrap" style={{ maxWidth: 900 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <Reveal>
             <div className="geistkopf" style={{ marginBottom: 34 }}>
               <span className="geist" aria-hidden="true">Häufige Fragen</span>
@@ -572,11 +572,11 @@ function HeroFolie({ art, starten }) {
         {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
       </span>
 
-      <h1 className="t1" style={{ color: '#fff', margin: '18px auto 14px', maxWidth: 880 }}>
+      <h1 className="t1" style={{ color: '#fff', margin: '20px auto 16px', maxWidth: 1000 }}>
         {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
       </h1>
 
-      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 620, margin: '0 auto 26px', fontSize: 18 }}>
+      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 680, margin: '0 auto 28px', fontSize: 18.5 }}>
         {mieten
           ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
           : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
@@ -616,30 +616,30 @@ const CSS = `
 .hfakten li{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:500;color:#DCE6EE}
 .hfakten li i{color:#6FC3EF;font-size:13px;width:16px;text-align:center}
 
-/* Domain-Check — breit, zentriert, größtes und hellstes Element im Hero */
-.dcheck{background:#fff;border-radius:24px;padding:40px 56px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:${CI.text};
-  width:100%;max-width:900px;margin:0 auto;
-  animation:dcheckein .7s .15s cubic-bezier(.2,.7,.3,1) backwards}
-@keyframes dcheckein{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.dcheck-label{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:700;color:${CI.text};margin-bottom:22px}
-.dcheck-label i{color:${CI.blau}}
-.dcheck-feld{display:flex;align-items:center;gap:0;background:${CI.grau};border:1.5px solid ${CI.linie};border-radius:99px;
-  padding:6px 6px 6px 26px;transition:border-color .18s}
-.dcheck-feld:focus-within{border-color:${CI.blau}}
-.dcheck-www{color:${CI.textZart};font-size:17px;font-weight:600;margin-right:2px;user-select:none}
-.dcheck-feld input{flex:1;min-width:0;border:none;outline:none;font-size:17px;font-weight:500;color:${CI.text};
+/* Domain-Check — minimalistische dunkle Suchleiste direkt im Hero, kein Kartenrahmen */
+.dcheck{width:100%;max-width:700px;margin:52px auto 0;text-align:center}
+.dcheck-label{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:700;color:#fff;margin-bottom:20px}
+.dcheck-label i{color:#6FC3EF}
+.dcheck-feld{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.09);backdrop-filter:blur(6px);
+  border:1.5px solid rgba(255,255,255,.22);border-radius:99px;padding:6px 6px 6px 26px;transition:all .18s}
+.dcheck-feld:focus-within{border-color:${CI.blau};background:rgba(255,255,255,.13)}
+.dcheck-www{color:rgba(255,255,255,.55);font-size:16px;font-weight:600;margin-right:2px;user-select:none}
+.dcheck-feld input{flex:1;min-width:0;border:none;outline:none;font-size:16px;font-weight:500;color:#fff;
   padding:15px 0;background:transparent}
-.dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:15px 28px;font-size:15px;
+.dcheck-feld input::placeholder{color:rgba(255,255,255,.4)}
+.dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:14px 26px;font-size:14.5px;
   font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:9px;white-space:nowrap;transition:all .18s}
 .dcheck-feld button:hover{background:${CI.blauDunkel};transform:translateY(-1px)}
-.dcheck-tlds{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
-.dcheck-tlds span{display:flex;flex-direction:column;align-items:center;gap:3px;background:${CI.grau};border-radius:12px;padding:13px 6px;transition:all .18s}
-.dcheck-tlds span:hover{background:#E7EFF3;transform:translateY(-2px)}
-.dcheck-tlds b{font-size:15px;font-weight:700;color:${CI.text}}
-.dcheck-tlds em{font-style:normal;font-size:11.5px;color:${CI.textMatt}}
-.dcheck-ergebnis{margin-top:18px;display:flex;flex-direction:column;gap:8px;text-align:left}
-.dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12.5px;color:${CI.textMatt};margin-top:18px;padding-top:16px;border-top:1px solid ${CI.linie}}
-.dcheck-hinweis i{color:${CI.gruen};margin-top:2px;flex-shrink:0}
+.dcheck-tlds{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.dcheck-tlds span{display:flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  border-radius:99px;padding:8px 16px;transition:all .18s}
+.dcheck-tlds span:hover{background:rgba(255,255,255,.14)}
+.dcheck-tlds b{font-size:13.5px;font-weight:700;color:#fff}
+.dcheck-tlds em{font-style:normal;font-size:11px;color:rgba(255,255,255,.55)}
+.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;
+  background:#fff;border-radius:18px;padding:16px;box-shadow:0 24px 50px rgba(0,0,0,.35)}
+.dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:18px}
+.dcheck-hinweis i{color:#6FC3EF;margin-top:2px;flex-shrink:0}
 .db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:10px;padding:11px 13px}
 .db-belegt{font-size:12.5px;color:${CI.textMatt}}
 .treffer{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;
@@ -648,8 +648,7 @@ const CSS = `
 .treffer>i{color:${CI.gruen};font-size:15px}
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
 .tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
-@media(max-width:900px){.dcheck{max-width:640px;padding:32px 28px}}
-@media(max-width:640px){.dcheck{padding:26px 22px}.dcheck-tlds{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.dcheck-feld{flex-wrap:wrap;border-radius:22px;padding:14px}.dcheck-feld input{width:100%;padding:6px 4px}.dcheck-feld button{width:100%;justify-content:center;margin-top:8px}}
 
 /* ══ Leistungskarten ══ */
 .lkarte{padding:28px 26px;height:100%}

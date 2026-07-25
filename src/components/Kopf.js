@@ -72,23 +72,23 @@ a{color:inherit;text-decoration:none}
 .lauf{font-size:17px;line-height:1.74;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Hervorhebung: fett + handgezeichnete Wellenlinie, zieht sich einmal ein ── */
-.vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:8px}
-.vschrift:after{content:'';position:absolute;left:1px;bottom:0;height:7px;width:0;overflow:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='7' viewBox='0 0 26 7'%3E%3Cpath d='M0,4.5 Q3.5,1 7,4.5 T14,4.5 T21,4.5 T28,4.5' stroke='%23E1591F' stroke-width='2.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:repeat-x;background-size:26px 7px}
-.reveal.an .vschrift:after{animation:strichauf 1.15s .35s cubic-bezier(.25,.7,.3,1) forwards}
-.vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:8px}
-.vschrift-hell:after{content:'';position:absolute;left:1px;bottom:0;height:7px;width:0;overflow:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='7' viewBox='0 0 26 7'%3E%3Cpath d='M0,4.5 Q3.5,1 7,4.5 T14,4.5 T21,4.5 T28,4.5' stroke='%23E1591F' stroke-width='2.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:repeat-x;background-size:26px 7px}
-.reveal.an .vschrift-hell:after{animation:strichauf 1.15s .35s cubic-bezier(.25,.7,.3,1) forwards}
-.vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:8px}
-.vschrift-bewegt:after{content:'';position:absolute;left:1px;bottom:0;height:7px;width:0;overflow:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='7' viewBox='0 0 26 7'%3E%3Cpath d='M0,4.5 Q3.5,1 7,4.5 T14,4.5 T21,4.5 T28,4.5' stroke='%23E1591F' stroke-width='2.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:repeat-x;background-size:26px 7px}
-.reveal.an .vschrift-bewegt:after{animation:strichauf 1.15s .35s cubic-bezier(.25,.7,.3,1) forwards}
-@keyframes strichauf{from{width:0}to{width:100%}}
+/* ── Hervorhebung: fett + ein einzelner handgezeichneter Schwung, zieht sich einmal ein ── */
+.vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:9px}
+.vschrift:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23E1591F' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
+.reveal.an .vschrift:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
+.vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:9px}
+.vschrift-hell:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23E1591F' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
+.reveal.an .vschrift-hell:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
+.vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:9px}
+.vschrift-bewegt:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23E1591F' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
+.reveal.an .vschrift-bewegt:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
+@keyframes strichzeichnen{to{clip-path:inset(0 0 0 0)}}
 
 /* ── Unterstrich beim Hover (z. B. Links) ── */
 .strich-hover{position:relative}
@@ -264,15 +264,33 @@ const MENUE = [
 export function Kopf() {
   const router = useRouter()
   const [nutzer, setNutzer] = useState(null)
-  const vorname = nutzer?.user_metadata?.vorname || null
+  const [vorname, setVorname] = useState(null)
 
   // Anmeldestatus laufend überwachen – sonst zeigt die Kopfzeile nach dem
   // Abmelden weiter den alten Zustand.
   useEffect(() => {
-    aktuellerNutzer().then(setNutzer).catch(() => {})
+    aktuellerNutzer().then(async (u) => {
+      setNutzer(u)
+      if (!u) return
+      // Vorname zuerst aus dem Profil (Konto-Seite), sonst aus den Signup-Daten
+      try {
+        const { data: p } = await supabase.from('profile').select('vorname').eq('id', u.id).maybeSingle()
+        setVorname(p?.vorname || u.user_metadata?.vorname || null)
+      } catch {
+        setVorname(u.user_metadata?.vorname || null)
+      }
+    }).catch(() => {})
     if (!supabaseBereit) return
-    const { data } = supabase.auth.onAuthStateChange((_ev, sitzung) => {
-      setNutzer(sitzung?.user || null)
+    const { data } = supabase.auth.onAuthStateChange(async (_ev, sitzung) => {
+      const u = sitzung?.user || null
+      setNutzer(u)
+      if (!u) { setVorname(null); return }
+      try {
+        const { data: p } = await supabase.from('profile').select('vorname').eq('id', u.id).maybeSingle()
+        setVorname(p?.vorname || u.user_metadata?.vorname || null)
+      } catch {
+        setVorname(u.user_metadata?.vorname || null)
+      }
     })
     return () => data?.subscription?.unsubscribe?.()
   }, [])
