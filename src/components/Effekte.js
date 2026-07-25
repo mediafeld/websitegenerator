@@ -101,3 +101,41 @@ export function Slider({ folien, dauer = 6500 }) {
     </div>
   )
 }
+
+// Umschalter — ein echter Schalter statt zwei nebeneinanderstehender Kästen (z. B. Mieten/Kaufen)
+export function Umschalter({ wert, setWert, aLabel = 'Website mieten', bLabel = 'Website kaufen', aWert = 'mieten', bWert = 'kaufen' }) {
+  const istA = wert === aWert
+  return (
+    <div className="umschalter">
+      <button type="button" className={istA ? 'an' : ''} onClick={() => setWert(aWert)}>{aLabel}</button>
+      <span className="uschalt" onClick={() => setWert(istA ? bWert : aWert)} role="switch" aria-checked={!istA} tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWert(istA ? bWert : aWert) } }}>
+        <span className="ukugel" style={{ transform: istA ? 'translateX(0)' : 'translateX(20px)' }} />
+      </span>
+      <button type="button" className={!istA ? 'an' : ''} onClick={() => setWert(bWert)}>{bLabel}</button>
+    </div>
+  )
+}
+
+// Einleitungs-Textblock für Unterseiten: Eyebrow + Überschrift + CTA links,
+// zwei Fließtext-Spalten daneben — als sanfter Einstieg vor dem eigentlichen Inhalt.
+export function Einleitung({ eyebrow, titel, titelFett, cta, spalte1, spalte2 }) {
+  return (
+    <Reveal>
+      <div className="einleitung">
+        <span className="eink-punkt" aria-hidden="true" />
+        <div className="eink-kopf">
+          <p className="eyebrow" style={{ marginBottom: 12 }}>{eyebrow}</p>
+          <h2 className="t3" style={{ fontSize: 27, fontWeight: 300, marginBottom: 18, lineHeight: 1.28 }}>
+            {titel} {titelFett && <b className="vschrift">{titelFett}</b>}
+          </h2>
+          {cta && <a href={cta.href} className="btnblau" style={{ fontSize: 14 }}>
+            <i className="fa-solid fa-calculator" aria-hidden="true" />{cta.text}
+          </a>}
+        </div>
+        <p className="lauf">{spalte1}</p>
+        <p className="lauf">{spalte2}</p>
+      </div>
+    </Reveal>
+  )
+}

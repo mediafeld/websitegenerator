@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Seite } from '@/components/Seite'
+import { Einleitung } from '@/components/Effekte'
 import { D, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 import { FRAGEN, GRUPPEN_REIHE } from '@/lib/fragen'
 
@@ -28,8 +29,21 @@ export default function Hilfe() {
         .suchfeld:focus{border-color:${D.blau}}
       `}
     >
-      <section style={{ padding: '46px 0 20px' }}>
-        <div className="wrap" style={{ maxWidth: 1040 }}>
+      <section style={{ padding: 0 }}>
+        <div className="wrap">
+          <Einleitung
+            eyebrow="Bevor du fragst"
+            titel="Zwei Wege,"
+            titelFett="eine Website."
+            cta={{ text: 'Zu den Preisen', href: '/preise' }}
+            spalte1="Beim Mieten übernehmen wir Domain, Hosting, SSL und Sicherungen — du zahlst monatlich und änderst deine Inhalte trotzdem jederzeit selbst im Editor, ohne Zusatzkosten."
+            spalte2="Beim Kaufen bekommst du den kompletten Quellcode als ZIP und betreibst die Website, wo du willst — einmalig bezahlt, kein Abo, keine Kündigungsfrist."
+          />
+        </div>
+      </section>
+
+      <section style={{ padding: '20px 0 20px' }}>
+        <div className="wrap" style={{ maxWidth: 1500 }}>
           <input className="suchfeld" placeholder="In der Hilfe suchen …" value={suche} onChange={e => setSuche(e.target.value)} style={{ marginBottom: 34 }} />
 
           {GRUPPEN_REIHE.map(g => {

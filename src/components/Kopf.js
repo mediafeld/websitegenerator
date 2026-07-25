@@ -5,6 +5,7 @@ import { aktuellerNutzer } from '@/lib/projekte'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 import { WarenkorbKnopf } from '@/components/Warenkorb'
 import { WARENKORB_CSS } from '@/components/Warenkorb'
+import { WYSIWYG_CSS } from '@/components/WysiwygEditor'
 
 // ══ CI websitegenerator24 — angelehnt an mediafeld.de ══
 // Farbwelt bewusst schmal gehalten: Blau, Schwarzblau, Weiß, Hellgrau.
@@ -147,6 +148,23 @@ a{color:inherit;text-decoration:none}
 .reiter-aus{background:#fff;color:${CI.textMatt};border-color:${CI.linie}}
 .reiter-aus:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
 
+/* ── Umschalter: echter Schalter statt zwei Kästen (auf allen Seiten nutzbar) ── */
+.umschalter{display:flex;align-items:center;gap:16px}
+.umschalter button{background:none;border:none;cursor:pointer;font-family:inherit;font-size:16px;font-weight:600;
+  color:${CI.textZart};transition:color .18s;padding:4px 0}
+.umschalter button.an{color:${CI.text}}
+.uschalt{position:relative;width:46px;height:26px;border-radius:99px;background:${CI.blau};cursor:pointer;
+  flex-shrink:0;transition:background .2s}
+.ukugel{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.2,.7,.3,1)}
+
+/* ── Einleitungs-Textblock: Auftakt auf Unterseiten (auf allen Seiten nutzbar) ── */
+.einleitung{position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;padding:64px 0 56px}
+.eink-punkt{position:absolute;top:0;left:0;width:13px;height:13px;border:1.5px solid #FF5722;border-radius:50%}
+.eink-kopf{padding-top:30px}
+.einleitung .lauf{padding-top:30px}
+@media(max-width:900px){.einleitung{grid-template-columns:1fr;gap:16px;padding:44px 0 36px}.eink-kopf{padding-top:20px}.einleitung .lauf{padding-top:0}}
+
 /* Bildkacheln: leichter Zoom beim Hover, damit die Seite lebendig wirkt */
 .bildzoom{overflow:hidden}
 .bildzoom img,.bildzoom .bzimg{transition:transform .6s cubic-bezier(.2,.7,.3,1)}
@@ -227,6 +245,7 @@ a{color:inherit;text-decoration:none}
 @media (max-width:820px){.spalten3{grid-template-columns:1fr !important}.spalten2{grid-template-columns:1fr !important}.geist{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none !important}.reveal{opacity:1;transform:none;transition:none}}
 ${WARENKORB_CSS}
+${WYSIWYG_CSS}
 `
 
 const MENUE = [

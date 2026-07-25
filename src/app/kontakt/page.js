@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Seite } from '@/components/Seite'
+import { Einleitung } from '@/components/Effekte'
 import { D, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 
 export default function Kontakt() {
@@ -33,8 +34,21 @@ export default function Kontakt() {
         @media(max-width:860px){.kontaktgrid{grid-template-columns:1fr !important}}
       `}
     >
-      <section style={{ padding: '50px 0 70px' }}>
-        <div className="wrap kontaktgrid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 34, alignItems: 'start', maxWidth: 1000 }}>
+      <section style={{ padding: '0' }}>
+        <div className="wrap">
+          <Einleitung
+            eyebrow="Bevor du schreibst"
+            titel="Die meisten Fragen"
+            titelFett="klären sich vorab."
+            cta={{ text: 'Häufige Fragen ansehen', href: '/hilfe' }}
+            spalte1="Fragen zu Preisen, Laufzeiten und dem Unterschied zwischen Mieten und Kaufen beantworten wir ausführlich auf der Hilfe-Seite — meist schneller, als eine Antwort per E-Mail dauert."
+            spalte2="Geht es um dein konkretes Projekt, eine technische Frage oder etwas, das nicht funktioniert: Das Formular unten oder ein Anruf erreicht uns direkt, wir melden uns in der Regel am nächsten Werktag."
+          />
+        </div>
+      </section>
+
+      <section style={{ padding: '20px 0 70px' }}>
+        <div className="wrap kontaktgrid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 34, alignItems: 'start', maxWidth: 1500 }}>
           <div className="karte" style={{ padding: 30 }}>
             {gesendet ? (
               <>

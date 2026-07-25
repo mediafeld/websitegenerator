@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, CI, TELEFON, TELEFON_LINK } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
-import { Reveal, Zaehler } from '@/components/Effekte'
+import { Reveal, Zaehler, Umschalter } from '@/components/Effekte'
 import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN, TLD_PREISE, ALLE_TLDS, eur } from '@/lib/preise'
+import { useWarenkorb } from '@/lib/warenkorb'
 import { BRANCHEN_INFO, BILD } from '@/lib/branchenSeite'
 import { FRAGEN } from '@/lib/fragen'
 
@@ -35,7 +36,7 @@ export default function Startseite() {
   const heroRef = useRef(null)
   const eingabeRef = useRef(null)
   const tldRef = useRef(null)
-  const tldUmschalten = (t) => setTlds(v => v.includes(t) ? (v.length > 1 ? v.filter(x => x !== t) : v) : [...v, t])
+  const tldUmschalten = (t) => setTlds(v => v.includes(t) ? v.filter(x => x !== t) : [...v, t])
 
   useEffect(() => {
     const leise = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -63,6 +64,7 @@ export default function Startseite() {
 
   async function pruefen() {
     if (!name.trim()) { eingabeRef.current?.focus(); return }
+    if (tlds.length === 0) { setFehler('Bitte wähle mindestens eine Endung aus.'); setTldOffen(true); return }
     setLaedt(true); setFehler(''); setDaten(null)
     try {
       const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, tlds }) })
@@ -78,6 +80,7 @@ export default function Startseite() {
   const freie = daten?.ergebnisse?.filter(e => e.frei) || []
   const belegte = daten?.ergebnisse?.filter(e => !e.frei) || []
   const tldTreffer = ALLE_TLDS.filter(t => t.includes(tldSuche.trim().toLowerCase()))
+  const { hinzufuegen, artikel } = useWarenkorb()
 
   return (
     <div style={{ background: '#fff', color: CI.text, fontFamily: '"InterTight",system-ui,sans-serif', overflowX: 'hidden' }}>
@@ -87,7 +90,7 @@ export default function Startseite() {
       <Kopf />
 
       {/* ═══ HERO — Foto + Domain-Check als zentriertes Herzstück ═══ */}
-      <section ref={heroRef} onMouseMove={herobewegung} className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
+      <section id="domain" ref={heroRef} onMouseMove={herobewegung} className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
         <div className="hero-mesh" aria-hidden="true" style={{ transform: `translate(${maus.x}px, ${maus.y}px)` }}>
           <span className="blob blob-a" />
           <span className="blob blob-b" />
@@ -115,7 +118,10 @@ export default function Startseite() {
                   </button>
                   {tldOffen && (
                     <div className="tld-panel">
-                      <div className="tld-panel-kopf">Endungen auswählen <span>{tlds.length} gewählt</span></div>
+                      <div className="tld-panel-kopf">
+                        Endungen auswählen <span>{tlds.length} gewählt</span>
+                        <button type="button" className="tld-alle-ab" onClick={() => setTlds([])}>Alle abwählen</button>
+                      </div>
                       <div className="tld-panel-suche">
                         <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
                         <input value={tldSuche} onChange={e => setTldSuche(e.target.value)} placeholder="Endung suchen … z. B. shop" autoFocus />
@@ -144,17 +150,23 @@ export default function Startseite() {
               {(fehler || daten) && (
                 <div className="dcheck-ergebnis">
                   {fehler && <p className="db-fehler">{fehler}</p>}
-                  {daten && freie.slice(0, 8).map((e, i) => (
+                  {daten && freie.slice(0, 8).map((e, i) => {
+                    const imWk = artikel.some(a => a.id === `domain-${e.domain}`)
+                    return (
                     <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
                       <i className="fa-solid fa-circle-check" aria-hidden="true" />
                       <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5, textAlign: 'left' }}>{e.domain}</span>
                       <span className="tr-frei">frei</span>
                       {e.preis != null && <span className="tr-preis">{eur(e.preis)} €/Jahr</span>}
+                      <button className={imWk ? 'btn-wk an' : 'btn-wk'} title="In den Warenkorb" disabled={imWk}
+                        onClick={() => hinzufuegen({ id: `domain-${e.domain}`, titel: e.domain, unter: 'Domain-Registrierung', preis: e.preis || 14.90, art: 'einmalig' })}>
+                        <i className={`fa-solid ${imWk ? 'fa-check' : 'fa-cart-plus'}`} aria-hidden="true" />
+                      </button>
                       <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '9px 15px', fontSize: 13 }}>
                         Nehmen<i className="fa-solid fa-arrow-right" aria-hidden="true" />
                       </button>
                     </div>
-                  ))}
+                  )})}
                   {daten && belegte.length > 0 && (
                     <div className="belegt-liste">
                       <p className="belegt-titel">Schon vergeben</p>
@@ -287,14 +299,8 @@ export default function Startseite() {
           </Reveal>
 
           <Reveal>
-            <div className="wahlleiste">
-              {[['mieten', 'globe', 'Website mieten', 'ab 19,90 € im Monat · Domain inklusive'],
-                ['kaufen', 'download', 'Website kaufen', 'ab 89,00 € einmalig · ZIP sofort']].map(([id, ic, t, u]) => (
-                <button key={id} onClick={() => setWeg(id)} className={`grosswahl ${weg === id ? 'gw-an' : 'gw-aus'}`}>
-                  <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
-                  <span><b>{t}</b><em>{u}</em></span>
-                </button>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+              <Umschalter wert={weg} setWert={setWeg} />
             </div>
           </Reveal>
 
@@ -436,14 +442,8 @@ export default function Startseite() {
           </Reveal>
 
           <Reveal>
-            <div className="wahlleiste" style={{ justifyContent: 'center' }}>
-              {[['mieten', 'globe', 'Website mieten', 'monatlich · Domain, Hosting und E-Mail inklusive'],
-                ['kaufen', 'download', 'Website kaufen', 'einmalig · Quellcode als ZIP, kein Abo']].map(([id, ic, t, u]) => (
-                <button key={id} onClick={() => setModus(id)} className={`grosswahl ${modus === id ? 'gw-an' : 'gw-aus'}`}>
-                  <i className={`fa-solid fa-${ic}`} aria-hidden="true" />
-                  <span><b>{t}</b><em>{u}</em></span>
-                </button>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
+              <Umschalter wert={modus} setWert={setModus} />
             </div>
           </Reveal>
 
@@ -533,7 +533,7 @@ export default function Startseite() {
 
       {/* ═══ 9 · FRAGEN ═══ */}
       <section className="band band-grau" style={{ padding: '84px 0 88px' }}>
-        <div className="wrap" style={{ maxWidth: 1040 }}>
+        <div className="wrap" style={{ maxWidth: 1500 }}>
           <Reveal>
             <div className="geistkopf" style={{ marginBottom: 34 }}>
               <span className="geist" aria-hidden="true">Häufige Fragen</span>
@@ -755,9 +755,12 @@ const CSS = `
   background:#fff;border-radius:16px;box-shadow:0 26px 60px rgba(0,0,0,.35);overflow:hidden;z-index:20;text-align:left;
   animation:tldpanelein .18s cubic-bezier(.2,.7,.3,1) backwards}
 @keyframes tldpanelein{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-.tld-panel-kopf{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid ${CI.linie};
+.tld-panel-kopf{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid ${CI.linie};
   font-size:12.5px;font-weight:700;color:${CI.text}}
 .tld-panel-kopf span{font-weight:600;color:${CI.blau};font-size:11.5px}
+.tld-alle-ab{margin-left:auto;background:none;border:none;color:${CI.textZart};font-size:11px;font-weight:600;
+  cursor:pointer;text-decoration:underline;font-family:inherit;padding:0}
+.tld-alle-ab:hover{color:${CI.blau}}
 .tld-panel-suche{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid ${CI.linie};background:${CI.grau}}
 .tld-panel-suche i{color:${CI.textZart};font-size:12px}
 .tld-panel-suche input{border:none;outline:none;background:transparent;font-size:13.5px;color:${CI.text};flex:1;font-family:inherit}
@@ -795,6 +798,10 @@ const CSS = `
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
 .tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
 .tr-preis{font-size:12.5px;font-weight:600;color:${CI.textMatt}}
+.btn-wk{width:34px;height:34px;border-radius:99px;border:1.5px solid ${CI.linie};background:#fff;color:${CI.textMatt};
+  cursor:pointer;font-size:13px;flex-shrink:0;transition:all .18s}
+.btn-wk:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-1px)}
+.btn-wk.an{background:${CI.gruen};border-color:${CI.gruen};color:#fff}
 @media(max-width:640px){.dcheck-feld{flex-wrap:wrap;border-radius:22px;padding:14px}.dcheck-feld input{width:100%;padding:6px 4px}.tld-dropdown{width:100%;margin-top:8px}.tld-trigger{width:100%;justify-content:center}.tld-panel{left:0;transform:none;width:100%}@keyframes tldpanelein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}.dcheck-feld button{width:100%;justify-content:center;margin-top:8px}}
 
 /* ══ Leistungskarten ══ */
@@ -813,23 +820,6 @@ const CSS = `
 .pband-preis{font-size:15px;color:#A9C2D2;margin:9px 0 4px}
 .pband-preis b{font-size:38px;font-weight:700;letter-spacing:-.035em;color:#fff;margin:0 3px}
 .pband-unter{font-size:12.5px;color:#9FB2C0;line-height:1.6;flex:1}
-
-/* ══ Große Auswahlknöpfe ══ */
-.wahlleiste{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
-.grosswahl{display:flex;align-items:center;gap:16px;text-align:left;border-radius:12px;padding:20px 22px;width:100%;
-  cursor:pointer;transition:all .24s;border:2px solid}
-.grosswahl i{font-size:21px;width:46px;height:46px;border-radius:11px;display:flex;align-items:center;
-  justify-content:center;flex-shrink:0;transition:all .24s}
-.grosswahl span{display:flex;flex-direction:column;gap:3px}
-.grosswahl b{font-size:18px;font-weight:700;letter-spacing:-.02em}
-.grosswahl em{font-style:normal;font-size:13px;font-weight:400}
-.gw-an{background:${CI.petrol};color:#fff;border-color:${CI.petrol};box-shadow:0 14px 32px rgba(10,24,35,.22)}
-.gw-an i{background:${CI.orange};color:#fff}
-.gw-an em{color:#A9C2D2}
-.gw-aus{background:#fff;color:${CI.text};border-color:${CI.linie}}
-.gw-aus i{background:#E7EFF3;color:${CI.blau}}
-.gw-aus em{color:${CI.textMatt}}
-.gw-aus:hover{border-color:${CI.orange};transform:translateY(-3px)}
 
 /* ══ Vergleich / Branche ══ */
 .vergleich,.branche{display:grid;grid-template-columns:1.05fr .95fr;background:#fff;border:1px solid ${CI.linie};
