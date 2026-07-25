@@ -51,7 +51,7 @@ export const EMAIL = 'info@websitegenerator24.de'
 export const BASIS_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#fff;color:${CI.text};font-family:'InterTight',system-ui,sans-serif}
-.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.wrap{max-width:1360px;margin:0 auto;padding:0 28px}
 button{font-family:inherit}
 input,select,textarea{font-family:inherit}
 a{color:inherit;text-decoration:none}
@@ -60,28 +60,34 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid ${CI.blau};outline-offset:3px}
 ::selection{background:${CI.blau};color:#fff}
 
-/* ── Typografie: Inter Tight, größer, nie ein einzelnes Wort allein in der Zeile ── */
-.t1{font-size:clamp(38px,5.8vw,72px);line-height:1.1;letter-spacing:-.025em;font-weight:300;text-wrap:balance}
+/* ── Typografie: Inter Tight, groß, 100er Feinschnitt gegen 800er Fettung ── */
+.t1{font-size:clamp(44px,6.6vw,88px);line-height:1.08;letter-spacing:-.025em;font-weight:100;text-wrap:balance}
 .t1 b{font-weight:800}
-.t2{font-size:clamp(30px,4.4vw,50px);line-height:1.14;letter-spacing:-.022em;font-weight:300;text-wrap:balance}
+.t2{font-size:clamp(34px,5vw,58px);line-height:1.12;letter-spacing:-.022em;font-weight:100;text-wrap:balance}
 .t2 b{font-weight:800}
-.t3{font-size:23px;font-weight:700;letter-spacing:-.012em;line-height:1.3;text-wrap:balance}
-.display{font-weight:800;letter-spacing:-.02em;line-height:1.22;color:${CI.text};text-wrap:balance}
-.serif{font-weight:300}
+.t3{font-size:25px;font-weight:700;letter-spacing:-.012em;line-height:1.3;text-wrap:balance}
+.display{font-weight:800;letter-spacing:-.02em;line-height:1.2;color:${CI.text};text-wrap:balance}
+.serif{font-weight:100}
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:${CI.blau}}
-.lauf{font-size:16.5px;line-height:1.74;color:${CI.textMatt};font-weight:400}
+.lauf{font-size:17px;line-height:1.74;color:${CI.textMatt};font-weight:400}
 .klein{font-size:14.5px;line-height:1.7;color:${CI.textMatt}}
 
-/* ── Hervorhebung: fett + einmal einziehender dünner Orange-Strich, wie bei mediafeld.de ── */
-.vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:5px}
-.vschrift:after{content:'';position:absolute;left:1px;bottom:0;height:3px;width:0;border-radius:2px;background:#E1591F}
-.reveal.an .vschrift:after{animation:strichauf 1s .35s cubic-bezier(.2,.7,.3,1) forwards}
-.vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:5px}
-.vschrift-hell:after{content:'';position:absolute;left:1px;bottom:0;height:3px;width:0;border-radius:2px;background:#E1591F}
-.reveal.an .vschrift-hell:after{animation:strichauf 1s .35s cubic-bezier(.2,.7,.3,1) forwards}
-.vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:5px}
-.vschrift-bewegt:after{content:'';position:absolute;left:1px;bottom:0;height:3px;width:0;border-radius:2px;background:#E1591F}
-.reveal.an .vschrift-bewegt:after{animation:strichauf 1s .35s cubic-bezier(.2,.7,.3,1) forwards}
+/* ── Hervorhebung: fett + handgezeichnete Wellenlinie, zieht sich einmal ein ── */
+.vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:8px}
+.vschrift:after{content:'';position:absolute;left:1px;bottom:0;height:7px;width:0;overflow:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='7' viewBox='0 0 26 7'%3E%3Cpath d='M0,4.5 Q3.5,1 7,4.5 T14,4.5 T21,4.5 T28,4.5' stroke='%23E1591F' stroke-width='2.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-size:26px 7px}
+.reveal.an .vschrift:after{animation:strichauf 1.15s .35s cubic-bezier(.25,.7,.3,1) forwards}
+.vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:8px}
+.vschrift-hell:after{content:'';position:absolute;left:1px;bottom:0;height:7px;width:0;overflow:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='7' viewBox='0 0 26 7'%3E%3Cpath d='M0,4.5 Q3.5,1 7,4.5 T14,4.5 T21,4.5 T28,4.5' stroke='%23E1591F' stroke-width='2.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-size:26px 7px}
+.reveal.an .vschrift-hell:after{animation:strichauf 1.15s .35s cubic-bezier(.25,.7,.3,1) forwards}
+.vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:8px}
+.vschrift-bewegt:after{content:'';position:absolute;left:1px;bottom:0;height:7px;width:0;overflow:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='7' viewBox='0 0 26 7'%3E%3Cpath d='M0,4.5 Q3.5,1 7,4.5 T14,4.5 T21,4.5 T28,4.5' stroke='%23E1591F' stroke-width='2.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-size:26px 7px}
+.reveal.an .vschrift-bewegt:after{animation:strichauf 1.15s .35s cubic-bezier(.25,.7,.3,1) forwards}
 @keyframes strichauf{from{width:0}to{width:100%}}
 
 /* ── Unterstrich beim Hover (z. B. Links) ── */
@@ -122,6 +128,22 @@ a{color:inherit;text-decoration:none}
 .karte{background:#fff;border:1px solid ${CI.linie};border-radius:14px}
 .karte-hover{transition:transform .28s cubic-bezier(.2,.7,.3,1),box-shadow .28s,border-color .28s}
 .karte-hover:hover{transform:translateY(-6px);box-shadow:0 22px 48px rgba(10,24,36,.14);border-color:${CI.blau}66}
+
+/* ── Häkchenlisten (auf allen Seiten nutzbar) ── */
+.haken{list-style:none;display:flex;flex-direction:column;gap:13px}
+.haken li{display:flex;align-items:center;gap:12px;font-size:14.8px;line-height:1.5;color:${CI.text}}
+.haken li i{color:${CI.blau};font-size:11px;flex-shrink:0;width:22px;height:22px;border-radius:50%;
+  background:#E7EFF3;display:flex;align-items:center;justify-content:center}
+.haken.gruen li i{color:${CI.gruen};background:#E7F7EC;font-size:12px}
+.dunkelzone .haken li,.sorgen .haken li{color:#DCE6EE}
+.haken.zwei{display:grid;grid-template-columns:1fr 1fr;gap:11px 24px}
+
+/* ── Reiter / Tab-Pillen (auf allen Seiten nutzbar) ── */
+.reiter{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:26px}
+.reiter-an,.reiter-aus{border-radius:99px;padding:11px 20px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid}
+.reiter-an{background:${CI.blau};color:#fff;border-color:${CI.blau};box-shadow:0 10px 22px rgba(27,147,210,.28)}
+.reiter-aus{background:#fff;color:${CI.textMatt};border-color:${CI.linie}}
+.reiter-aus:hover{border-color:${CI.blau};color:${CI.blau};transform:translateY(-2px)}
 
 /* Bildkacheln: leichter Zoom beim Hover, damit die Seite lebendig wirkt */
 .bildzoom{overflow:hidden}
@@ -242,6 +264,7 @@ const MENUE = [
 export function Kopf() {
   const router = useRouter()
   const [nutzer, setNutzer] = useState(null)
+  const vorname = nutzer?.user_metadata?.vorname || null
 
   // Anmeldestatus laufend überwachen – sonst zeigt die Kopfzeile nach dem
   // Abmelden weiter den alten Zustand.
@@ -264,15 +287,22 @@ export function Kopf() {
 
   return (
     <>
-      {/* Ankündigungsleiste */}
+      {/* Ankündigungsleiste — bei Login: Begrüßung links statt Promo */}
       <div className="ankuendigung">
-        <div className="wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, minHeight: 42, flexWrap: 'wrap' }}>
-          <span className="neu-marke">Neu</span>
-          <span style={{ fontSize: 13.5 }}>
-            <strong>Websiteerstellung kostenlos</strong> — erst zahlen, wenn dir die Website gefällt
-          </span>
-          <a href="/start" className="ank-link">Jetzt erstellen <i className="fa-solid fa-arrow-right" aria-hidden="true" /></a>
-        </div>
+        {nutzer ? (
+          <div className="wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, minHeight: 42, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13.5, fontWeight: 600 }}>👋 Hallo{vorname ? `, ${vorname}` : ''}!</span>
+            <a href="/start" className="ank-link">Neue Website erstellen <i className="fa-solid fa-arrow-right" aria-hidden="true" /></a>
+          </div>
+        ) : (
+          <div className="wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, minHeight: 42, flexWrap: 'wrap' }}>
+            <span className="neu-marke">Neu</span>
+            <span style={{ fontSize: 13.5 }}>
+              <strong>Websiteerstellung kostenlos</strong> — erst zahlen, wenn dir die Website gefällt
+            </span>
+            <a href="/start" className="ank-link">Jetzt erstellen <i className="fa-solid fa-arrow-right" aria-hidden="true" /></a>
+          </div>
+        )}
       </div>
 
       {/* Hauptleiste */}
