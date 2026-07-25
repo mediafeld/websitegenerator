@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, CI } from '@/components/Kopf'
+import { Umschalter } from '@/components/Effekte'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN, eur } from '@/lib/preise'
@@ -45,13 +46,8 @@ export default function PreiseSeite() {
 
       <section style={{ padding: '48px 0 24px' }}>
         <div className="wrap">
-          <div style={{ display: 'inline-flex', background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 11, padding: 4, marginBottom: 28 }}>
-            {[['kaufen', 'Kaufen · einmalig'], ['mieten', 'Mieten · monatlich']].map(([id, t]) => (
-              <button key={id} onClick={() => setModus(id)} style={{
-                border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
-                background: modus === id ? D.blau : 'transparent', color: modus === id ? '#fff' : D.textMatt, transition: 'all .15s',
-              }}>{t}</button>
-            ))}
+          <div style={{ marginBottom: 28 }}>
+            <Umschalter wert={modus} setWert={setModus} aLabel="Website mieten" bLabel="Website kaufen" />
           </div>
 
           <div className="spalten3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, alignItems: 'stretch' }}>
@@ -76,7 +72,7 @@ export default function PreiseSeite() {
                     </li>
                   ))}
                 </ul>
-                <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => router.push('/start')} style={{ width: '100%', padding: 12 }}>Mit {p.name} starten</button>
+                <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => router.push(`/start?paket=${p.id}`)} style={{ width: '100%', padding: 12 }}>Mit {p.name} starten</button>
               </div>
             ))}
           </div>
@@ -85,7 +81,7 @@ export default function PreiseSeite() {
 
       {/* Vergleich */}
       <section style={{ padding: '32px 0' }}>
-        <div className="wrap" style={{ maxWidth: 1040 }}>
+        <div className="wrap" style={{ maxWidth: 1500 }}>
           <h2 className="display" style={{ fontSize: 26, marginBottom: 18 }}>Kaufen oder mieten?</h2>
           <div className="karte" style={{ overflow: 'hidden' }}>
             <table className="tabelle">
@@ -110,7 +106,7 @@ export default function PreiseSeite() {
 
       {/* Einzelposten */}
       <section id="zusatz" style={{ padding: '32px 0' }}>
-        <div className="wrap" style={{ maxWidth: 1040 }}>
+        <div className="wrap" style={{ maxWidth: 1500 }}>
           <h2 className="display" style={{ fontSize: 26, marginBottom: 8 }}>Domain, Hosting & Einzelposten</h2>
           <p style={{ fontSize: 14.5, color: D.textMatt, marginBottom: 18, lineHeight: 1.65 }}>
             Diese Posten kannst du einzeln dazubuchen. Bei den Mietpaketen sind Domain, Hosting und SSL schon enthalten.
@@ -130,7 +126,7 @@ export default function PreiseSeite() {
 
       {/* Kündigung */}
       <section id="kuendigung" style={{ padding: '32px 0 70px' }}>
-        <div className="wrap" style={{ maxWidth: 1040 }}>
+        <div className="wrap" style={{ maxWidth: 1500 }}>
           <div className="karte" style={{ padding: '26px 24px' }}>
             <h2 className="display" style={{ fontSize: 22, marginBottom: 10 }}>Vertrag kündigen</h2>
             <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.7, marginBottom: 16 }}>

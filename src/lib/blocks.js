@@ -206,6 +206,36 @@ export const HERO_FULL = {
   </div>
 </section>`
     },
+    {
+      id: 'hero-mesh', name: 'Modern Bewegt',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-mesh" data-section="1" style="position:relative;min-height:90vh;display:flex;align-items:center;overflow:hidden;background:linear-gradient(160deg,var(--p900),#0d1b2a 65%);padding:90px 0;">
+  <style>
+    @keyframes hmDriftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,50px) scale(1.2)}}
+    @keyframes hmDriftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-40px) scale(1.15)}}
+    @keyframes hmStrich{to{clip-path:inset(0 0 0 0)}}
+    .hm-strich{clip-path:inset(0 100% 0 0);animation:hmStrich .9s .5s cubic-bezier(.25,.7,.3,1) forwards}
+  </style>
+  <div aria-hidden="true" style="position:absolute;top:-160px;left:-100px;width:560px;height:560px;border-radius:50%;filter:blur(60px);background:radial-gradient(circle,var(--accent),transparent 70%);opacity:.55;animation:hmDriftA 24s ease-in-out infinite;"></div>
+  <div aria-hidden="true" style="position:absolute;bottom:-180px;right:-80px;width:520px;height:520px;border-radius:50%;filter:blur(60px);background:radial-gradient(circle,var(--p500),transparent 70%);opacity:.5;animation:hmDriftB 29s ease-in-out infinite;"></div>
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
+    <div data-reveal style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:8px 18px;margin-bottom:26px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;">
+      <span style="width:7px;height:7px;background:var(--accent);border-radius:50%;"></span>${ed('tag', c.tag, 'span')}
+    </div>
+    <h1 data-reveal style="font-size:clamp(42px,7vw,84px);font-weight:200;line-height:1.06;letter-spacing:-.03em;color:#fff;max-width:820px;margin-bottom:22px;">
+      ${ed('headline', c.headline, 'span')}
+    </h1>
+    <p data-reveal style="font-size:19px;font-weight:400;color:rgba(255,255,255,.75);max-width:560px;line-height:1.7;margin-bottom:38px;">${ed('subline', c.subline, 'span')}</p>
+    <div data-reveal style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:58px;">
+      <a href="kontakt.html" style="background:var(--accent);color:#fff;text-decoration:none;padding:17px 32px;border-radius:99px;font-weight:700;font-size:16px;box-shadow:0 14px 30px rgba(0,0,0,.3);">${ed('cta1', c.cta1, 'span')}</a>
+      <a href="#leistungen" style="background:transparent;color:#fff;text-decoration:none;padding:17px 32px;border-radius:99px;font-weight:600;font-size:16px;border:1.5px solid rgba(255,255,255,.35);">${ed('cta2', c.cta2, 'span')}</a>
+    </div>
+    <div data-reveal style="display:flex;gap:48px;flex-wrap:wrap;">
+      ${(c.stats || []).map(s => `<div><div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-.02em;">${ed('stat_'+s.label, s.num, 'span')}</div><div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:2px;">${esc(s.label)}</div></div>`).join('')}
+    </div>
+  </div>
+</section>`
+    },
   ]
 }
 

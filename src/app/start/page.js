@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { KAUF } from '@/lib/preise'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
@@ -104,7 +105,16 @@ function SectionTitle({ children, sub }) {
 
 // ── HAUPT-WIZARD ────────────────────────────────────────────
 export default function WizardPage() {
+  return (
+    <Suspense fallback={null}>
+      <WizardInnen />
+    </Suspense>
+  )
+}
+
+function WizardInnen() {
   const router = useRouter()
+  const params = useSearchParams()
   const [step, setStep] = useState(1)
   const [fd, setFd] = useState({
     paket: 'multipage', preis: 149,
@@ -135,6 +145,20 @@ export default function WizardPage() {
       const d = sessionStorage.getItem('wg24_domain')
       if (d) setFd(prev => (prev.domain ? prev : { ...prev, domain: d }))
     } catch {}
+  }, [])
+
+  // Paket-Wahl von der Preise-Seite/Startseite übernehmen (?paket=multipage
+  // ODER ?paket=plus, je nachdem ob Kauf- oder Mietkarte angeklickt wurde) —
+  // Mieten-Stufen und Kauf-Stufen haben denselben Umfang, nur andere Namen.
+  useEffect(() => {
+    const GROESSE = { start: 'onepager', plus: 'multipage', pro: 'business', onepager: 'onepager', multipage: 'multipage', business: 'business' }
+    const paketId = params.get('paket')
+    const groesse = GROESSE[paketId]
+    if (groesse) {
+      const gewaehlt = KAUF.find(p => p.id === groesse)
+      setFd(prev => ({ ...prev, paket: groesse, preis: gewaehlt?.preis ?? prev.preis }))
+      setStep(2)
+    }
   }, [])
 
   const upd = (k, v) => setFd(prev => ({ ...prev, [k]: v }))

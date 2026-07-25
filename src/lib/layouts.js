@@ -92,6 +92,22 @@ export const LAYOUTS = [
       { type: 'contact', variant: 'contact-split' },
     ],
   },
+  {
+    id: 'modern-bewegt',
+    name: 'Modern & bewegt',
+    sub: 'Großer Auftritt',
+    desc: 'Bewegter Farbverlauf im Hero, große Typografie, viel Wirkung. Für alle, die etwas auffallen wollen.',
+    wire: ['hero', 'stats', 'cards3', 'split', 'quotes', 'cta', 'contact'],
+    blocks: [
+      { type: 'hero-full', variant: 'hero-mesh' },
+      { type: 'stats', variant: 'stats-bar' },
+      { type: 'services', variant: 'services-cards' },
+      { type: 'about', variant: 'about-split' },
+      { type: 'testimonials', variant: 'testi-cards' },
+      { type: 'cta', variant: 'cta-gradient' },
+      { type: 'contact', variant: 'contact-split' },
+    ],
+  },
 ]
 
 // Branchen-Empfehlung fürs Layout

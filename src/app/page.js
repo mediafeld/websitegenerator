@@ -73,9 +73,9 @@ export default function Startseite() {
     } catch { setFehler('Die Domainprüfung ist gerade nicht erreichbar. Du kannst trotzdem starten.') }
     setLaedt(false)
   }
-  function starten(domain) {
+  function starten(domain, paketId) {
     try { if (domain) sessionStorage.setItem('wg24_domain', domain) } catch {}
-    router.push('/start')
+    router.push(paketId ? `/start?paket=${paketId}` : '/start')
   }
   const freie = daten?.ergebnisse?.filter(e => e.frei) || []
   const belegte = daten?.ergebnisse?.filter(e => !e.frei) || []
@@ -483,7 +483,7 @@ export default function Startseite() {
                   <ul className="haken gruen" style={{ flex: 1 }}>
                     {p.punkte.map(t => <li key={t}><i className="fa-solid fa-circle-check" aria-hidden="true" />{t}</li>)}
                   </ul>
-                  <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => starten(null)} style={{ width: '100%', marginTop: 22, fontSize: 15.5, padding: '16px' }}>
+                  <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => starten(null, p.id)} style={{ width: '100%', marginTop: 22, fontSize: 15.5, padding: '16px' }}>
                     <><i className={`fa-solid fa-${modus === 'mieten' ? 'rotate' : 'download'}`} aria-hidden="true" />{modus === 'mieten' ? `Mieten für ${eur(p.preis)} €/Monat` : `Kaufen für ${eur(p.preis)} €`}</>
                   </button>
                   <p className="klein" style={{ fontSize: 12, textAlign: 'center', marginTop: 10 }}>
