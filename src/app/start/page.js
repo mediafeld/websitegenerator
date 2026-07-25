@@ -12,15 +12,15 @@ import { aktuellerNutzer } from '@/lib/projekte'
 const PRESET_COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
 const TONE_PRESETS = [
-  { id: 'professionell', label: 'Professionell', sub: 'Seriös, kompetent', emoji: '👔' },
-  { id: 'serioes', label: 'Seriös wie eine Bank', sub: 'Förmlich, präzise', emoji: '🏛️' },
-  { id: 'herzlich', label: 'Locker & herzlich', sub: 'Nahbar, sympathisch', emoji: '😊' },
-  { id: 'jugendlich', label: 'Jugendlich & modern', sub: 'Dynamisch, frisch', emoji: '🚀' },
-  { id: 'premium', label: 'Exklusiv & Premium', sub: 'Hochwertig, elegant', emoji: '✨' },
-  { id: 'technisch', label: 'Technisch & präzise', sub: 'Faktenbasiert', emoji: '🔧' },
-  { id: 'empathisch', label: 'Empathisch & fürsorglich', sub: 'Verständnisvoll', emoji: '💙' },
-  { id: 'kreativ', label: 'Mutig & kreativ', sub: 'Außergewöhnlich', emoji: '🎨' },
-  { id: 'bodenstaendig', label: 'Bodenständig & ehrlich', sub: 'Direkt, verlässlich', emoji: '🤝' },
+  { id: 'professionell', label: 'Professionell', sub: 'Seriös, kompetent', icon: 'fa-user-tie' },
+  { id: 'serioes', label: 'Seriös wie eine Bank', sub: 'Förmlich, präzise', icon: 'fa-building-columns' },
+  { id: 'herzlich', label: 'Locker & herzlich', sub: 'Nahbar, sympathisch', icon: 'fa-face-smile' },
+  { id: 'jugendlich', label: 'Jugendlich & modern', sub: 'Dynamisch, frisch', icon: 'fa-rocket' },
+  { id: 'premium', label: 'Exklusiv & Premium', sub: 'Hochwertig, elegant', icon: 'fa-gem' },
+  { id: 'technisch', label: 'Technisch & präzise', sub: 'Faktenbasiert', icon: 'fa-wrench' },
+  { id: 'empathisch', label: 'Empathisch & fürsorglich', sub: 'Verständnisvoll', icon: 'fa-heart' },
+  { id: 'kreativ', label: 'Mutig & kreativ', sub: 'Außergewöhnlich', icon: 'fa-palette' },
+  { id: 'bodenstaendig', label: 'Bodenständig & ehrlich', sub: 'Direkt, verlässlich', icon: 'fa-handshake' },
 ]
 
 const CTA_STILE = [
@@ -79,8 +79,8 @@ function Select({ label, value, onChange, options, primary }) {
 
 function Check({ label, checked, onChange, primary }) {
   return (
-    <div onClick={() => onChange(!checked)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${checked ? primary : '#e5e5e5'}`, borderRadius: 10, cursor: 'pointer', marginBottom: 8, background: checked ? primary + '0d' : '#fff', transition: 'all 0.15s' }}>
-      <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${checked ? primary : '#ccc'}`, background: checked ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, flexShrink: 0 }}>{checked ? '✓' : ''}</div>
+    <div onClick={() => onChange(!checked)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${checked ? primary : '#e5e5e5'}`, borderRadius: 12, cursor: 'pointer', marginBottom: 8, background: checked ? primary + '0d' : '#fff', transition: 'all 0.15s' }}>
+      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${checked ? primary : '#ccc'}`, background: checked ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, flexShrink: 0 }}>{checked && <i className="fa-solid fa-check" aria-hidden="true" />}</div>
       <span style={{ fontSize: 13, fontWeight: 500, color: '#334155' }}>{label}</span>
     </div>
   )
@@ -88,7 +88,7 @@ function Check({ label, checked, onChange, primary }) {
 
 function Card({ active, onClick, children, primary, style = {} }) {
   return (
-    <div onClick={onClick} style={{ border: `2px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 12, padding: 14, cursor: 'pointer', background: active ? primary + '0d' : '#fff', transition: 'all 0.15s', ...style }}>
+    <div onClick={onClick} style={{ border: `2px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 14, padding: 14, cursor: 'pointer', background: active ? primary + '0d' : '#fff', transition: 'all 0.15s', ...style }}>
       {children}
     </div>
   )
@@ -272,16 +272,16 @@ function WizardInnen() {
       <link href={`https://fonts.googleapis.com/css2?${allGoogleFontsParam()}&display=swap`} rel="stylesheet" />
 
       {/* Topbar */}
-      <div style={{ height: 56, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', background: '#fff', flexShrink: 0, position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/" style={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.5, color: 'inherit', textDecoration: 'none' }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></a>
+      <div style={{ height: 58, borderBottom: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', background: '#0A1824', flexShrink: 0, position: 'sticky', top: 0, zIndex: 100 }}>
+        <a href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: -0.5, color: '#fff', textDecoration: 'none' }}>websitegenerator<span style={{ color: '#6FC3EF' }}>24</span></a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {fd.domain && (
-            <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: '#15803D', background: '#EBF8F0', border: '1px solid #A7E3BC', borderRadius: 99, padding: '5px 12px' }}>
-              {fd.domain}
+            <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: '#6FC3EF', background: 'rgba(111,195,239,.12)', border: '1px solid rgba(111,195,239,.3)', borderRadius: 99, padding: '6px 13px', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}
             </span>
           )}
-          <span style={{ fontWeight: 700, fontSize: 14, color: primary }}>{fd.preis} € <span style={{ fontWeight: 500, fontSize: 11, color: '#8493AC' }}>inkl. MwSt.</span></span>
-          <button onClick={() => router.push(nutzer ? '/dashboard' : '/login')} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, color: '#475569', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>{fd.preis} € <span style={{ fontWeight: 500, fontSize: 11, color: 'rgba(255,255,255,.55)' }}>inkl. MwSt.</span></span>
+          <button onClick={() => router.push(nutzer ? '/dashboard' : '/login')} style={{ border: '1px solid rgba(255,255,255,.2)', background: 'rgba(255,255,255,.06)', borderRadius: 99, padding: '8px 15px', fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
             {nutzer ? 'Meine Websites' : 'Anmelden'}
           </button>
         </div>
@@ -292,9 +292,9 @@ function WizardInnen() {
         {['Paket','Branche','Unternehmen','Details','Stil & Marke','Design','SEO','Seiten'].map((s, i) => (
           <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             {i > 0 && <div style={{ width: 16, height: 1, background: '#e5e5e5', margin: '0 4px' }} />}
-            <div onClick={() => i + 1 < step && setStep(i + 1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 0', cursor: i + 1 < step ? 'pointer' : 'default' }}>
-              <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: step > i + 1 ? '#22c55e' : step === i + 1 ? primary : '#e5e5e5', color: step >= i + 1 ? '#fff' : '#999', transition: 'all 0.2s' }}>
-                {step > i + 1 ? '✓' : i + 1}
+            <div onClick={() => i + 1 < step && setStep(i + 1)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '12px 0', cursor: i + 1 < step ? 'pointer' : 'default' }}>
+              <div style={{ width: 23, height: 23, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: step > i + 1 ? '#1F9D55' : step === i + 1 ? primary : '#E1E7EB', color: step >= i + 1 ? '#fff' : '#94a3b8', transition: 'all 0.2s' }}>
+                {step > i + 1 ? <i className="fa-solid fa-check" aria-hidden="true" /> : i + 1}
               </div>
               <span style={{ fontSize: 12, fontWeight: 500, color: step === i + 1 ? '#111' : '#999', whiteSpace: 'nowrap' }}>{s}</span>
             </div>
@@ -312,13 +312,13 @@ function WizardInnen() {
               <StepHead n={1} title="Welches Paket passt zu dir?" sub="Einmalig bezahlen – kein Abo. Premium-Design & alle Editor-Funktionen in jedem Paket." />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16, marginBottom: 24 }}>
                 {[
-                  { id: 'onepager', name: 'Onepager', price: 89, icon: '📄', seiten: '1 Seite', bilder: '6 KI-Bilder' },
-                  { id: 'multipage', name: 'Multipage', price: 149, icon: '🗂️', seiten: 'Bis 5 Unterseiten', bilder: '8 KI-Bilder', pop: true },
-                  { id: 'business', name: 'Business', price: 199, icon: '🏢', seiten: 'Bis 8 Unterseiten', bilder: '12 KI-Bilder' },
+                  { id: 'onepager', name: 'Onepager', price: 89, icon: 'fa-file', seiten: '1 Seite', bilder: '6 KI-Bilder' },
+                  { id: 'multipage', name: 'Multipage', price: 149, icon: 'fa-folder-open', seiten: 'Bis 5 Unterseiten', bilder: '8 KI-Bilder', pop: true },
+                  { id: 'business', name: 'Business', price: 199, icon: 'fa-building', seiten: 'Bis 8 Unterseiten', bilder: '12 KI-Bilder' },
                 ].map(p => (
                   <div key={p.id} onClick={() => { upd('paket', p.id); upd('preis', p.price) }} style={{ border: `2px solid ${fd.paket === p.id ? primary : '#e5e5e5'}`, borderRadius: 16, padding: 24, cursor: 'pointer', background: fd.paket === p.id ? primary + '0a' : '#fff', position: 'relative', transition: 'all 0.15s' }}>
-                    {p.pop && <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>★ Beliebteste</div>}
-                    <div style={{ fontSize: 26, marginBottom: 10 }}>{p.icon}</div>
+                    {p.pop && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-star" style={{ fontSize: 9 }} aria-hidden="true" />Beliebteste</div>}
+                    <div style={{ width: 42, height: 42, borderRadius: 12, background: primary + '14', color: primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, marginBottom: 12 }}><i className={`fa-solid ${p.icon}`} aria-hidden="true" /></div>
                     <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>{p.name}</div>
                     <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 2 }}>{p.price} <span style={{ fontSize: 14, fontWeight: 400, color: '#888' }}>€</span></div>
                     <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>inkl. MwSt. · einmalig</div>
@@ -348,7 +348,7 @@ function WizardInnen() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 20 }}>
                 {BRANCHEN.map(b => (
                   <Card key={b.id} active={fd.branche === b.id} onClick={() => upd('branche', b.id)} primary={primary}>
-                    <div style={{ fontSize: 26, marginBottom: 6 }}>{b.emoji}</div>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: fd.branche === b.id ? primary : '#F1F4F6', color: fd.branche === b.id ? '#fff' : primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, marginBottom: 8, transition: 'all .15s' }}><i className={`fa-solid ${b.icon}`} aria-hidden="true" /></div>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{b.label}</div>
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>{b.beschreibung}</div>
                   </Card>
@@ -424,7 +424,7 @@ function WizardInnen() {
                   {fd.logo ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
                       <img src={fd.logo} alt="Logo" style={{ height: 48, width: 'auto', objectFit: 'contain' }} />
-                      <span style={{ fontSize: 13, color: primary, fontWeight: 600 }}>✓ Logo hochgeladen – klicken zum Ändern</span>
+                      <span style={{ fontSize: 13, color: primary, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><i className="fa-solid fa-check" aria-hidden="true" />Logo hochgeladen – klicken zum Ändern</span>
                     </div>
                   ) : (
                     <>
@@ -473,7 +473,7 @@ function WizardInnen() {
               <StepHead n={4} title={brancheFelder.titel} sub={brancheFelder.sub} />
               <Panel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, padding: '10px 14px', background: primary + '0d', borderRadius: 10 }}>
-                  <span style={{ fontSize: 22 }}>{branche.emoji}</span>
+                  <i className={`fa-solid ${branche.icon}`} style={{ fontSize: 17, color: primary }} aria-hidden="true" />
                   <span style={{ fontSize: 13, color: '#475569' }}>Speziell für <b>{branche.label}</b> – diese Angaben werden zu echten Sektionen auf deiner Website.</span>
                 </div>
                 {brancheFelder.felder.map(f => {
@@ -502,7 +502,7 @@ function WizardInnen() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
                   {TONE_PRESETS.map(t => (
                     <Card key={t.id} active={fd.tonPreset === t.id} onClick={() => upd('tonPreset', t.id)} primary={primary} style={{ padding: '10px 12px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{t.emoji} {t.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}><i className={`fa-solid ${t.icon}`} style={{ color: primary, fontSize: 12 }} aria-hidden="true" />{t.label}</div>
                       <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>{t.sub}</div>
                     </Card>
                   ))}
@@ -612,11 +612,14 @@ function WizardInnen() {
                 <MenuBuilder value={fd.menu} onChange={v => upd('menu', v)} primary={primary} maxPages={fd.paket === 'business' ? 8 : fd.paket === 'onepager' ? 1 : 5} />
               </Panel>
 
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, color: '#92400e' }}>⚖️ Impressum, Datenschutz & Cookie-Banner</div>
-                <p style={{ fontSize: 12, color: '#78716c', lineHeight: 1.6 }}>
-                  Werden automatisch generiert und sind inklusive. <b>Wichtiger Hinweis:</b> Wir übernehmen <b>keine Haftung</b> für die rechtliche Vollständigkeit. Eine <b>anwaltliche Prüfung</b> sollte vor Veröffentlichung immer erfolgen. Eine automatische Cookie-Erklärung ist enthalten. Auf Wunsch beraten wir dich gerne.
-                </p>
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: 16, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <i className="fa-solid fa-scale-balanced" style={{ color: '#92400e', fontSize: 15, marginTop: 2, flexShrink: 0 }} aria-hidden="true" />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, color: '#92400e' }}>Impressum, Datenschutz &amp; Cookie-Banner</div>
+                  <p style={{ fontSize: 12, color: '#78716c', lineHeight: 1.6 }}>
+                    Werden automatisch generiert und sind inklusive. <b>Wichtiger Hinweis:</b> Wir übernehmen <b>keine Haftung</b> für die rechtliche Vollständigkeit. Eine <b>anwaltliche Prüfung</b> sollte vor Veröffentlichung immer erfolgen. Eine automatische Cookie-Erklärung ist enthalten. Auf Wunsch beraten wir dich gerne.
+                  </p>
+                </div>
               </div>
             </>
           )}
@@ -626,11 +629,11 @@ function WizardInnen() {
 
       {/* Footer-Navigation */}
       <div style={{ borderTop: '1px solid #e5e5e5', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', position: 'sticky', bottom: 0, flexShrink: 0 }}>
-        <button onClick={back} disabled={step === 1} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', opacity: step === 1 ? 0.4 : 1, fontFamily: 'inherit' }}>← Zurück</button>
+        <button onClick={back} disabled={step === 1} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '12px 24px', borderRadius: 99, fontWeight: 700, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', opacity: step === 1 ? 0.4 : 1, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 9 }}><i className="fa-solid fa-arrow-left" aria-hidden="true" />Zurück</button>
         {step < TOTAL_STEPS ? (
-          <button onClick={next} disabled={step === 3 && !!(fd.userImages?.length) && !fd.imgLicense} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: (step === 3 && !!(fd.userImages?.length) && !fd.imgLicense) ? 'not-allowed' : 'pointer', opacity: (step === 3 && !!(fd.userImages?.length) && !fd.imgLicense) ? 0.5 : 1, fontFamily: 'inherit' }}>Weiter →</button>
+          <button onClick={next} disabled={step === 3 && !!(fd.userImages?.length) && !fd.imgLicense} style={{ background: primary, color: '#fff', border: 'none', padding: '13px 30px', borderRadius: 99, fontWeight: 700, fontSize: 14, cursor: (step === 3 && !!(fd.userImages?.length) && !fd.imgLicense) ? 'not-allowed' : 'pointer', opacity: (step === 3 && !!(fd.userImages?.length) && !fd.imgLicense) ? 0.5 : 1, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 9 }}>Weiter<i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
         ) : (
-          <button onClick={finish} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 32px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>✨ Website generieren →</button>
+          <button onClick={finish} style={{ background: primary, color: '#fff', border: 'none', padding: '13px 34px', borderRadius: 99, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10 }}><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Website generieren<i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
         )}
       </div>
     </div>
@@ -653,9 +656,12 @@ function Panel({ children }) {
 }
 
 function Feat({ children, primary, bold }) {
-  return <div style={{ fontSize: 13, color: bold ? '#0f172a' : '#555', fontWeight: bold ? 700 : 400, padding: '3px 0', display: 'flex', gap: 8 }}><span style={{ color: primary }}>✓</span>{children}</div>
+  return <div style={{ fontSize: 13, color: bold ? '#0f172a' : '#555', fontWeight: bold ? 700 : 400, padding: '3px 0', display: 'flex', alignItems: 'center', gap: 9 }}><i className="fa-solid fa-check" style={{ color: primary, fontSize: 11 }} aria-hidden="true" />{children}</div>
 }
 
 function InfoBox({ children, primary }) {
-  return <div style={{ background: primary + '0d', border: `1px solid ${primary}33`, borderRadius: 12, padding: 16, fontSize: 13, color: '#475569', lineHeight: 1.6 }}>{children}</div>
+  return <div style={{ background: primary + '0d', border: `1px solid ${primary}33`, borderRadius: 14, padding: 16, fontSize: 13, color: '#475569', lineHeight: 1.6, display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+    <i className="fa-solid fa-circle-info" style={{ color: primary, marginTop: 2, flexShrink: 0 }} aria-hidden="true" />
+    <span>{children}</span>
+  </div>
 }

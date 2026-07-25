@@ -1,16 +1,16 @@
 // 10 Branchen + branchenspezifische Detail-Felder
 
 export const BRANCHEN = [
-  { id: 'restaurant', label: 'Restaurant / Café', emoji: '🍽️', beschreibung: 'Gastronomie' },
-  { id: 'salon', label: 'Friseur / Beauty', emoji: '✂️', beschreibung: 'Salon & Kosmetik' },
-  { id: 'fitness', label: 'Fitness / Sport', emoji: '💪', beschreibung: 'Studio & Training' },
-  { id: 'anwalt', label: 'Anwalt / Kanzlei', emoji: '⚖️', beschreibung: 'Recht & Beratung' },
-  { id: 'praxis', label: 'Arzt / Praxis', emoji: '🩺', beschreibung: 'Gesundheit' },
-  { id: 'handwerk', label: 'Handwerk', emoji: '🔨', beschreibung: 'Bau & Service' },
-  { id: 'immobilien', label: 'Immobilien', emoji: '🏠', beschreibung: 'Makler' },
-  { id: 'agentur', label: 'Agentur / Beratung', emoji: '💼', beschreibung: 'Business' },
-  { id: 'fahrschule', label: 'Fahrschule / Bildung', emoji: '🚗', beschreibung: 'Schulung & Kurse' },
-  { id: 'andere', label: 'Andere Branche', emoji: '🏢', beschreibung: 'Allgemein' },
+  { id: 'restaurant', label: 'Restaurant / Café', icon: 'fa-utensils', beschreibung: 'Gastronomie' },
+  { id: 'salon', label: 'Friseur / Beauty', icon: 'fa-scissors', beschreibung: 'Salon & Kosmetik' },
+  { id: 'fitness', label: 'Fitness / Sport', icon: 'fa-dumbbell', beschreibung: 'Studio & Training' },
+  { id: 'anwalt', label: 'Anwalt / Kanzlei', icon: 'fa-scale-balanced', beschreibung: 'Recht & Beratung' },
+  { id: 'praxis', label: 'Arzt / Praxis', icon: 'fa-stethoscope', beschreibung: 'Gesundheit' },
+  { id: 'handwerk', label: 'Handwerk', icon: 'fa-hammer', beschreibung: 'Bau & Service' },
+  { id: 'immobilien', label: 'Immobilien', icon: 'fa-house', beschreibung: 'Makler' },
+  { id: 'agentur', label: 'Agentur / Beratung', icon: 'fa-briefcase', beschreibung: 'Business' },
+  { id: 'fahrschule', label: 'Fahrschule / Bildung', icon: 'fa-car', beschreibung: 'Schulung & Kurse' },
+  { id: 'andere', label: 'Andere Branche', icon: 'fa-building', beschreibung: 'Allgemein' },
 ]
 
 export function getBranche(id) {
