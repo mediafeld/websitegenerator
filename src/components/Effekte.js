@@ -69,8 +69,8 @@ export function Slider({ folien, dauer = 6500 }) {
   }, [i, pause, folien.length, dauer])
 
   return (
-    <div onMouseEnter={() => setPause(true)} onMouseLeave={() => setPause(false)}>
-      <div style={{ position: 'relative' }}>
+    <div onMouseEnter={() => setPause(true)} onMouseLeave={() => setPause(false)} style={{ width: '100%' }}>
+      <div style={{ position: 'relative', width: '100%' }}>
         {folien.map((f, k) => (
           <div key={k} aria-hidden={k !== i}
             style={{
@@ -80,6 +80,7 @@ export function Slider({ folien, dauer = 6500 }) {
               position: k === i ? 'relative' : 'absolute',
               inset: k === i ? 'auto' : 0,
               pointerEvents: k === i ? 'auto' : 'none',
+              width: '100%',
             }}>
             {f}
           </div>

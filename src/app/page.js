@@ -5,7 +5,7 @@ import { Kopf, D, BASIS_CSS, CI, TELEFON, TELEFON_LINK } from '@/components/Kopf
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { Reveal, Zaehler, Slider } from '@/components/Effekte'
-import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN, eur } from '@/lib/preise'
+import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN, TLD_PREISE, eur } from '@/lib/preise'
 import { BRANCHEN_INFO, BILD } from '@/lib/branchenSeite'
 import { FRAGEN } from '@/lib/fragen'
 
@@ -27,13 +27,27 @@ export default function Startseite() {
   const [branche, setBranche] = useState(BRANCHEN_INFO[0])
   const [weg, setWeg] = useState('mieten')
   const [faqWeg, setFaqWeg] = useState('mieten')
+  const [tlds, setTlds] = useState(['de', 'com', 'net', 'org'])
+  const [maus, setMaus] = useState({ x: 0, y: 0 })
+  const heroRef = useRef(null)
   const eingabeRef = useRef(null)
+  const tldUmschalten = (t) => setTlds(v => v.includes(t) ? (v.length > 1 ? v.filter(x => x !== t) : v) : [...v, t])
+
+  function herobewegung(e) {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const el = heroRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width - 0.5
+    const py = (e.clientY - r.top) / r.height - 0.5
+    setMaus({ x: px * 46, y: py * 32 })
+  }
 
   async function pruefen() {
     if (!name.trim()) { eingabeRef.current?.focus(); return }
     setLaedt(true); setFehler(''); setDaten(null)
     try {
-      const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, tlds }) })
       const j = await res.json()
       if (j.error) setFehler(j.error); else setDaten(j)
     } catch { setFehler('Die Domainprüfung ist gerade nicht erreichbar. Du kannst trotzdem starten.') }
@@ -54,8 +68,8 @@ export default function Startseite() {
       <Kopf />
 
       {/* ═══ HERO — Foto + Domain-Check als zentriertes Herzstück ═══ */}
-      <section className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
-        <div className="hero-mesh" aria-hidden="true">
+      <section ref={heroRef} onMouseMove={herobewegung} className="band band-foto hero" style={{ backgroundImage: `url(${F('hero-buero')})` }}>
+        <div className="hero-mesh" aria-hidden="true" style={{ transform: `translate(${maus.x}px, ${maus.y}px)` }}>
           <span className="blob blob-a" />
           <span className="blob blob-b" />
           <span className="blob blob-c" />
@@ -81,8 +95,12 @@ export default function Startseite() {
 
               {!fehler && !daten && (
                 <div className="dcheck-tlds">
-                  {[['.de', 14.90], ['.com', 24.90], ['.net', 24.90], ['.org', 24.90]].map(([t, p]) => (
-                    <span key={t}><b>{t}</b><em>{eur(p)} €/Jahr</em></span>
+                  {Object.entries(TLD_PREISE).map(([t, p]) => (
+                    <button key={t} type="button" onClick={() => tldUmschalten(t)}
+                      className={`dcheck-tld ${tlds.includes(t) ? 'an' : ''}`}>
+                      {tlds.includes(t) && <i className="fa-solid fa-check" aria-hidden="true" />}
+                      <b>.{t}</b><em>{eur(p)} €/Jahr</em>
+                    </button>
                   ))}
                 </div>
               )}
@@ -90,11 +108,12 @@ export default function Startseite() {
               {(fehler || daten) && (
                 <div className="dcheck-ergebnis">
                   {fehler && <p className="db-fehler">{fehler}</p>}
-                  {daten && freie.slice(0, 3).map((e, i) => (
+                  {daten && freie.slice(0, 8).map((e, i) => (
                     <div key={e.domain} className={`treffer ${i === 0 ? 'treffer-erst' : ''}`}>
                       <i className="fa-solid fa-circle-check" aria-hidden="true" />
                       <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5, textAlign: 'left' }}>{e.domain}</span>
                       <span className="tr-frei">frei</span>
+                      {e.preis != null && <span className="tr-preis">{eur(e.preis)} €/Jahr</span>}
                       <button className="btnfest" onClick={() => starten(e.domain)} style={{ padding: '9px 15px', fontSize: 13 }}>
                         Nehmen<i className="fa-solid fa-arrow-right" aria-hidden="true" />
                       </button>
@@ -577,7 +596,7 @@ function HeroFolie({ art, starten }) {
     : [['file-zipper', 'Quellcode als ZIP'], ['bolt', 'Sofort verfügbar'], ['ban', 'Keine Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
 
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: 'center', width: '100%' }}>
       <span className="hmarke">
         <i className={`fa-solid fa-${mieten ? 'globe' : 'download'}`} aria-hidden="true" />
         {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
@@ -616,7 +635,7 @@ function HeroFolie({ art, starten }) {
 const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
 .hero{position:relative;overflow:hidden}
-.hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
 .hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(50px);opacity:.85;mix-blend-mode:screen;will-change:transform}
 .blob-a{width:680px;height:680px;background:radial-gradient(circle,#54BCEF,transparent 70%);top:-200px;left:-120px;animation:driftA 22s ease-in-out infinite}
 .blob-b{width:760px;height:760px;background:radial-gradient(circle,#1B93D2,transparent 70%);bottom:-260px;right:-160px;animation:driftB 27s ease-in-out infinite}
@@ -655,23 +674,27 @@ const CSS = `
   font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:9px;white-space:nowrap;transition:all .18s}
 .dcheck-feld button:hover{background:${CI.blauDunkel};transform:translateY(-1px)}
 .dcheck-tlds{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
-.dcheck-tlds span{display:flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
-  border-radius:99px;padding:8px 16px;transition:all .18s}
-.dcheck-tlds span:hover{background:rgba(255,255,255,.14)}
-.dcheck-tlds b{font-size:13.5px;font-weight:700;color:#fff}
-.dcheck-tlds em{font-style:normal;font-size:11px;color:rgba(255,255,255,.55)}
-.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;
+.dcheck-tld{display:flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);
+  border-radius:99px;padding:8px 16px 8px 14px;transition:all .18s;cursor:pointer;font-family:inherit}
+.dcheck-tld:hover{background:rgba(255,255,255,.16);transform:translateY(-1px)}
+.dcheck-tld.an{background:${CI.blau};border-color:${CI.blau};box-shadow:0 8px 18px rgba(27,147,210,.35)}
+.dcheck-tld i{font-size:10px;color:#fff}
+.dcheck-tld b{font-size:13.5px;font-weight:700;color:#fff}
+.dcheck-tld em{font-style:normal;font-size:11px;color:rgba(255,255,255,.6)}
+.dcheck-tld.an em{color:rgba(255,255,255,.85)}
+.dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;color:${CI.text};
   background:#fff;border-radius:18px;padding:16px;box-shadow:0 24px 50px rgba(0,0,0,.35)}
 .dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:18px}
 .dcheck-hinweis i{color:#6FC3EF;margin-top:2px;flex-shrink:0}
 .db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:10px;padding:11px 13px}
 .db-belegt{font-size:12.5px;color:${CI.textMatt}}
-.treffer{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;
+.treffer{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;color:${CI.text};
   background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s}
 .treffer:hover{border-color:${CI.gruen};transform:translateX(3px)}
 .treffer>i{color:${CI.gruen};font-size:15px}
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
 .tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
+.tr-preis{font-size:12.5px;font-weight:600;color:${CI.textMatt}}
 @media(max-width:640px){.dcheck-feld{flex-wrap:wrap;border-radius:22px;padding:14px}.dcheck-feld input{width:100%;padding:6px 4px}.dcheck-feld button{width:100%;justify-content:center;margin-top:8px}}
 
 /* ══ Leistungskarten ══ */
