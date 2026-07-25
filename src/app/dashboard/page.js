@@ -1,30 +1,51 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
 import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
+import { MIETE } from '@/lib/preise'
+import { starteCheckout } from '@/lib/checkout'
 
 const STATUS = {
   entwurf: { text: 'Entwurf', farbe: '#92400E', bg: '#FFFBEB', rand: '#FDE68A' },
   fertig:  { text: 'Fertig',  farbe: '#1E40AF', bg: '#EFF6FF', rand: '#BFDBFE' },
   online:  { text: 'Online',  farbe: '#15803D', bg: '#F0FDF4', rand: '#BBF7D0' },
+  zahlung_fehlgeschlagen: { text: 'Zahlung fehlgeschlagen', farbe: '#B91C1C', bg: '#FEF2F2', rand: '#FECACA' },
+  gekuendigt: { text: 'Gekündigt', farbe: '#57657E', bg: '#F1F4F6', rand: '#E1E7EB' },
 }
 
 export default function Dashboard() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardInnen />
+    </Suspense>
+  )
+}
+
+function DashboardInnen() {
   const router = useRouter()
+  const params = useSearchParams()
   const [projekte, setProjekte] = useState([])
   const [fehler, setFehler] = useState('')
+  const [paketWahl, setPaketWahl] = useState(null)   // Projekt-ID, für die grade das Paket gewählt wird
+  const [bucht, setBucht] = useState(null)            // Projekt-ID, die grade zu Stripe unterwegs ist
 
   const laden = useCallback(async () => {
     if (!supabaseBereit) return
     const { data, error } = await supabase.from('projekte')
-      .select('id,name,firma,branche,status,domain,geaendert_am')
+      .select('id,name,firma,branche,status,domain,geaendert_am,zahlungsart,paket_id')
       .order('geaendert_am', { ascending: false })
     if (error) setFehler(fehlerText(error)); else setProjekte(data || [])
   }, [])
 
   useEffect(() => { laden() }, [laden])
+
+  async function buchen(projekt, paketId) {
+    setBucht(projekt.id)
+    const { error } = await starteCheckout({ paketId, modus: 'mieten', projektId: projekt.id, domain: projekt.domain })
+    if (error) { setFehler(error); setBucht(null) }
+  }
 
   async function loeschen(id, name) {
     if (!supabaseBereit) return
@@ -38,6 +59,12 @@ export default function Dashboard() {
       unter="Deine Websites, Entwürfe und der jeweilige Stand."
       kinder={
         <>
+          {params.get('bezahlt') === '1' && (
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '15px 18px', marginBottom: 18, fontSize: 14, color: '#15803D', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <i className="fa-solid fa-circle-check" style={{ fontSize: 17 }} aria-hidden="true" />
+              Zahlung eingegangen — deine Website wird jetzt online geschaltet. Die Rechnung findest du unter „Rechnungen & Verträge".
+            </div>
+          )}
           {fehler && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '15px 18px', marginBottom: 18, fontSize: 14, color: '#B91C1C' }}>{fehler}</div>}
 
           <div className="kkarte" style={{ marginBottom: 16 }}>
@@ -66,25 +93,50 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {projekte.map(p => {
                   const st = STATUS[p.status] || STATUS.entwurf
+                  const online = p.status === 'online'
                   return (
-                    <div key={p.id} className="karte-hover" style={{ background: D.hellKarte, border: `1px solid ${D.hellLinie}`, borderRadius: 13, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 11, background: D.blauZart, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <i className="fa-solid fa-globe" style={{ color: D.magenta, fontSize: 17 }} aria-hidden="true" />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 160 }}>
-                        <div style={{ fontSize: 15.5, fontWeight: 700 }}>{p.name}</div>
-                        <div style={{ fontSize: 12.5, color: D.hellGrau }}>
-                          {p.domain || 'noch keine Domain'}
-                          {p.geaendert_am && ` · geändert ${new Date(p.geaendert_am).toLocaleDateString('de-DE')}`}
+                    <div key={p.id} className="karte-hover" style={{ background: D.hellKarte, border: `1px solid ${D.hellLinie}`, borderRadius: 13, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 11, background: D.blauZart, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <i className="fa-solid fa-globe" style={{ color: D.magenta, fontSize: 17 }} aria-hidden="true" />
                         </div>
+                        <div style={{ flex: 1, minWidth: 160 }}>
+                          <div style={{ fontSize: 15.5, fontWeight: 700 }}>{p.name}</div>
+                          <div style={{ fontSize: 12.5, color: D.hellGrau }}>
+                            {p.domain || 'noch keine Domain'}
+                            {p.geaendert_am && ` · geändert ${new Date(p.geaendert_am).toLocaleDateString('de-DE')}`}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: st.farbe, background: st.bg, border: `1px solid ${st.rand}`, borderRadius: 99, padding: '4px 12px' }}>{st.text}</span>
+                        {!online && (
+                          <button className="btnblau" onClick={() => setPaketWahl(paketWahl === p.id ? null : p.id)} style={{ padding: '10px 17px', fontSize: 13 }}>
+                            <i className="fa-solid fa-rocket" style={{ marginRight: 7 }} aria-hidden="true" />Online schalten
+                          </button>
+                        )}
+                        <button className="btnfest" onClick={() => router.push(`/editor?projekt=${p.id}`)} style={{ padding: '10px 17px', fontSize: 13 }}>
+                          <i className="fa-solid fa-pen" style={{ marginRight: 7 }} aria-hidden="true" />Bearbeiten
+                        </button>
+                        <button onClick={() => loeschen(p.id, p.name)} title="Löschen" style={{ background: D.hellKarte, color: '#DC2626', border: '1px solid #FECACA', borderRadius: 9, padding: '10px 13px', cursor: 'pointer' }}>
+                          <i className="fa-solid fa-trash" aria-hidden="true" />
+                        </button>
                       </div>
-                      <span style={{ fontSize: 11.5, fontWeight: 700, color: st.farbe, background: st.bg, border: `1px solid ${st.rand}`, borderRadius: 99, padding: '4px 12px' }}>{st.text}</span>
-                      <button className="btnfest" onClick={() => router.push(`/editor?projekt=${p.id}`)} style={{ padding: '10px 17px', fontSize: 13 }}>
-                        <i className="fa-solid fa-pen" style={{ marginRight: 7 }} aria-hidden="true" />Bearbeiten
-                      </button>
-                      <button onClick={() => loeschen(p.id, p.name)} title="Löschen" style={{ background: D.hellKarte, color: '#DC2626', border: '1px solid #FECACA', borderRadius: 9, padding: '10px 13px', cursor: 'pointer' }}>
-                        <i className="fa-solid fa-trash" aria-hidden="true" />
-                      </button>
+
+                      {paketWahl === p.id && (
+                        <div style={{ background: D.hellGrund, borderRadius: 11, padding: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: D.hellText, marginRight: 4 }}>Mietpaket wählen:</span>
+                          {MIETE.map(m => (
+                            <button key={m.id} disabled={bucht === p.id} onClick={() => buchen(p, m.id)}
+                              style={{
+                                border: `1.5px solid ${p.paket_id === m.id ? D.blau : D.hellLinie}`, background: '#fff', borderRadius: 10,
+                                padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                              }}>
+                              {m.name} · {m.preis.toFixed(2).replace('.', ',')} €/Monat
+                              {bucht === p.id && <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />}
+                            </button>
+                          ))}
+                          <span style={{ fontSize: 12, color: D.hellGrau }}>Weiter zur sicheren Bezahlung bei Stripe.</span>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
