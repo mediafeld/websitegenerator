@@ -11,6 +11,12 @@ import { FRAGEN } from '@/lib/fragen'
 
 const F = (n) => `/bilder/${n}.webp`
 
+// Große, dünne Preiszahl mit hochgestellten Cent — wie im Angebots-Rechner-Stil
+function Preis({ betrag }) {
+  const [ganz, dez] = eur(betrag).split(',')
+  return <>{ganz}<span className="dez">,{dez}</span></>
+}
+
 export default function Startseite() {
   const router = useRouter()
   const [name, setName] = useState('')
@@ -379,7 +385,7 @@ export default function Startseite() {
                   <p className="klein" style={{ marginBottom: 18 }}>{p.kurz}</p>
 
                   <div className="preisblock">
-                    <div className={`preiszeile ${p.beliebt ? 'hell' : ''}`}><span>ab</span><b>{eur(p.preis)}</b><span>€ *</span></div>
+                    <div className={`preiszeile ${p.beliebt ? 'hell' : ''}`}><span>ab</span><b><Preis betrag={p.preis} /></b><span>€ *</span></div>
                     <div className="preis-unter">
                       <strong>{modus === 'mieten' ? 'pro Monat' : 'einmalig'}</strong>
                       <span>* inkl. 19 % MwSt.</span>
@@ -429,7 +435,7 @@ export default function Startseite() {
                 </ul>
               </div>
               <div className="sorgen-preis">
-                <div className="preiszeile hell"><span>ab</span><b>{eur(SORGENFREI.preis)}</b><span>€ *</span></div>
+                <div className="preiszeile hell"><span>ab</span><b><Preis betrag={SORGENFREI.preis} /></b><span>€ *</span></div>
                 <p className="klein" style={{ color: '#9FB2C0', marginBottom: 18 }}>
                   <strong style={{ color: '#fff', fontSize: 15 }}>pro Monat</strong> * inkl. 19 % MwSt.<br />oder {eur(SORGENFREI.jahr)} € im Jahr · 12 Monate Laufzeit
                 </p>
@@ -577,11 +583,11 @@ function HeroFolie({ art, starten }) {
         {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
       </span>
 
-      <h1 className="t1" style={{ color: '#fff', margin: '20px auto 16px', maxWidth: 1000 }}>
+      <h1 className="t1" style={{ color: '#fff', margin: '20px auto 16px', maxWidth: 1300 }}>
         {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
       </h1>
 
-      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 680, margin: '0 auto 28px', fontSize: 18.5 }}>
+      <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 780, margin: '0 auto 28px', fontSize: 19.5 }}>
         {mieten
           ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
           : 'Du bekommst den kompletten Quellcode und betreibst die Website, wo du willst. Domain und Hosting bringst du selbst mit.'}
@@ -610,17 +616,17 @@ function HeroFolie({ art, starten }) {
 const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
 .hero{position:relative;overflow:hidden}
-.hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(64px);opacity:.5;mix-blend-mode:screen;will-change:transform}
-.blob-a{width:540px;height:540px;background:radial-gradient(circle,#54BCEF,transparent 68%);top:-160px;left:-90px;animation:driftA 27s ease-in-out infinite}
-.blob-b{width:620px;height:620px;background:radial-gradient(circle,#1B93D2,transparent 68%);bottom:-220px;right:-120px;animation:driftB 33s ease-in-out infinite}
-.blob-c{width:420px;height:420px;background:radial-gradient(circle,#8FD2F5,transparent 68%);top:35%;left:52%;animation:driftC 23s ease-in-out infinite}
-@keyframes driftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,50px) scale(1.18)}}
-@keyframes driftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-35px) scale(1.12)}}
-@keyframes driftC{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-45px,55px) scale(1.1)}}
+.hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(50px);opacity:.85;mix-blend-mode:screen;will-change:transform}
+.blob-a{width:680px;height:680px;background:radial-gradient(circle,#54BCEF,transparent 70%);top:-200px;left:-120px;animation:driftA 22s ease-in-out infinite}
+.blob-b{width:760px;height:760px;background:radial-gradient(circle,#1B93D2,transparent 70%);bottom:-260px;right:-160px;animation:driftB 27s ease-in-out infinite}
+.blob-c{width:520px;height:520px;background:radial-gradient(circle,#FF5722,transparent 70%);top:30%;left:50%;animation:driftC 19s ease-in-out infinite;opacity:.4}
+@keyframes driftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(90px,60px) scale(1.22)}}
+@keyframes driftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-80px,-45px) scale(1.16)}}
+@keyframes driftC{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-55px,65px) scale(1.14)}}
 @media(prefers-reduced-motion:reduce){.hero-mesh .blob{animation:none}}
-@media(max-width:700px){.hero-mesh{opacity:.6}.blob-c{display:none}}
-.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:1480px;margin:0 auto;width:100%}
+@media(max-width:700px){.blob-c{display:none}}
+.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;z-index:2;max-width:1480px;margin:0 auto;width:100%}
 .hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:11px 22px;
   position:relative;background:linear-gradient(100deg,#157AB0,#1B93D2,#54BCEF,#1B93D2,#157AB0);
@@ -758,7 +764,8 @@ const CSS = `
 .preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:14px;padding:22px;margin-bottom:22px}
 .preis-top .preisblock{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
 .preiszeile{display:flex;align-items:baseline;gap:7px;font-size:15px;color:${CI.textMatt}}
-.preiszeile b{font-size:clamp(44px,5vw,54px);font-weight:800;letter-spacing:-.035em;color:#E1591F;line-height:1}
+.preiszeile b{font-size:clamp(50px,5.6vw,64px);font-weight:100;letter-spacing:-.03em;color:#FF5722;line-height:1}
+.preiszeile b .dez{font-size:0.42em;font-weight:300;letter-spacing:-.01em}
 .preiszeile.hell b{color:#FF8A57}
 .preiszeile.hell{color:#A9C2D2;justify-content:center}
 .preis-unter{display:flex;flex-direction:column;gap:1px;margin-top:8px}

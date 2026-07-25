@@ -6,6 +6,12 @@ import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN, eur } from '@/lib/preise'
 
+// Große, dünne Preiszahl mit hochgestellten Cent — wie im Angebots-Rechner-Stil
+function Preis({ betrag }) {
+  const [ganz, dez] = eur(betrag).split(',')
+  return <>{ganz}<span style={{ fontSize: '0.42em', fontWeight: 300, letterSpacing: '-.01em' }}>,{dez}</span></>
+}
+
 export default function PreiseSeite() {
   const router = useRouter()
   const [modus, setModus] = useState('kaufen')
@@ -55,7 +61,7 @@ export default function PreiseSeite() {
                 <h2 className="display" style={{ fontSize: 21, marginBottom: 4 }}>{p.name}</h2>
                 <p style={{ fontSize: 13, color: D.textMatt, marginBottom: 18 }}>{p.kurz}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span className="display" style={{ fontSize: 44, color: '#E1591F' }}>{eur(p.preis)}</span>
+                  <span className="display" style={{ fontSize: 54, fontWeight: 100, color: '#FF5722' }}><Preis betrag={p.preis} /></span>
                   <span style={{ fontSize: 17, fontWeight: 700, color: D.textMatt }}>€ *</span>
                   <span style={{ fontSize: 12.5, color: D.grauHell, marginLeft: 4 }}>{modus === 'kaufen' ? 'einmalig' : '/ Monat'}</span>
                 </div>

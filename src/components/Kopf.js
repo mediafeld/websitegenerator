@@ -61,7 +61,7 @@ a{color:inherit;text-decoration:none}
 ::selection{background:${CI.blau};color:#fff}
 
 /* ── Typografie: Inter Tight, groß, 100er Feinschnitt gegen 800er Fettung ── */
-.t1{font-size:clamp(44px,6.6vw,88px);line-height:1.08;letter-spacing:-.025em;font-weight:100;text-wrap:balance}
+.t1{font-size:clamp(44px,7.2vw,108px);line-height:1.05;letter-spacing:-.025em;font-weight:100;text-wrap:balance}
 .t1 b{font-weight:800}
 .t2{font-size:clamp(34px,5vw,58px);line-height:1.12;letter-spacing:-.022em;font-weight:100;text-wrap:balance}
 .t2 b{font-weight:800}
@@ -75,17 +75,17 @@ a{color:inherit;text-decoration:none}
 /* ── Hervorhebung: fett + ein einzelner handgezeichneter Schwung, zieht sich einmal ein ── */
 .vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:9px}
 .vschrift:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23E1591F' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23FF5722' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
 .reveal.an .vschrift:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
 .vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:9px}
 .vschrift-hell:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23E1591F' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23FF5722' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
 .reveal.an .vschrift-hell:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
 .vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:9px}
 .vschrift-bewegt:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23E1591F' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23FF5722' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
 .reveal.an .vschrift-bewegt:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
 @keyframes strichzeichnen{to{clip-path:inset(0 0 0 0)}}

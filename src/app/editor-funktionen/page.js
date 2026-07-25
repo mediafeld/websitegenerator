@@ -141,7 +141,7 @@ function GestaltungMock() {
       <div>
         <div style={{ fontSize: 11, color: D.grauHell, marginBottom: 8 }}>CI-Farbe</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {[D.blau, '#0A1824', '#1F9D55', '#8A99A6', '#E1591F'].map((c, i) => (
+          {[D.blau, '#0A1824', '#1F9D55', '#8A99A6', '#FF5722'].map((c, i) => (
             <span key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: c, border: i === 0 ? `2px solid ${D.blau}` : '2px solid transparent', outline: i === 0 ? `2px solid ${D.blau}` : 'none', outlineOffset: 2 }} />
           ))}
         </div>
