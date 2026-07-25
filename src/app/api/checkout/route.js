@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe'
-import { nutzerAusToken } from '@/lib/supabaseServer'
+import { nutzerAusToken, supabaseAdmin } from '@/lib/supabaseServer'
 import { MIETE, KAUF } from '@/lib/preise'
+import { profilLuecken } from '@/lib/projekte'
 
 // Erstellt eine Stripe-Checkout-Session. Preise werden NIE vom Client übernommen —
 // wir schlagen sie serverseitig in lib/preise.js nach, damit niemand den Preis
@@ -19,6 +20,19 @@ export async function POST(req) {
 
     const nutzer = await nutzerAusToken(accessToken)
     if (!nutzer) return NextResponse.json({ error: 'Bitte zuerst einloggen.' }, { status: 401 })
+
+    // Ohne vollständige Firmen-/Rechnungsdaten kein Kauf — die brauchen wir
+    // zwingend für Impressum und Rechnung. Serverseitig geprüft, damit das
+    // nicht über die Oberfläche hinweg umgangen werden kann.
+    const db = supabaseAdmin()
+    const { data: profil } = await db.from('profile').select('*').eq('id', nutzer.id).maybeSingle()
+    const luecken = profilLuecken(profil)
+    if (luecken.length > 0) {
+      return NextResponse.json({
+        error: `Bitte zuerst deine Daten vervollständigen: ${luecken.join(', ')}.`,
+        fehlendeDaten: luecken,
+      }, { status: 422 })
+    }
 
     const stripe = stripeClient()
     const basis = process.env.NEXT_PUBLIC_SITE_URL || req.headers.get('origin') || 'https://websitegenerator24.de'

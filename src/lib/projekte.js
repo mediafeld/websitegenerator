@@ -69,3 +69,18 @@ export function projektIdAusUrl() {
   if (typeof window === 'undefined') return null
   return new URLSearchParams(window.location.search).get('projekt')
 }
+
+// Pflichtangaben, die für ein rechtsgültiges Impressum/eine Rechnung nötig sind.
+// Wird sowohl im Dashboard (Anzeige) als auch in der Checkout-Route (serverseitig,
+// nicht umgehbar) benutzt — bevor "Online schalten" wirklich zu Stripe führt.
+export const PROFIL_PFLICHTFELDER = [
+  ['vorname', 'Vorname'],
+  ['nachname', 'Nachname'],
+  ['strasse', 'Straße & Hausnummer'],
+  ['plz', 'Postleitzahl'],
+  ['ort', 'Ort'],
+]
+
+export function profilLuecken(profil) {
+  return PROFIL_PFLICHTFELDER.filter(([feld]) => !profil?.[feld]?.trim?.()).map(([, label]) => label)
+}

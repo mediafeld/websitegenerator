@@ -6,6 +6,7 @@ import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
 import { MIETE } from '@/lib/preise'
 import { starteCheckout } from '@/lib/checkout'
+import { aktuellerNutzer, profilLuecken } from '@/lib/projekte'
 
 const STATUS = {
   entwurf: { text: 'Entwurf', farbe: '#92400E', bg: '#FFFBEB', rand: '#FDE68A' },
@@ -30,6 +31,7 @@ function DashboardInnen() {
   const [fehler, setFehler] = useState('')
   const [paketWahl, setPaketWahl] = useState(null)   // Projekt-ID, für die grade das Paket gewählt wird
   const [bucht, setBucht] = useState(null)            // Projekt-ID, die grade zu Stripe unterwegs ist
+  const [luecken, setLuecken] = useState(null)         // null = noch nicht geladen, [] = vollständig
 
   const laden = useCallback(async () => {
     if (!supabaseBereit) return
@@ -37,9 +39,19 @@ function DashboardInnen() {
       .select('id,name,firma,branche,status,domain,geaendert_am,zahlungsart,paket_id')
       .order('geaendert_am', { ascending: false })
     if (error) setFehler(fehlerText(error)); else setProjekte(data || [])
+
+    const u = await aktuellerNutzer()
+    if (u) {
+      const { data: profil } = await supabase.from('profile').select('*').eq('id', u.id).maybeSingle()
+      setLuecken(profilLuecken(profil))
+    }
   }, [])
 
   useEffect(() => { laden() }, [laden])
+
+  function onlineSchalten(projektId) {
+    setPaketWahl(paketWahl === projektId ? null : projektId)
+  }
 
   async function buchen(projekt, paketId) {
     setBucht(projekt.id)
@@ -109,7 +121,7 @@ function DashboardInnen() {
                         </div>
                         <span style={{ fontSize: 11.5, fontWeight: 700, color: st.farbe, background: st.bg, border: `1px solid ${st.rand}`, borderRadius: 99, padding: '4px 12px' }}>{st.text}</span>
                         {!online && (
-                          <button className="btnblau" onClick={() => setPaketWahl(paketWahl === p.id ? null : p.id)} style={{ padding: '10px 17px', fontSize: 13 }}>
+                          <button className="btnblau" onClick={() => onlineSchalten(p.id)} style={{ padding: '10px 17px', fontSize: 13 }}>
                             <i className="fa-solid fa-rocket" style={{ marginRight: 7 }} aria-hidden="true" />Online schalten
                           </button>
                         )}
@@ -121,7 +133,24 @@ function DashboardInnen() {
                         </button>
                       </div>
 
-                      {paketWahl === p.id && (
+                      {paketWahl === p.id && luecken?.length > 0 && (
+                        <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 11, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                          <i className="fa-solid fa-circle-exclamation" style={{ color: '#92400E', fontSize: 16, marginTop: 2 }} aria-hidden="true" />
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#92400E', marginBottom: 4 }}>
+                              Bevor du online gehen kannst, brauchen wir noch: {luecken.join(', ')}
+                            </div>
+                            <p style={{ fontSize: 13, color: '#92400E', marginBottom: 10, lineHeight: 1.6 }}>
+                              Diese Angaben stehen später auf deinem Impressum und deiner Rechnung — Pflicht, keine Kür.
+                            </p>
+                            <a href="/konto" className="btnfest" style={{ padding: '9px 16px', fontSize: 13 }}>
+                              <i className="fa-solid fa-address-card" style={{ marginRight: 7 }} aria-hidden="true" />Jetzt vervollständigen
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {paketWahl === p.id && luecken?.length === 0 && (
                         <div style={{ background: D.hellGrund, borderRadius: 11, padding: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: D.hellText, marginRight: 4 }}>Mietpaket wählen:</span>
                           {MIETE.map(m => (
