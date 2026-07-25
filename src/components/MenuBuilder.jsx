@@ -141,7 +141,7 @@ export default function MenuBuilder({ value, onChange, primary, maxPages = 5 }) 
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>💡 Tipp: Seite auf eine andere ziehen → wird zur Unterseite (Dropdown im Menü). Dieses Menü erscheint identisch auf allen Seiten.</div>
+      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}><i className="fa-solid fa-lightbulb" style={{ marginRight: 6 }} aria-hidden="true" />Tipp: Seite auf eine andere ziehen → wird zur Unterseite (Dropdown im Menü). Dieses Menü erscheint identisch auf allen Seiten.</div>
     </div>
   )
 }

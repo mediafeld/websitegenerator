@@ -15,6 +15,15 @@ import { useWarenkorb } from '@/lib/warenkorb'
 const GROESSE_MAP = { start: 'onepager', plus: 'multipage', pro: 'business', onepager: 'onepager', multipage: 'multipage', business: 'business' }
 const MIETE_IDS = new Set(MIETE.map(m => m.id))
 const PAKET_ICON = { onepager: 'fa-file', multipage: 'fa-folder-open', business: 'fa-building' }
+const MAX_SEITEN = { onepager: 1, multipage: 5, business: 8 }
+const DEFAULT_MENU = () => ([
+  { id: 'p_start', label: 'Startseite', fix: true, children: [] },
+  { id: 'p_leist', label: 'Leistungen', children: [] },
+  { id: 'p_about', label: 'Über uns', children: [] },
+  { id: 'p_kontakt', label: 'Kontakt', fix: true, children: [] },
+])
+// Onepager = alles auf EINER Seite → nur die Startseite, kein Menü
+const ONEPAGER_MENU = () => ([{ id: 'p_start', label: 'Startseite', fix: true, children: [] }])
 
 // Farbstimmung (nur Optik) – jetzt Teil des Farbwahl-Schritts im Wizard
 const STIMMUNGEN = [
@@ -188,7 +197,16 @@ function WizardInnen() {
     const quelle = zahlungsart === 'mieten' ? MIETE : KAUF
     const p = quelle.find(x => x.id === id) || quelle.find(x => GROESSE_MAP[x.id] === size)
     if (!p) return
-    setFd(prev => ({ ...prev, paket: size, zahlungsart, preis: p.preis }))
+    setFd(prev => {
+      // Menü dynamisch ans Paket anpassen: Onepager = 1 Seite; wechselt man von
+      // Onepager wieder hoch, kommt das Standard-Menü zurück.
+      const istOne = size === 'onepager'
+      const warOne = (prev.menu || []).length <= 1
+      let menu = prev.menu
+      if (istOne) menu = ONEPAGER_MENU()
+      else if (warOne) menu = DEFAULT_MENU()
+      return { ...prev, paket: size, zahlungsart, preis: p.preis, menu }
+    })
     setzePaket({
       id: 'paket-' + p.id,
       titel: `Website ${zahlungsart === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`,
@@ -308,29 +326,29 @@ function WizardInnen() {
       {/* Google Fonts laden für Vorschau */}
       <link href={`https://fonts.googleapis.com/css2?${allGoogleFontsParam()}&display=swap`} rel="stylesheet" />
 
-      {/* Slim Info-Strip: gewähltes Paket + Domain (Logo/Login/Warenkorb liefert der echte Header oben) */}
-      <div style={{ borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '9px 24px', justifyContent: 'flex-end', gap: 12, background: '#fff', flexShrink: 0 }}>
-        {fd.domain && (
-          <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '6px 13px', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}
-          </span>
-        )}
-        <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{eur(fd.preis)} €{fd.zahlungsart === 'mieten' ? ' /Monat' : ''} <span style={{ fontWeight: 500, fontSize: 11, color: '#94a3b8' }}>inkl. MwSt.</span></span>
-      </div>
-
-      {/* Steps */}
-      <div style={{ borderBottom: '1px solid #e5e5e5', background: '#fff', padding: '0 24px', display: 'flex', gap: 0, alignItems: 'center', overflowX: 'auto', flexShrink: 0 }}>
-        {['Paket','Branche','Unternehmen','Details','Stil & Marke','Design','SEO','Seiten'].map((s, i) => (
-          <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            {i > 0 && <div style={{ width: 16, height: 1, background: '#e5e5e5', margin: '0 4px' }} />}
-            <div onClick={() => i + 1 < step && setStep(i + 1)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '12px 0', cursor: i + 1 < step ? 'pointer' : 'default' }}>
-              <div style={{ width: 23, height: 23, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: step > i + 1 ? '#1F9D55' : step === i + 1 ? primary : '#E1E7EB', color: step >= i + 1 ? '#fff' : '#94a3b8', transition: 'all 0.2s' }}>
-                {step > i + 1 ? <i className="fa-solid fa-check" aria-hidden="true" /> : i + 1}
+      {/* Schritte + Preis/Domain in EINER Zeile */}
+      <div style={{ borderBottom: '1px solid #e5e5e5', background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', flex: 1 }}>
+          {['Paket','Branche','Unternehmen','Details','Stil & Marke','Design','SEO','Seiten'].map((s, i) => (
+            <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              {i > 0 && <div style={{ width: 16, height: 1, background: '#e5e5e5', margin: '0 4px' }} />}
+              <div onClick={() => i + 1 < step && setStep(i + 1)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '12px 0', cursor: i + 1 < step ? 'pointer' : 'default' }}>
+                <div style={{ width: 23, height: 23, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: step > i + 1 ? '#1F9D55' : step === i + 1 ? primary : '#E1E7EB', color: step >= i + 1 ? '#fff' : '#94a3b8', transition: 'all 0.2s' }}>
+                  {step > i + 1 ? <i className="fa-solid fa-check" aria-hidden="true" /> : i + 1}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 500, color: step === i + 1 ? '#111' : '#999', whiteSpace: 'nowrap' }}>{s}</span>
               </div>
-              <span style={{ fontSize: 12, fontWeight: 500, color: step === i + 1 ? '#111' : '#999', whiteSpace: 'nowrap' }}>{s}</span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          {fd.domain && (
+            <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+              <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}
+            </span>
+          )}
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', whiteSpace: 'nowrap' }}>{eur(fd.preis)} €{fd.zahlungsart === 'mieten' ? ' /Monat' : ''} <span style={{ fontWeight: 500, fontSize: 11, color: '#94a3b8' }}>inkl. MwSt.</span></span>
+        </div>
       </div>
 
       {/* Content */}
@@ -652,9 +670,23 @@ function WizardInnen() {
           {/* STEP 8 – SEITEN & MENÜ */}
           {step === 8 && (
             <>
-              <StepHead n={8} title="Seiten & Menü" sub="Lege deine Seiten an und ordne sie per Drag & Drop. Das Menü erscheint auf allen Seiten gleich." />
+              <StepHead n={8} title="Seiten & Menü" sub={fd.paket === 'onepager' ? 'Dein Onepager läuft auf EINER Seite – kein Menü nötig.' : `Dein ${fd.paket === 'business' ? 'Business' : 'Multipage'}-Paket erlaubt bis zu ${MAX_SEITEN[fd.paket]} Unterseiten.`} />
               <Panel>
-                <MenuBuilder value={fd.menu} onChange={v => upd('menu', v)} primary={primary} maxPages={fd.paket === 'business' ? 8 : fd.paket === 'onepager' ? 1 : 5} />
+                {fd.paket === 'onepager' ? (
+                  <div style={{ textAlign: 'center', padding: '10px 8px' }}>
+                    <div style={{ width: 54, height: 54, borderRadius: 14, background: primary + '14', color: primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 14 }}><i className="fa-solid fa-file" aria-hidden="true" /></div>
+                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#0f172a' }}>Alles auf einer Seite</div>
+                    <p style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 18px' }}>
+                      Beim Onepager werden Leistungen, Über uns und Kontakt als Abschnitte <b>auf der Startseite</b> angelegt – genau das, was du gebucht hast.
+                    </p>
+                    <button onClick={() => waehlePaket(fd.zahlungsart, fd.zahlungsart === 'mieten' ? 'plus' : 'multipage')} style={{ background: '#fff', border: `2px solid ${primary}`, color: primary, padding: '11px 22px', borderRadius: 99, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <i className="fa-solid fa-arrow-up" aria-hidden="true" />Mehr Seiten? Auf Multipage upgraden
+                    </button>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>Aktualisiert automatisch deinen Warenkorb.</div>
+                  </div>
+                ) : (
+                  <MenuBuilder value={fd.menu} onChange={v => upd('menu', v)} primary={primary} maxPages={MAX_SEITEN[fd.paket] || 5} />
+                )}
               </Panel>
 
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: 16, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>

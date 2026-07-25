@@ -11,13 +11,27 @@ const CI = { linie: '#E1E7EB', text: '#0A1824', textMatt: '#5A6B7A', textZart: '
 
 const eur = (n) => Number(n).toFixed(2).replace('.', ',')
 
-// Knopf für die Kopfzeile — überall auf der Seite sichtbar
-export function WarenkorbKnopf() {
+// Knopf für die Kopfzeile — überall auf der Seite sichtbar.
+// farbe: optional (z. B. dunkel für helle Kopfzeilen wie im Editor)
+export function WarenkorbKnopf({ farbe }) {
   const { anzahl, setOffen } = useWarenkorb()
   return (
-    <button className="wk-knopf" onClick={() => setOffen(true)} aria-label="Warenkorb öffnen">
+    <button className="wk-knopf" onClick={() => setOffen(true)} aria-label="Warenkorb öffnen" style={farbe ? { color: farbe } : undefined}>
       <i className="fa-solid fa-cart-shopping" aria-hidden="true" />
       {anzahl > 0 && <span className="wk-zahl">{anzahl}</span>}
+    </button>
+  )
+}
+
+// Dauerhaft sichtbarer, schwebender Warenkorb-Knopf (unten rechts) — großes Icon
+// + Zähler, klappt den Warenkorb auf. Erscheint sobald etwas drin ist.
+export function WarenkorbFAB() {
+  const { anzahl, gesamt, setOffen } = useWarenkorb()
+  if (anzahl <= 0) return null
+  return (
+    <button className="wk-fab" onClick={() => setOffen(true)} aria-label="Warenkorb öffnen">
+      <span className="wk-fab-ic"><i className="fa-solid fa-cart-shopping" aria-hidden="true" /><span className="wk-fab-zahl">{anzahl}</span></span>
+      <span className="wk-fab-txt">Warenkorb</span>
     </button>
   )
 }
@@ -110,10 +124,20 @@ export const WARENKORB_CSS = `
 .wk-knopf{position:relative;background:none;border:none;cursor:pointer;color:#fff;font-size:16px;padding:8px;display:flex;align-items:center}
 .wk-zahl{position:absolute;top:0;right:0;background:#FF5722;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;
   border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px}
-.wk-overlay{position:fixed;inset:0;background:rgba(10,24,36,.5);z-index:200;animation:wkoverlayein .2s ease}
+.wk-overlay{position:fixed;inset:0;background:rgba(10,24,36,.5);z-index:2147483000;animation:wkoverlayein .2s ease}
 @keyframes wkoverlayein{from{opacity:0}to{opacity:1}}
-.wk-panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:92vw;background:#fff;z-index:201;
+.wk-panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:92vw;background:#fff;z-index:2147483001;
   display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,.25);animation:wkpanelein .25s cubic-bezier(.2,.7,.3,1)}
+/* Dauerhaft sichtbarer Schwebe-Knopf */
+.wk-fab{position:fixed;right:22px;bottom:22px;z-index:2147482000;display:inline-flex;align-items:center;gap:11px;
+  background:#1B93D2;color:#fff;border:none;cursor:pointer;border-radius:99px;padding:13px 20px 13px 15px;
+  box-shadow:0 12px 30px rgba(10,24,36,.28);font-family:inherit;font-weight:800;font-size:14px;
+  transition:transform .18s,box-shadow .18s}
+.wk-fab:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(10,24,36,.34)}
+.wk-fab-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:19px}
+.wk-fab-zahl{position:absolute;top:-9px;right:-11px;background:#FF5722;color:#fff;font-size:11px;font-weight:800;
+  min-width:19px;height:19px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+@media(max-width:600px){.wk-fab-txt{display:none}.wk-fab{padding:14px}}
 @keyframes wkpanelein{from{transform:translateX(100%)}to{transform:translateX(0)}}
 .wk-kopf{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid ${CI.linie};
   font-size:16px;font-weight:700;color:${CI.text}}
