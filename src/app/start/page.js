@@ -7,6 +7,15 @@ import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
 import MenuBuilder from '@/components/MenuBuilder'
 import { aktuellerNutzer } from '@/lib/projekte'
+import { Kopf, BASIS_CSS } from '@/components/Kopf'
+import { Fuss } from '@/components/Fuss'
+
+// Farbstimmung (nur Optik) – jetzt Teil des Farbwahl-Schritts im Wizard
+const STIMMUNGEN = [
+  { id: 'dark-elite', name: 'Dunkel & edel', desc: 'Dunkle Hero-Bereiche, edle Kontraste', bg: (p) => `linear-gradient(135deg,${p[900]},${p[700]})` },
+  { id: 'clean-pro', name: 'Hell & klar', desc: 'Helle Flächen, viel Weißraum', bg: (p) => `linear-gradient(135deg,${p[50]},${p[200]})` },
+  { id: 'bold-center', name: 'Kräftig & zentriert', desc: 'Große zentrierte Aussagen', bg: (p) => `linear-gradient(160deg,#fff,${p[100]})` },
+]
 
 // ── Konstanten ──────────────────────────────────────────────
 const PRESET_COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
@@ -267,24 +276,21 @@ function WizardInnen() {
   const pair = FONT_PAIRS.find(p => p.id === fd.fontPair) || FONT_PAIRS[0]
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: '"Inter Tight",sans-serif', background: '#f8fafc' }}>
+    <>
+    <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
+    <Kopf />
+    <div style={{ display: 'flex', flexDirection: 'column', fontFamily: '"Inter Tight",sans-serif', background: '#f8fafc' }}>
       {/* Google Fonts laden für Vorschau */}
       <link href={`https://fonts.googleapis.com/css2?${allGoogleFontsParam()}&display=swap`} rel="stylesheet" />
 
-      {/* Topbar */}
-      <div style={{ height: 58, borderBottom: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', background: '#0A1824', flexShrink: 0, position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: -0.5, color: '#fff', textDecoration: 'none' }}>websitegenerator<span style={{ color: '#6FC3EF' }}>24</span></a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {fd.domain && (
-            <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: '#6FC3EF', background: 'rgba(111,195,239,.12)', border: '1px solid rgba(111,195,239,.3)', borderRadius: 99, padding: '6px 13px', display: 'flex', alignItems: 'center', gap: 7 }}>
-              <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}
-            </span>
-          )}
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>{fd.preis} € <span style={{ fontWeight: 500, fontSize: 11, color: 'rgba(255,255,255,.55)' }}>inkl. MwSt.</span></span>
-          <button onClick={() => router.push(nutzer ? '/dashboard' : '/login')} style={{ border: '1px solid rgba(255,255,255,.2)', background: 'rgba(255,255,255,.06)', borderRadius: 99, padding: '8px 15px', fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {nutzer ? 'Meine Websites' : 'Anmelden'}
-          </button>
-        </div>
+      {/* Slim Info-Strip: gewähltes Paket + Domain (Logo/Login/Warenkorb liefert der echte Header oben) */}
+      <div style={{ borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '9px 24px', justifyContent: 'flex-end', gap: 12, background: '#fff', flexShrink: 0 }}>
+        {fd.domain && (
+          <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '6px 13px', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}
+          </span>
+        )}
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{fd.preis} € <span style={{ fontWeight: 500, fontSize: 11, color: '#94a3b8' }}>inkl. MwSt.</span></span>
       </div>
 
       {/* Steps */}
@@ -303,7 +309,7 @@ function WizardInnen() {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1 }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '36px 24px 100px' }}>
 
           {/* STEP 1 – PAKET */}
@@ -360,17 +366,17 @@ function WizardInnen() {
               <div style={{ marginTop: 12 }}>
                 <SectionTitle>Geschäftsmodell</SectionTitle>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
-                  {[['b2c','👤 B2C – Privatkunden'],['b2b','🏢 B2B – Geschäftskunden'],['beide','👥 Beide']].map(([id, l]) => (
+                  {[['b2c','B2C – Privatkunden','user'],['b2b','B2B – Geschäftskunden','building'],['beide','Beide','users']].map(([id, l, ic]) => (
                     <Card key={id} active={fd.geschaeftsmodell === id} onClick={() => upd('geschaeftsmodell', id)} primary={primary} style={{ padding: '12px 14px' }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{l}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}><i className={`fa-solid fa-${ic}`} style={{ color: primary }} aria-hidden="true" />{l}</span>
                     </Card>
                   ))}
                 </div>
                 <SectionTitle>Einzugsgebiet</SectionTitle>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 14 }}>
-                  {[['lokal','📍 Lokal'],['regional','🗺️ Regional'],['national','🇩🇪 National'],['international','🌍 International']].map(([id, l]) => (
+                  {[['lokal','Lokal','location-dot'],['regional','Regional','map'],['national','National','flag'],['international','International','earth-europe']].map(([id, l, ic]) => (
                     <Card key={id} active={fd.einzugsgebiet === id} onClick={() => upd('einzugsgebiet', id)} primary={primary} style={{ padding: '12px 10px', textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 600 }}>{l}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7 }}><i className={`fa-solid fa-${ic}`} style={{ color: primary }} aria-hidden="true" />{l}</span>
                     </Card>
                   ))}
                 </div>
@@ -428,7 +434,7 @@ function WizardInnen() {
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontSize: 28, marginBottom: 8 }}>🖼️</div>
+                      <div style={{ fontSize: 26, marginBottom: 8, color: '#94a3b8' }}><i className="fa-solid fa-image" aria-hidden="true" /></div>
                       <div style={{ fontWeight: 600, fontSize: 14, color: '#475569' }}>Logo hochladen</div>
                       <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>PNG, JPG, SVG – oder später im Editor</div>
                     </>
@@ -440,7 +446,7 @@ function WizardInnen() {
               <Panel>
                 <SectionTitle sub="Optional – werden automatisch sinnvoll auf der Seite platziert (Hero, Über uns, Galerie …)">Eigene Bilder ({fd.userImages?.length || 0}/20)</SectionTitle>
                 <div onClick={() => (fd.userImages?.length || 0) < 20 && document.getElementById('wizImgs')?.click()} style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: 24, textAlign: 'center', cursor: (fd.userImages?.length || 0) < 20 ? 'pointer' : 'not-allowed', background: '#fafbff', marginBottom: 12 }}>
-                  <div style={{ fontSize: 26, marginBottom: 6 }}>📷</div>
+                  <div style={{ fontSize: 24, marginBottom: 6, color: '#94a3b8' }}><i className="fa-solid fa-camera" aria-hidden="true" /></div>
                   <div style={{ fontWeight: 600, fontSize: 14, color: '#475569' }}>Bilder hochladen (max. 20)</div>
                   <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>Nur WebP, JPG oder PNG</div>
                 </div>
@@ -550,8 +556,20 @@ function WizardInnen() {
                   ))}
                   <input type="color" value={fd.farbe} onChange={e => upd('farbe', e.target.value)} style={{ width: 32, height: 32, borderRadius: '50%', border: '1px dashed #ccc', cursor: 'pointer', padding: 2 }} />
                 </div>
-                <div style={{ display: 'flex', gap: 2, borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', gap: 2, borderRadius: 6, overflow: 'hidden', marginBottom: 22 }}>
                   {[50,100,200,300,400,500,600,700,800,900].map(s => <div key={s} style={{ flex: 1, height: 24, background: palette.primary[s] }} />)}
+                </div>
+                <SectionTitle sub="Wie hell oder dunkel soll der Look sein? Wird direkt beim Generieren angewendet.">Farbstimmung</SectionTitle>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                  {STIMMUNGEN.map(s => (
+                    <div key={s.id} onClick={() => upd('stilVariante', s.id)} style={{ border: `2px solid ${fd.stilVariante === s.id ? primary : '#e5e5e5'}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: '#fff' }}>
+                      <div style={{ height: 54, background: s.bg(palette.primary) }} />
+                      <div style={{ padding: '10px 12px' }}>
+                        <div style={{ fontWeight: 700, fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 7 }}>{fd.stilVariante === s.id && <i className="fa-solid fa-check" style={{ color: primary, fontSize: 11 }} aria-hidden="true" />}{s.name}</div>
+                        <div style={{ fontSize: 10.5, color: '#888' }}>{s.desc}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </Panel>
 
@@ -637,6 +655,8 @@ function WizardInnen() {
         )}
       </div>
     </div>
+    <Fuss />
+    </>
   )
 }
 

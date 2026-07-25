@@ -9,10 +9,6 @@
 // bestehenden Inline-Blöcken oder AOS kollidiert. Rein additiv.
 // ─────────────────────────────────────────────────────────────
 
-// Handgezeichneter Schwung als SVG-Maske → wird in --accent eingefärbt
-const SQUIGGLE =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 22' preserveAspectRatio='none'%3E%3Cpath d='M5 15 Q 60 3 120 11 T 235 10 T 296 8' fill='none' stroke='%23000' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E\")"
-
 export function generatorDesignCSS({ fontHeadline } = {}) {
   const headlineFam = fontHeadline ? `font-family:'${fontHeadline}',inherit;` : ''
   return `
@@ -30,12 +26,12 @@ export function generatorDesignCSS({ fontHeadline } = {}) {
 .wg-dunkelzone .wg-t1,.wg-dunkelzone .wg-t2,.wg-dunkelzone .wg-t3{color:#fff;}
 .wg-dunkelzone .wg-lead{color:rgba(255,255,255,.76);}
 
-/* ── Handgezeichneter Akzent-Unterstrich (in Kundenfarbe) ── */
+/* ── Akzent-Unterstrich: gerade & dünn, als Element (in Kundenfarbe) ── */
 .wg-vstrich{position:relative;display:inline-block;white-space:nowrap;}
-.wg-vstrich::after{content:"";position:absolute;left:-2%;right:-2%;bottom:-.16em;height:.34em;background:var(--accent);-webkit-mask:${SQUIGGLE} no-repeat center/100% 100%;mask:${SQUIGGLE} no-repeat center/100% 100%;clip-path:inset(0 100% 0 0);}
-.wg-strichlinie{display:block;width:190px;max-width:62%;height:15px;margin:16px 0 24px;background:var(--accent);-webkit-mask:${SQUIGGLE} no-repeat left center/100% 100%;mask:${SQUIGGLE} no-repeat left center/100% 100%;clip-path:inset(0 100% 0 0);}
+.wg-vstrich::after{content:"";position:absolute;left:0;right:0;bottom:-.12em;height:3px;border-radius:2px;background:var(--accent);clip-path:inset(0 100% 0 0);}
+.wg-strichlinie{display:block;width:92px;height:3px;border-radius:2px;margin:18px 0 24px;background:var(--accent);clip-path:inset(0 100% 0 0);}
 .wg-strichlinie.mitte{margin-left:auto;margin-right:auto;}
-.wg-reveal.an .wg-vstrich::after,.wg-vstrich.an::after,.wg-reveal.an .wg-strichlinie,.wg-strichlinie.an{animation:wgStrich 1s .35s cubic-bezier(.25,.7,.3,1) forwards;}
+.wg-reveal.an .wg-vstrich::after,.wg-vstrich.an::after,.wg-reveal.an .wg-strichlinie,.wg-strichlinie.an{animation:wgStrich .8s .3s cubic-bezier(.25,.7,.3,1) forwards;}
 @keyframes wgStrich{to{clip-path:inset(0 0 0 0)}}
 
 /* ── Geister-Überschrift (großes verblasstes Wort im Hintergrund) ── */

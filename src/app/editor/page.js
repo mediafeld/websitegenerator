@@ -7,6 +7,8 @@ import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
 import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer } from '@/lib/projekte'
 import { supabase } from '@/lib/supabaseClient'
+import { starteCheckout } from '@/lib/checkout'
+import { WarenkorbKnopf } from '@/components/Warenkorb'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -727,12 +729,18 @@ export default function EditorPage() {
         </div>
 
         <div style={{ flex: 1 }} />
-        {[['🖥','desktop'],['📱','tablet'],['📲','mobile']].map(([ic, d]) => (
-          <button key={d} onClick={() => setDevice(d)} style={{ width: 30, height: 30, border: `1px solid ${device === d ? primary : '#e5e5e5'}`, borderRadius: 7, background: device === d ? '#f5f5f5' : '#fff', cursor: 'pointer', fontSize: 14 }}>{ic}</button>
+        {[['desktop','desktop'],['tablet-screen-button','tablet'],['mobile-screen','mobile']].map(([ic, d]) => (
+          <button key={d} onClick={() => setDevice(d)} title={d} style={{ width: 30, height: 30, border: `1px solid ${device === d ? primary : '#e5e5e5'}`, borderRadius: 7, background: device === d ? '#f5f5f5' : '#fff', cursor: 'pointer', fontSize: 14, color: device === d ? primary : '#475569' }}><i className={`fa-solid fa-${ic}`} /></button>
         ))}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
-        <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>✨ AI Designer</button>
-        <button onClick={() => alert('Checkout kommt bald!')} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Kaufen & Download →</button>
+        <WarenkorbKnopf />
+        <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
+        <button onClick={async () => {
+          if (!nutzer) { router.push('/login'); return }
+          const paketId = formDataRef.current?.paket || 'multipage'
+          const { error } = await starteCheckout({ paketId, modus: 'kaufen', projektId: projektIdRef.current, domain: formDataRef.current?.domain })
+          if (error) alert(error)
+        }} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>Kaufen &amp; Download<i className="fa-solid fa-arrow-right" /></button>
 
         {/* Konto */}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />

@@ -3,16 +3,18 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { aktuellerNutzer, projektAnlegen } from '@/lib/projekte'
+import { Kopf, BASIS_CSS } from '@/components/Kopf'
+import { Fuss } from '@/components/Fuss'
 
 const FACTS = [
-  { icon: '⚡', text: 'Schnelle Websites laden in unter 2 Sekunden – das verbessert dein Google-Ranking deutlich.' },
-  { icon: '📱', text: 'Über 60% aller Besucher kommen vom Smartphone. Deine Website ist vollständig responsive.' },
-  { icon: '🎨', text: 'Konsistente Farben steigern die Markenwiedererkennung um bis zu 80%.' },
-  { icon: '✍️', text: 'Klare Überschriften halten Besucher 3x länger auf der Seite.' },
-  { icon: '🔍', text: 'Eine gute Struktur hilft Google, deine Seite besser zu verstehen und zu ranken.' },
-  { icon: '💬', text: 'Kundenstimmen erhöhen das Vertrauen und die Conversion-Rate erheblich.' },
-  { icon: '🚀', text: 'Ein klarer Call-to-Action kann deine Anfragen verdoppeln.' },
-  { icon: '🖼️', text: 'Optimierte Bilder machen deine Seite schneller und professioneller.' },
+  { icon: 'bolt', text: 'Schnelle Websites laden in unter 2 Sekunden – das verbessert dein Google-Ranking deutlich.' },
+  { icon: 'mobile-screen', text: 'Über 60% aller Besucher kommen vom Smartphone. Deine Website ist vollständig responsive.' },
+  { icon: 'palette', text: 'Konsistente Farben steigern die Markenwiedererkennung um bis zu 80%.' },
+  { icon: 'pen-nib', text: 'Klare Überschriften halten Besucher 3x länger auf der Seite.' },
+  { icon: 'magnifying-glass', text: 'Eine gute Struktur hilft Google, deine Seite besser zu verstehen und zu ranken.' },
+  { icon: 'comment', text: 'Kundenstimmen erhöhen das Vertrauen und die Conversion-Rate erheblich.' },
+  { icon: 'rocket', text: 'Ein klarer Call-to-Action kann deine Anfragen verdoppeln.' },
+  { icon: 'image', text: 'Optimierte Bilder machen deine Seite schneller und professioneller.' },
 ]
 
 const STEPS = ['Branche wird analysiert', 'Passende Sektionen werden gewählt', 'Texte werden geschrieben', 'Layout wird zusammengestellt', 'Unterseiten werden erstellt', 'Letzte Details']
@@ -117,16 +119,24 @@ export default function GeneratingPage() {
   const primaryDark = palette?.primary?.[700] || '#1d4ed8'
 
   if (error) return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter Tight",sans-serif', padding: 24, background: '#fafbff' }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>😕</div>
+    <>
+    <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
+    <Kopf />
+    <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter Tight",sans-serif', padding: 24, background: '#fafbff' }}>
+      <div style={{ fontSize: 48, marginBottom: 16, color: '#94a3b8' }}><i className="fa-solid fa-face-frown" /></div>
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Da ging etwas schief</h2>
       <p style={{ color: '#888', fontSize: 14, marginBottom: 24, textAlign: 'center', maxWidth: 400 }}>{error}</p>
-      <button onClick={() => router.push('/start')} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>← Nochmal versuchen</button>
+      <button onClick={() => router.push('/start')} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}><i className="fa-solid fa-arrow-left" />Nochmal versuchen</button>
     </div>
+    <Fuss />
+    </>
   )
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter Tight",sans-serif', background: `linear-gradient(160deg, #ffffff 0%, ${primaryLight}55 50%, #ffffff 100%)`, position: 'relative', overflow: 'hidden' }}>
+    <>
+    <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
+    <Kopf />
+    <div style={{ minHeight: 'calc(100vh - 70px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter Tight",sans-serif', background: `linear-gradient(160deg, #ffffff 0%, ${primaryLight}55 50%, #ffffff 100%)`, position: 'relative', overflow: 'hidden' }}>
       {/* helle Orbs */}
       <div className="orb orb1" style={{ background: `${primary}22` }} />
       <div className="orb orb2" style={{ background: `${primary}18` }} />
@@ -145,13 +155,13 @@ export default function GeneratingPage() {
               <div className="ring ring1" style={{ borderTopColor: primary, borderRightColor: `${primary}66` }} />
               <div className="ring ring2" style={{ borderBottomColor: primaryDark, borderLeftColor: `${primaryDark}66` }} />
               <div className="ring ring3" style={{ borderTopColor: `${primary}99` }} />
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}><span className="pulse-emoji">✨</span></div>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: primary }}><span className="pulse-emoji"><i className="fa-solid fa-wand-magic-sparkles" /></span></div>
             </div>
           )}
         </div>
 
         <h1 style={{ fontSize: 38, fontWeight: 900, color: '#0f172a', letterSpacing: -1, marginBottom: 12 }}>
-          {done ? 'Fertig! 🎉' : firmenname ? `${firmenname} entsteht` : 'Deine Website entsteht'}
+          {done ? 'Fertig!' : firmenname ? `${firmenname} entsteht` : 'Deine Website entsteht'}
         </h1>
         <p style={{ fontSize: 17, color: '#64748b', marginBottom: 44 }}>
           {done ? 'Wird geöffnet...' : 'Wir bauen gerade jede Seite – das dauert nur einen Moment'}
@@ -170,7 +180,7 @@ export default function GeneratingPage() {
 
         {/* Fact card */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 8px 32px rgba(0,0,0,0.06)', borderRadius: 18, padding: '26px 30px', minHeight: 120, display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div key={factIdx} className="fact-icon" style={{ fontSize: 42, flexShrink: 0 }}>{FACTS[factIdx].icon}</div>
+          <div key={factIdx} className="fact-icon" style={{ fontSize: 40, flexShrink: 0, color: primary, width: 46, textAlign: 'center' }}><i className={`fa-solid fa-${FACTS[factIdx].icon}`} /></div>
           <div key={'t' + factIdx} className="fact-text" style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Wusstest du schon?</div>
             <div style={{ fontSize: 15, color: '#334155', lineHeight: 1.6 }}>{FACTS[factIdx].text}</div>
@@ -206,5 +216,7 @@ export default function GeneratingPage() {
         .fact-text{animation:fadeInUp 0.5s ease;}
       `}</style>
     </div>
+    <Fuss />
+    </>
   )
 }

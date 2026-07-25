@@ -3,13 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { LAYOUTS, BRANCHEN_LAYOUT, getLayout } from '@/lib/layouts'
-
-// Farbstimmung (nur Optik, keine Layout-Änderung)
-const STIMMUNGEN = [
-  { id: 'dark-elite', name: 'Dunkel & edel', desc: 'Dunkle Hero-Bereiche, edle Kontraste', bg: (p) => `linear-gradient(135deg,${p[900]},${p[700]})` },
-  { id: 'clean-pro', name: 'Hell & klar', desc: 'Helle Flächen, viel Weißraum', bg: (p) => `linear-gradient(135deg,${p[50]},${p[200]})` },
-  { id: 'bold-center', name: 'Kräftig & zentriert', desc: 'Große zentrierte Aussagen', bg: (p) => `linear-gradient(160deg,#fff,${p[100]})` },
-]
+import { Kopf, BASIS_CSS } from '@/components/Kopf'
+import { Fuss } from '@/components/Fuss'
 
 // Wireframe-Zone -> Mini-Darstellung
 function WireZone({ kind, p }) {
@@ -36,7 +31,6 @@ export default function DesignAuswahlPage() {
   const [formData, setFormData] = useState(null)
   const [palette, setPalette] = useState(null)
   const [layout, setLayout] = useState('classic')
-  const [stimmung, setStimmung] = useState('dark-elite')
 
   useEffect(() => {
     const f = sessionStorage.getItem('wg24_formData')
@@ -49,7 +43,8 @@ export default function DesignAuswahlPage() {
   }, [])
 
   function weiter() {
-    const fd = { ...formData, stilVariante: stimmung, layout: layout, layoutBlocks: getLayout(layout).blocks }
+    // Farbstimmung (stilVariante) kommt jetzt aus dem Wizard-Farbschritt – hier nicht mehr überschreiben.
+    const fd = { ...formData, stilVariante: formData.stilVariante || 'dark-elite', layout: layout, layoutBlocks: getLayout(layout).blocks }
     sessionStorage.setItem('wg24_formData', JSON.stringify(fd))
     router.push('/generating')
   }
@@ -67,12 +62,10 @@ export default function DesignAuswahlPage() {
   const recoLayout = BRANCHEN_LAYOUT[formData.branche]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: '"Inter Tight",sans-serif' }}>
-      <div style={{ borderBottom: '1px solid #e5e5e5', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', position: 'sticky', top: 0, zIndex: 50 }}>
-        <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.5 }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></span>
-        <button onClick={weiter} style={{ background: primary, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Website generieren →</button>
-      </div>
-
+    <>
+    <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
+    <Kopf />
+    <div style={{ minHeight: '60vh', background: '#f8fafc', fontFamily: '"Inter Tight",sans-serif' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -0.5, marginBottom: 8 }}>Wähle dein Layout</h1>
@@ -113,34 +106,13 @@ export default function DesignAuswahlPage() {
           })}
         </div>
 
-        {/* FARBSTIMMUNG */}
-        <div style={{ marginBottom: 12 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Farbstimmung</h2>
-          <p style={{ color: '#94a3b8', fontSize: 14 }}>Wie hell oder dunkel soll der Look sein?</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 40 }}>
-          {STIMMUNGEN.map(s => {
-            const active = stimmung === s.id
-            return (
-              <div key={s.id} onClick={() => setStimmung(s.id)} style={{ border: `3px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 14, overflow: 'hidden', cursor: 'pointer', background: '#fff' }}>
-                <div style={{ height: 70, background: s.bg(p) }} />
-                <div style={{ padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{s.name}</div>
-                    <div style={{ fontSize: 11, color: '#888' }}>{s.desc}</div>
-                  </div>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${active ? primary : '#ccc'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{active && <div style={{ width: 10, height: 10, borderRadius: '50%', background: primary }} />}</div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => router.push('/start')} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>← Zurück</button>
-          <button onClick={weiter} style={{ background: primary, color: '#fff', border: 'none', padding: '13px 32px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>Website generieren →</button>
+          <button onClick={() => router.push('/start')} style={{ border: '2px solid #e5e5e5', background: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}><i className="fa-solid fa-arrow-left" />Zurück</button>
+          <button onClick={weiter} style={{ background: primary, color: '#fff', border: 'none', padding: '13px 32px', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>Website generieren<i className="fa-solid fa-arrow-right" /></button>
         </div>
       </div>
     </div>
+    <Fuss />
+    </>
   )
 }

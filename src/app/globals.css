@@ -1,5 +1,8 @@
 /* Schriften werden lokal ausgeliefert – siehe /public/schrift/schrift.css */
 @import url('/schrift/schrift.css');
+/* Font Awesome global – Icons auf ALLEN Seiten verfügbar (Wizard, Design-Auswahl,
+   Generating, Editor), nicht nur auf den Marketing-Seiten. */
+@import url('/fa/css/all.min.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
