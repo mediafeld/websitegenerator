@@ -89,6 +89,9 @@ export const TLD_PREISE = {
   berlin: 34.90, io: 49.90, app: 21.90, dev: 17.90,
   co: 32.90, biz: 19.90, xyz: 12.90, site: 27.90,
   store: 44.90, tech: 44.90, club: 17.90, live: 27.90,
+  me: 24.90, tv: 39.90, cc: 22.90, ai: 89.90,
+  name: 14.90, guide: 27.90, expert: 44.90, studio: 27.90,
+  agency: 27.90, design: 44.90,
 }
 
 // Endungen, die im Domainchecker geprüft werden

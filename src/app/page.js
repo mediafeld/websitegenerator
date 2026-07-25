@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, CI, TELEFON, TELEFON_LINK } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
-import { Reveal, Zaehler, Slider } from '@/components/Effekte'
+import { Reveal, Zaehler } from '@/components/Effekte'
 import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN, TLD_PREISE, ALLE_TLDS, eur } from '@/lib/preise'
 import { BRANCHEN_INFO, BILD } from '@/lib/branchenSeite'
 import { FRAGEN } from '@/lib/fragen'
@@ -29,6 +29,8 @@ export default function Startseite() {
   const [faqWeg, setFaqWeg] = useState('mieten')
   const [tlds, setTlds] = useState(['de', 'com', 'net', 'org'])
   const [tldOffen, setTldOffen] = useState(false)
+  const [tldSuche, setTldSuche] = useState('')
+  const [heroArt, setHeroArt] = useState('mieten')
   const [maus, setMaus] = useState({ x: 0, y: 0 })
   const heroRef = useRef(null)
   const eingabeRef = useRef(null)
@@ -36,7 +38,14 @@ export default function Startseite() {
   const tldUmschalten = (t) => setTlds(v => v.includes(t) ? (v.length > 1 ? v.filter(x => x !== t) : v) : [...v, t])
 
   useEffect(() => {
-    if (!tldOffen) return
+    const leise = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (leise) return
+    const t = setTimeout(() => setHeroArt(v => v === 'mieten' ? 'kaufen' : 'mieten'), 9500)
+    return () => clearTimeout(t)
+  }, [heroArt])
+
+  useEffect(() => {
+    if (!tldOffen) { setTldSuche(''); return }
     const schliessen = (e) => { if (tldRef.current && !tldRef.current.contains(e.target)) setTldOffen(false) }
     document.addEventListener('mousedown', schliessen)
     return () => document.removeEventListener('mousedown', schliessen)
@@ -68,6 +77,7 @@ export default function Startseite() {
   }
   const freie = daten?.ergebnisse?.filter(e => e.frei) || []
   const belegte = daten?.ergebnisse?.filter(e => !e.frei) || []
+  const tldTreffer = ALLE_TLDS.filter(t => t.includes(tldSuche.trim().toLowerCase()))
 
   return (
     <div style={{ background: '#fff', color: CI.text, fontFamily: '"InterTight",system-ui,sans-serif', overflowX: 'hidden' }}>
@@ -85,12 +95,11 @@ export default function Startseite() {
         </div>
         <div className="wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
           <div className="hmitte">
-            <Slider dauer={9500} folien={[
-              <HeroFolie key="m" art="mieten" starten={starten} />,
-              <HeroFolie key="k" art="kaufen" starten={starten} />,
-            ]} />
+            <div key={`oben-${heroArt}`} className="hero-fade" style={{ width: '100%' }}>
+              <HeroOben art={heroArt} />
+            </div>
 
-            {/* Domain-Check — bewusst das größte, zentrierte Element im Hero */}
+            {/* Domain-Check — bewusst das größte Element, direkt unter der Überschrift */}
             <div className="dcheck">
               <span className="dcheck-label"><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Ist dein Wunschname noch frei?</span>
               <div className="dcheck-feld">
@@ -107,8 +116,13 @@ export default function Startseite() {
                   {tldOffen && (
                     <div className="tld-panel">
                       <div className="tld-panel-kopf">Endungen auswählen <span>{tlds.length} gewählt</span></div>
+                      <div className="tld-panel-suche">
+                        <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                        <input value={tldSuche} onChange={e => setTldSuche(e.target.value)} placeholder="Endung suchen … z. B. shop" autoFocus />
+                      </div>
                       <div className="tld-panel-liste">
-                        {ALLE_TLDS.map(t => (
+                        {tldTreffer.length === 0 && <p className="tld-keine">Keine Endung gefunden.</p>}
+                        {tldTreffer.map(t => (
                           <label key={t} className="tld-zeile">
                             <input type="checkbox" checked={tlds.includes(t)} onChange={() => tldUmschalten(t)} />
                             <span className="tld-haken" aria-hidden="true"><i className="fa-solid fa-check" /></span>
@@ -155,6 +169,17 @@ export default function Startseite() {
               )}
 
               <p className="dcheck-hinweis"><i className="fa-solid fa-lock" aria-hidden="true" />SSL-verschlüsselt &amp; DSGVO-konform geprüft. Bei Miete ist die Domain inklusive, beim Kauf bringst du sie selbst mit.</p>
+            </div>
+
+            <div key={`unten-${heroArt}`} className="hero-fade" style={{ width: '100%' }}>
+              <HeroUnten art={heroArt} starten={starten} />
+            </div>
+
+            <div className="hero-punkte">
+              {['mieten', 'kaufen'].map(a => (
+                <button key={a} onClick={() => setHeroArt(a)} aria-label={a}
+                  className={heroArt === a ? 'an' : ''} />
+              ))}
             </div>
           </div>
         </div>
@@ -619,12 +644,8 @@ export default function Startseite() {
 }
 
 // ── Hero-Folie: Mieten oder Kaufen ──
-function HeroFolie({ art, starten }) {
+function HeroOben({ art }) {
   const mieten = art === 'mieten'
-  const fakten = mieten
-    ? [['globe', 'Domain inklusive'], ['server', 'Hosting & SSL'], ['calendar-days', '12 Monate Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
-    : [['file-zipper', 'Quellcode als ZIP'], ['bolt', 'Sofort verfügbar'], ['ban', 'Keine Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
-
   return (
     <div style={{ textAlign: 'center', width: '100%' }}>
       <span className="hmarke">
@@ -632,10 +653,21 @@ function HeroFolie({ art, starten }) {
         {mieten ? `Website mieten — ab ${eur(19.90)} €/Monat` : `Website kaufen — ab ${eur(89)} € einmalig`}
       </span>
 
-      <h1 className="t1" style={{ color: '#fff', margin: '20px auto 16px', maxWidth: 1300 }}>
+      <h1 className="t1" style={{ color: '#fff', margin: '20px auto 0', maxWidth: 1300 }}>
         {mieten ? <>Sofort online.<br /><b>Wir kümmern uns.</b></> : <>Einmal zahlen.<br /><b>Dir gehört alles.</b></>}
       </h1>
+    </div>
+  )
+}
 
+function HeroUnten({ art, starten }) {
+  const mieten = art === 'mieten'
+  const fakten = mieten
+    ? [['globe', 'Domain inklusive'], ['server', 'Hosting & SSL'], ['calendar-days', '12 Monate Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
+    : [['file-zipper', 'Quellcode als ZIP'], ['bolt', 'Sofort verfügbar'], ['ban', 'Keine Laufzeit'], ['pen-to-square', 'Änderungen gratis']]
+
+  return (
+    <div style={{ textAlign: 'center', width: '100%' }}>
       <p className="lauf" style={{ color: '#C7D6E0', maxWidth: 780, margin: '0 auto 28px', fontSize: 19.5 }}>
         {mieten
           ? 'Domain, Hosting, SSL und E-Mail laufen bei uns — du änderst deine Inhalte trotzdem jederzeit selbst.'
@@ -664,7 +696,7 @@ function HeroFolie({ art, starten }) {
 
 const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
-.hero{position:relative;overflow:hidden}
+.hero{position:relative}
 .hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
 .hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(46px);will-change:transform}
 .blob-a{width:600px;height:600px;background:radial-gradient(circle,rgba(84,188,239,.55),rgba(84,188,239,0) 70%);top:-180px;left:-100px;animation:driftA 22s ease-in-out infinite}
@@ -676,6 +708,12 @@ const CSS = `
 @media(prefers-reduced-motion:reduce){.hero-mesh .blob{animation:none}}
 @media(max-width:700px){.blob-c{display:none}}
 .hmitte{display:flex;flex-direction:column;align-items:center;position:relative;z-index:2;max-width:1480px;margin:0 auto;width:100%}
+.hero-fade{animation:herofadein .5s cubic-bezier(.2,.7,.3,1) both}
+@keyframes herofadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hero-punkte{display:flex;gap:9px;justify-content:center;margin-top:34px}
+.hero-punkte button{width:9px;height:9px;border-radius:99px;border:none;cursor:pointer;background:rgba(255,255,255,.28);
+  transition:all .3s cubic-bezier(.2,.7,.3,1);padding:0}
+.hero-punkte button.an{width:28px;background:${CI.blau}}
 .hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:11px 22px;
   position:relative;background:linear-gradient(100deg,#157AB0,#1B93D2,#54BCEF,#1B93D2,#157AB0);
@@ -690,7 +728,7 @@ const CSS = `
 .hfakten li i{color:#6FC3EF;font-size:13px;width:16px;text-align:center}
 
 /* Domain-Check — minimalistische dunkle Suchleiste direkt im Hero, kein Kartenrahmen */
-.dcheck{width:100%;max-width:700px;margin:52px auto 0;text-align:center}
+.dcheck{width:100%;max-width:820px;margin:40px auto 0;text-align:center}
 .dcheck-label{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:700;color:#fff;margin-bottom:20px}
 .dcheck-label i{color:#6FC3EF}
 .dcheck-feld{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.09);backdrop-filter:blur(6px);
@@ -719,7 +757,12 @@ const CSS = `
 .tld-panel-kopf{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid ${CI.linie};
   font-size:12.5px;font-weight:700;color:${CI.text}}
 .tld-panel-kopf span{font-weight:600;color:${CI.blau};font-size:11.5px}
-.tld-panel-liste{max-height:280px;overflow-y:auto;padding:6px}
+.tld-panel-suche{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid ${CI.linie};background:${CI.grau}}
+.tld-panel-suche i{color:${CI.textZart};font-size:12px}
+.tld-panel-suche input{border:none;outline:none;background:transparent;font-size:13.5px;color:${CI.text};flex:1;font-family:inherit}
+.tld-panel-suche input::placeholder{color:${CI.textZart}}
+.tld-keine{padding:18px 10px;text-align:center;font-size:12.5px;color:${CI.textZart}}
+.tld-panel-liste{max-height:320px;overflow-y:auto;padding:6px}
 .tld-zeile{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .14s}
 .tld-zeile:hover{background:${CI.grau}}
 .tld-zeile input{position:absolute;opacity:0;width:0;height:0}
