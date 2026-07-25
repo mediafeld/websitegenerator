@@ -80,11 +80,19 @@ export const MIETE_BEDINGUNGEN = {
 }
 
 // ── Domain-Preise (nur bei Miete relevant; Zusatzdomains für Mietkunden) ──
+// Preise pro Endung. ACHTUNG: die neu ergänzten Endungen unten (ab .io) sind
+// Platzhalter-Richtwerte — bitte vor dem Livegang gegen die tatsächlichen
+// INWX-Einkaufspreise + Marge prüfen und anpassen.
 export const TLD_PREISE = {
   de: 14.90, com: 24.90, eu: 19.90, net: 24.90,
   org: 24.90, info: 24.90, shop: 29.90, online: 29.90,
+  berlin: 34.90, io: 49.90, app: 21.90, dev: 17.90,
+  co: 32.90, biz: 19.90, xyz: 12.90, site: 27.90,
+  store: 44.90, tech: 44.90, club: 17.90, live: 27.90,
 }
 
 // Endungen, die im Domainchecker geprüft werden
-// Nur Endungen mit amtlicher Registry-Auskunft (RDAP) – damit "frei" verlässlich ist
+// RDAP-Auskunft ist für jede hier gelistete Endung möglich (fest hinterlegt
+// oder über die amtliche IANA-Bootstrap-Liste) – damit "frei" verlässlich ist
+export const ALLE_TLDS = Object.keys(TLD_PREISE)
 export const STANDARD_TLDS = ['de', 'com', 'net', 'org']

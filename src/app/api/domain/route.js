@@ -17,7 +17,7 @@ export async function POST(request) {
       return Response.json({ error: 'Der Name ist zu kurz für eine Domain (mindestens 3 Zeichen).' }, { status: 400 })
     }
 
-    const gewuenscht = (Array.isArray(tlds) && tlds.length ? tlds : STANDARD_TLDS).slice(0, 8)
+    const gewuenscht = (Array.isArray(tlds) && tlds.length ? tlds : STANDARD_TLDS).slice(0, 20)
     const namen = gewuenscht.map(t => `${label}.${t}`)
 
     const geprueft = await pruefeDomains(namen)

@@ -1,11 +1,11 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, CI, TELEFON, TELEFON_LINK } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { Reveal, Zaehler, Slider } from '@/components/Effekte'
-import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN, TLD_PREISE, eur } from '@/lib/preise'
+import { KAUF, MIETE, SORGENFREI, MIETE_BEDINGUNGEN, TLD_PREISE, ALLE_TLDS, eur } from '@/lib/preise'
 import { BRANCHEN_INFO, BILD } from '@/lib/branchenSeite'
 import { FRAGEN } from '@/lib/fragen'
 
@@ -28,10 +28,19 @@ export default function Startseite() {
   const [weg, setWeg] = useState('mieten')
   const [faqWeg, setFaqWeg] = useState('mieten')
   const [tlds, setTlds] = useState(['de', 'com', 'net', 'org'])
+  const [tldOffen, setTldOffen] = useState(false)
   const [maus, setMaus] = useState({ x: 0, y: 0 })
   const heroRef = useRef(null)
   const eingabeRef = useRef(null)
+  const tldRef = useRef(null)
   const tldUmschalten = (t) => setTlds(v => v.includes(t) ? (v.length > 1 ? v.filter(x => x !== t) : v) : [...v, t])
+
+  useEffect(() => {
+    if (!tldOffen) return
+    const schliessen = (e) => { if (tldRef.current && !tldRef.current.contains(e.target)) setTldOffen(false) }
+    document.addEventListener('mousedown', schliessen)
+    return () => document.removeEventListener('mousedown', schliessen)
+  }, [tldOffen])
 
   function herobewegung(e) {
     if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
@@ -88,22 +97,34 @@ export default function Startseite() {
                 <span className="dcheck-www">www.</span>
                 <input ref={eingabeRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()}
                   placeholder="deinefirma" aria-label="Wunschname für die Domain" />
+
+                <div className="tld-dropdown" ref={tldRef}>
+                  <button type="button" className="tld-trigger" onClick={() => setTldOffen(v => !v)} aria-expanded={tldOffen}>
+                    <span className="tld-punkt" aria-hidden="true" />
+                    {tlds.length === 1 ? `.${tlds[0]}` : `${tlds.length} Endungen`}
+                    <i className={`fa-solid fa-chevron-down tld-chevron ${tldOffen ? 'auf' : ''}`} aria-hidden="true" />
+                  </button>
+                  {tldOffen && (
+                    <div className="tld-panel">
+                      <div className="tld-panel-kopf">Endungen auswählen <span>{tlds.length} gewählt</span></div>
+                      <div className="tld-panel-liste">
+                        {ALLE_TLDS.map(t => (
+                          <label key={t} className="tld-zeile">
+                            <input type="checkbox" checked={tlds.includes(t)} onChange={() => tldUmschalten(t)} />
+                            <span className="tld-haken" aria-hidden="true"><i className="fa-solid fa-check" /></span>
+                            <b>.{t}</b>
+                            <em>{eur(TLD_PREISE[t])} €/Jahr</em>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button onClick={pruefen} disabled={laedt}>
                   {laedt ? <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> : <>Prüfen<i className="fa-solid fa-magnifying-glass" aria-hidden="true" /></>}
                 </button>
               </div>
-
-              {!fehler && !daten && (
-                <div className="dcheck-tlds">
-                  {Object.entries(TLD_PREISE).map(([t, p]) => (
-                    <button key={t} type="button" onClick={() => tldUmschalten(t)}
-                      className={`dcheck-tld ${tlds.includes(t) ? 'an' : ''}`}>
-                      {tlds.includes(t) && <i className="fa-solid fa-check" aria-hidden="true" />}
-                      <b>.{t}</b><em>{eur(p)} €/Jahr</em>
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {(fehler || daten) && (
                 <div className="dcheck-ergebnis">
@@ -119,7 +140,16 @@ export default function Startseite() {
                       </button>
                     </div>
                   ))}
-                  {daten && belegte.length > 0 && <p className="db-belegt">Schon vergeben: {belegte.map(e => e.domain).join(' · ')}</p>}
+                  {daten && belegte.length > 0 && (
+                    <div className="belegt-liste">
+                      <p className="belegt-titel">Schon vergeben</p>
+                      <div className="belegt-chips">
+                        {belegte.map(e => (
+                          <span key={e.domain} className="belegt-chip"><i className="fa-solid fa-xmark" aria-hidden="true" />{e.domain}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {daten && freie.length === 0 && <p className="db-belegt">Alle geprüften Adressen sind belegt — probier eine Alternative.</p>}
                 </div>
               )}
@@ -636,10 +666,10 @@ const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
 .hero{position:relative;overflow:hidden}
 .hero-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
-.hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(50px);opacity:.85;mix-blend-mode:screen;will-change:transform}
-.blob-a{width:680px;height:680px;background:radial-gradient(circle,#54BCEF,transparent 70%);top:-200px;left:-120px;animation:driftA 22s ease-in-out infinite}
-.blob-b{width:760px;height:760px;background:radial-gradient(circle,#1B93D2,transparent 70%);bottom:-260px;right:-160px;animation:driftB 27s ease-in-out infinite}
-.blob-c{width:520px;height:520px;background:radial-gradient(circle,#FF5722,transparent 70%);top:30%;left:50%;animation:driftC 19s ease-in-out infinite;opacity:.4}
+.hero-mesh .blob{position:absolute;border-radius:50%;filter:blur(46px);will-change:transform}
+.blob-a{width:600px;height:600px;background:radial-gradient(circle,rgba(84,188,239,.55),rgba(84,188,239,0) 70%);top:-180px;left:-100px;animation:driftA 22s ease-in-out infinite}
+.blob-b{width:680px;height:680px;background:radial-gradient(circle,rgba(27,147,210,.55),rgba(27,147,210,0) 70%);bottom:-240px;right:-140px;animation:driftB 27s ease-in-out infinite}
+.blob-c{width:460px;height:460px;background:radial-gradient(circle,rgba(255,87,34,.45),rgba(255,87,34,0) 70%);top:28%;left:48%;animation:driftC 19s ease-in-out infinite}
 @keyframes driftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(90px,60px) scale(1.22)}}
 @keyframes driftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-80px,-45px) scale(1.16)}}
 @keyframes driftC{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-55px,65px) scale(1.14)}}
@@ -673,21 +703,43 @@ const CSS = `
 .dcheck-feld button{background:${CI.blau};color:#fff;border:none;border-radius:99px;padding:14px 26px;font-size:14.5px;
   font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:9px;white-space:nowrap;transition:all .18s}
 .dcheck-feld button:hover{background:${CI.blauDunkel};transform:translateY(-1px)}
-.dcheck-tlds{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
-.dcheck-tld{display:flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);
-  border-radius:99px;padding:8px 16px 8px 14px;transition:all .18s;cursor:pointer;font-family:inherit}
-.dcheck-tld:hover{background:rgba(255,255,255,.16);transform:translateY(-1px)}
-.dcheck-tld.an{background:${CI.blau};border-color:${CI.blau};box-shadow:0 8px 18px rgba(27,147,210,.35)}
-.dcheck-tld i{font-size:10px;color:#fff}
-.dcheck-tld b{font-size:13.5px;font-weight:700;color:#fff}
-.dcheck-tld em{font-style:normal;font-size:11px;color:rgba(255,255,255,.6)}
-.dcheck-tld.an em{color:rgba(255,255,255,.85)}
+/* Endungen-Dropdown, links vom Prüfen-Button im Eingabefeld */
+.tld-dropdown{position:relative;flex-shrink:0}
+.tld-trigger{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.22);
+  border-radius:99px;padding:11px 16px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;
+  white-space:nowrap;transition:all .18s}
+.tld-trigger:hover{background:rgba(255,255,255,.17)}
+.tld-punkt{width:7px;height:7px;border-radius:50%;background:${CI.blau};box-shadow:0 0 0 3px rgba(27,147,210,.35);flex-shrink:0}
+.tld-chevron{font-size:9px;opacity:.7;transition:transform .2s}
+.tld-chevron.auf{transform:rotate(180deg)}
+.tld-panel{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);width:300px;max-width:80vw;
+  background:#fff;border-radius:16px;box-shadow:0 26px 60px rgba(0,0,0,.35);overflow:hidden;z-index:20;text-align:left;
+  animation:tldpanelein .18s cubic-bezier(.2,.7,.3,1) backwards}
+@keyframes tldpanelein{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.tld-panel-kopf{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid ${CI.linie};
+  font-size:12.5px;font-weight:700;color:${CI.text}}
+.tld-panel-kopf span{font-weight:600;color:${CI.blau};font-size:11.5px}
+.tld-panel-liste{max-height:280px;overflow-y:auto;padding:6px}
+.tld-zeile{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .14s}
+.tld-zeile:hover{background:${CI.grau}}
+.tld-zeile input{position:absolute;opacity:0;width:0;height:0}
+.tld-haken{width:19px;height:19px;border-radius:6px;border:1.5px solid ${CI.linie};display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:transparent;font-size:10px;transition:all .15s}
+.tld-zeile input:checked ~ .tld-haken{background:${CI.blau};border-color:${CI.blau};color:#fff}
+.tld-zeile b{font-size:13.5px;font-weight:700;color:${CI.text};min-width:56px}
+.tld-zeile em{font-style:normal;font-size:12px;color:${CI.textMatt};margin-left:auto}
 .dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;color:${CI.text};
   background:#fff;border-radius:18px;padding:16px;box-shadow:0 24px 50px rgba(0,0,0,.35)}
 .dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:18px}
 .dcheck-hinweis i{color:#6FC3EF;margin-top:2px;flex-shrink:0}
 .db-fehler{font-size:13.5px;color:#8A5A00;background:#FFF7E6;border:1px solid #F3DDA8;border-radius:10px;padding:11px 13px}
 .db-belegt{font-size:12.5px;color:${CI.textMatt}}
+.belegt-liste{margin-top:4px;padding-top:12px;border-top:1px solid ${CI.linie}}
+.belegt-titel{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${CI.textZart};margin-bottom:8px}
+.belegt-chips{display:flex;flex-wrap:wrap;gap:7px}
+.belegt-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:${CI.textMatt};
+  background:${CI.grau};border-radius:99px;padding:6px 12px}
+.belegt-chip i{color:#E23B3B;font-size:10px}
 .treffer{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;color:${CI.text};
   background:${CI.grau};border:1px solid ${CI.linie};flex-wrap:wrap;transition:all .2s}
 .treffer:hover{border-color:${CI.gruen};transform:translateX(3px)}
@@ -695,7 +747,7 @@ const CSS = `
 .treffer-erst{border-color:${CI.gruen};background:#F0FAF4}
 .tr-frei{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${CI.gruen}}
 .tr-preis{font-size:12.5px;font-weight:600;color:${CI.textMatt}}
-@media(max-width:640px){.dcheck-feld{flex-wrap:wrap;border-radius:22px;padding:14px}.dcheck-feld input{width:100%;padding:6px 4px}.dcheck-feld button{width:100%;justify-content:center;margin-top:8px}}
+@media(max-width:640px){.dcheck-feld{flex-wrap:wrap;border-radius:22px;padding:14px}.dcheck-feld input{width:100%;padding:6px 4px}.tld-dropdown{width:100%;margin-top:8px}.tld-trigger{width:100%;justify-content:center}.tld-panel{left:0;transform:none;width:100%}@keyframes tldpanelein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}.dcheck-feld button{width:100%;justify-content:center;margin-top:8px}}
 
 /* ══ Leistungskarten ══ */
 .lkarte{padding:28px 26px;height:100%}
