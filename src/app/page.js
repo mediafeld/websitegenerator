@@ -605,10 +605,13 @@ function HeroFolie({ art, starten }) {
 const CSS = `
 /* ══ HERO — Foto, alles zentriert, Domain-Check als Kernstück ══ */
 .hero{position:relative}
-.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:1160px;margin:0 auto}
+.hmitte{display:flex;flex-direction:column;align-items:center;position:relative;max-width:1480px;margin:0 auto;width:100%}
 .hmarke{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
-  border-radius:99px;padding:9px 18px}
+  text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:11px 22px;
+  position:relative;background:linear-gradient(100deg,#157AB0,#1B93D2,#54BCEF,#1B93D2,#157AB0);
+  background-size:300% 100%;animation:hmarkefarbe 7s ease-in-out infinite;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -3px 7px rgba(0,0,0,.3),0 10px 24px rgba(10,24,36,.4)}
+@keyframes hmarkefarbe{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .hknoepfe{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:28px}
 .btnleer.hell{background:transparent;color:#fff;border-color:rgba(255,255,255,.4);padding:16px 25px;font-size:15.5px}
 .btnleer.hell:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff}
@@ -740,8 +743,8 @@ const CSS = `
 .preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:14px;padding:22px;margin-bottom:22px}
 .preis-top .preisblock{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
 .preiszeile{display:flex;align-items:baseline;gap:7px;font-size:15px;color:${CI.textMatt}}
-.preiszeile b{font-size:clamp(44px,5vw,54px);font-weight:800;letter-spacing:-.035em;color:${CI.text};line-height:1}
-.preiszeile.hell b{color:#fff}
+.preiszeile b{font-size:clamp(44px,5vw,54px);font-weight:800;letter-spacing:-.035em;color:#E1591F;line-height:1}
+.preiszeile.hell b{color:#FF8A57}
 .preiszeile.hell{color:#A9C2D2;justify-content:center}
 .preis-unter{display:flex;flex-direction:column;gap:1px;margin-top:8px}
 .preis-unter strong{font-size:16px;font-weight:700;color:${CI.text}}

@@ -55,12 +55,12 @@ export default function PreiseSeite() {
                 <h2 className="display" style={{ fontSize: 21, marginBottom: 4 }}>{p.name}</h2>
                 <p style={{ fontSize: 13, color: D.textMatt, marginBottom: 18 }}>{p.kurz}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span className="display" style={{ fontSize: 44 }}>{eur(p.preis)}</span>
-                  <span style={{ fontSize: 17, fontWeight: 700, color: D.textMatt }}>€</span>
+                  <span className="display" style={{ fontSize: 44, color: '#E1591F' }}>{eur(p.preis)}</span>
+                  <span style={{ fontSize: 17, fontWeight: 700, color: D.textMatt }}>€ *</span>
                   <span style={{ fontSize: 12.5, color: D.grauHell, marginLeft: 4 }}>{modus === 'kaufen' ? 'einmalig' : '/ Monat'}</span>
                 </div>
                 <p style={{ fontSize: 11.5, color: D.textMatt, margin: '6px 0 18px' }}>
-                  {modus === 'kaufen' ? 'inkl. MwSt. · Einmalzahlung' : `inkl. MwSt. · oder ${eur(p.jahr)} € im Jahr (10 statt 12 Monate)`}
+                  {modus === 'kaufen' ? '* inkl. MwSt. · Einmalzahlung' : `* inkl. MwSt. · oder ${eur(p.jahr)} € im Jahr (10 statt 12 Monate)`}
                 </p>
                 {p.fuer && <p style={{ fontSize: 13, color: D.textMatt, fontStyle: 'italic', marginBottom: 16, lineHeight: 1.55 }}>Für: {p.fuer}</p>}
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24, flex: 1 }}>
@@ -79,7 +79,7 @@ export default function PreiseSeite() {
 
       {/* Vergleich */}
       <section style={{ padding: '32px 0' }}>
-        <div className="wrap" style={{ maxWidth: 900 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <h2 className="display" style={{ fontSize: 26, marginBottom: 18 }}>Kaufen oder mieten?</h2>
           <div className="karte" style={{ overflow: 'hidden' }}>
             <table className="tabelle">
@@ -104,7 +104,7 @@ export default function PreiseSeite() {
 
       {/* Einzelposten */}
       <section id="zusatz" style={{ padding: '32px 0' }}>
-        <div className="wrap" style={{ maxWidth: 900 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <h2 className="display" style={{ fontSize: 26, marginBottom: 8 }}>Domain, Hosting & Einzelposten</h2>
           <p style={{ fontSize: 14.5, color: D.textMatt, marginBottom: 18, lineHeight: 1.65 }}>
             Diese Posten kannst du einzeln dazubuchen. Bei den Mietpaketen sind Domain, Hosting und SSL schon enthalten.
@@ -124,7 +124,7 @@ export default function PreiseSeite() {
 
       {/* Kündigung */}
       <section id="kuendigung" style={{ padding: '32px 0 70px' }}>
-        <div className="wrap" style={{ maxWidth: 900 }}>
+        <div className="wrap" style={{ maxWidth: 1040 }}>
           <div className="karte" style={{ padding: '26px 24px' }}>
             <h2 className="display" style={{ fontSize: 22, marginBottom: 10 }}>Vertrag kündigen</h2>
             <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.7, marginBottom: 16 }}>

@@ -51,7 +51,7 @@ export const EMAIL = 'info@websitegenerator24.de'
 export const BASIS_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#fff;color:${CI.text};font-family:'InterTight',system-ui,sans-serif}
-.wrap{max-width:1360px;margin:0 auto;padding:0 28px}
+.wrap{max-width:1600px;margin:0 auto;padding:0 32px}
 button{font-family:inherit}
 input,select,textarea{font-family:inherit}
 a{color:inherit;text-decoration:none}
