@@ -729,7 +729,7 @@ const CSS = `
 .hfakten li i{color:#6FC3EF;font-size:13px;width:16px;text-align:center}
 
 /* Domain-Check — minimalistische dunkle Suchleiste direkt im Hero, kein Kartenrahmen */
-.dcheck{width:100%;max-width:820px;margin:40px auto 0;text-align:center}
+.dcheck{width:100%;max-width:820px;margin:40px auto 0;text-align:center;position:relative;z-index:5}
 .dcheck-label{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:700;color:#fff;margin-bottom:20px}
 .dcheck-label i{color:#6FC3EF}
 .dcheck-feld{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.09);backdrop-filter:blur(6px);
