@@ -1,8 +1,12 @@
 'use client'
 import { KontoLayout } from '@/components/KontoLayout'
 import { D, EMAIL } from '@/components/Kopf'
+import { useWarenkorb } from '@/lib/warenkorb'
 
 export default function EmailBereich() {
+  const { artikel, hinzufuegen } = useWarenkorb()
+  const imWarenkorb = artikel.some(a => a.id === 'postfach-zusatz')
+
   return (
     <KontoLayout aktiv="email" titel="E-Mail-Postfächer"
       unter="Eigene E-Mail-Adressen unter deiner Domain — zum Beispiel kontakt@deine-firma.de."
@@ -16,8 +20,23 @@ export default function EmailBereich() {
               <p style={{ fontSize: 14.5, color: D.hellGrau, maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.65 }}>
                 Sobald deine Domain aktiv ist, kannst du hier Adressen anlegen und wieder löschen.
               </p>
-              <a href="/preise#mieten" className="btnfest">Pakete ansehen</a>
+              <a href="/preise#mieten" className="btnfest">Mietpakete vergleichen</a>
             </div>
+          </div>
+
+          <div className="kkarte" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+            <div style={{ width: 46, height: 46, borderRadius: 12, background: D.blauZart, color: D.blau, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+              <i className="fa-solid fa-envelope-circle-check" aria-hidden="true" />
+            </div>
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 700 }}>Zusätzliches Postfach</div>
+              <div style={{ fontSize: 13, color: D.hellGrau }}>1 weitere E-Mail-Adresse unter deiner Domain, unabhängig vom Paket-Kontingent</div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#FF5722' }}>2,90 €<span style={{ fontSize: 12, fontWeight: 600, color: D.hellGrau }}>/Monat</span></div>
+            <button className={imWarenkorb ? 'btnleer' : 'btnfest'} disabled={imWarenkorb}
+              onClick={() => hinzufuegen({ id: 'postfach-zusatz', titel: 'Zusätzliches Postfach', unter: 'E-Mail-Adresse unter deiner Domain', preis: 2.90, art: 'monatlich' })}>
+              {imWarenkorb ? <><i className="fa-solid fa-check" style={{ marginRight: 7 }} aria-hidden="true" />Im Warenkorb</> : <><i className="fa-solid fa-cart-plus" style={{ marginRight: 7 }} aria-hidden="true" />Hinzufügen</>}
+            </button>
           </div>
 
           <div className="kkarte" style={{ marginBottom: 16 }}>

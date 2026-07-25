@@ -1,4 +1,6 @@
 import './globals.css'
+import { WarenkorbProvider } from '@/lib/warenkorb'
+import { WarenkorbPanel } from '@/components/Warenkorb'
 
 export const metadata = {
   title: 'websitegenerator24.de – Deine Website in Minuten',
@@ -8,7 +10,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body>
+        <WarenkorbProvider>
+          {children}
+          <WarenkorbPanel />
+        </WarenkorbProvider>
+      </body>
     </html>
   )
 }

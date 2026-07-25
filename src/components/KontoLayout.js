@@ -84,7 +84,7 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
 
   return rahmen(
     <section style={{ padding: '30px 0 66px' }}>
-      <div className="wrap kgrid" style={{ maxWidth: 1160 }}>
+      <div className="wrap kgrid" style={{ maxWidth: 1600 }}>
         {/* Seitenleiste */}
         <aside className="sidebar">
           <div className="sblock">

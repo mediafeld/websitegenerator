@@ -249,7 +249,7 @@ export default function WizardPage() {
 
       {/* Topbar */}
       <div style={{ height: 56, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', background: '#fff', flexShrink: 0, position: 'sticky', top: 0, zIndex: 100 }}>
-        <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.5 }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></span>
+        <a href="/" style={{ fontWeight: 800, fontSize: 15, letterSpacing: -0.5, color: 'inherit', textDecoration: 'none' }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {fd.domain && (
             <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: '#15803D', background: '#EBF8F0', border: '1px solid #A7E3BC', borderRadius: 99, padding: '5px 12px' }}>

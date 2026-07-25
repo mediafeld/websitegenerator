@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { aktuellerNutzer } from '@/lib/projekte'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
+import { WarenkorbKnopf } from '@/components/Warenkorb'
+import { WARENKORB_CSS } from '@/components/Warenkorb'
 
 // ══ CI websitegenerator24 — angelehnt an mediafeld.de ══
 // Farbwelt bewusst schmal gehalten: Blau, Schwarzblau, Weiß, Hellgrau.
@@ -224,6 +226,7 @@ a{color:inherit;text-decoration:none}
 @media (max-width:700px){.minihide{display:none}}
 @media (max-width:820px){.spalten3{grid-template-columns:1fr !important}.spalten2{grid-template-columns:1fr !important}.geist{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none !important}.reveal{opacity:1;transform:none;transition:none}}
+${WARENKORB_CSS}
 `
 
 const MENUE = [
@@ -335,6 +338,7 @@ export function Kopf() {
           <a href={nutzer ? '/dashboard' : '/login'} className="hl-punkt">
             <i className="fa-solid fa-user" aria-hidden="true" /><span className="minihide">{nutzer ? 'Mein Konto' : 'Login'}</span>
           </a>
+          <WarenkorbKnopf />
         </div>
       </div>
 

@@ -92,7 +92,21 @@ export default function EditorPage() {
     if (id) {
       projektIdRef.current = id
       projektLaden(id).then(p => {
-        if (!p || !p.pages) { router.push('/dashboard'); return }
+        if (!p) { router.push('/dashboard'); return }
+        if (!p.pages) {
+          // Projekt wurde angelegt, aber nie fertig generiert (z. B. abgebrochene Generierung).
+          // Die Angaben sind noch da — wir generieren einfach neu, statt tatenlos zurückzuspringen.
+          if (p.form_data) {
+            try {
+              sessionStorage.setItem('wg24_formData', JSON.stringify(p.form_data))
+              if (p.palette) sessionStorage.setItem('wg24_palette', JSON.stringify(p.palette))
+            } catch {}
+            router.push('/generating')
+          } else {
+            router.push('/start')
+          }
+          return
+        }
         setPages(p.pages)
         setActivePage(Object.keys(p.pages)[0])
         const palObj = p.palette || generateCIPalette('#1d4ed8')
