@@ -123,12 +123,13 @@ export default function Startseite() {
                       <div className="tld-panel-liste">
                         {tldTreffer.length === 0 && <p className="tld-keine">Keine Endung gefunden.</p>}
                         {tldTreffer.map(t => (
-                          <label key={t} className="tld-zeile">
-                            <input type="checkbox" checked={tlds.includes(t)} onChange={() => tldUmschalten(t)} />
-                            <span className="tld-haken" aria-hidden="true"><i className="fa-solid fa-check" /></span>
+                          <div key={t} className="tld-zeile" onClick={() => tldUmschalten(t)}
+                            role="checkbox" aria-checked={tlds.includes(t)} tabIndex={0}
+                            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tldUmschalten(t) } }}>
+                            <span className={`tld-haken ${tlds.includes(t) ? 'an' : ''}`} aria-hidden="true"><i className="fa-solid fa-check" /></span>
                             <b>.{t}</b>
                             <em>{eur(TLD_PREISE[t])} €/Jahr</em>
-                          </label>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -171,7 +172,7 @@ export default function Startseite() {
               <p className="dcheck-hinweis"><i className="fa-solid fa-lock" aria-hidden="true" />SSL-verschlüsselt &amp; DSGVO-konform geprüft. Bei Miete ist die Domain inklusive, beim Kauf bringst du sie selbst mit.</p>
             </div>
 
-            <div key={`unten-${heroArt}`} className="hero-fade" style={{ width: '100%' }}>
+            <div key={`unten-${heroArt}`} className="hero-fade" style={{ width: '100%', marginTop: 48 }}>
               <HeroUnten art={heroArt} starten={starten} />
             </div>
 
@@ -762,15 +763,19 @@ const CSS = `
 .tld-panel-suche input{border:none;outline:none;background:transparent;font-size:13.5px;color:${CI.text};flex:1;font-family:inherit}
 .tld-panel-suche input::placeholder{color:${CI.textZart}}
 .tld-keine{padding:18px 10px;text-align:center;font-size:12.5px;color:${CI.textZart}}
-.tld-panel-liste{max-height:320px;overflow-y:auto;padding:6px}
-.tld-zeile{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .14s}
+.tld-panel-liste{max-height:320px;overflow-y:auto;padding:6px;scrollbar-width:thin;scrollbar-color:${CI.linie} transparent}
+.tld-panel-liste::-webkit-scrollbar{width:7px}
+.tld-panel-liste::-webkit-scrollbar-track{background:transparent}
+.tld-panel-liste::-webkit-scrollbar-thumb{background:${CI.linie};border-radius:99px}
+.tld-panel-liste::-webkit-scrollbar-thumb:hover{background:${CI.textZart}}
+.tld-zeile{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;cursor:pointer;transition:background .14s;user-select:none}
 .tld-zeile:hover{background:${CI.grau}}
-.tld-zeile input{position:absolute;opacity:0;width:0;height:0}
+.tld-zeile:focus-visible{outline:2px solid ${CI.blau};outline-offset:-2px}
 .tld-haken{width:19px;height:19px;border-radius:6px;border:1.5px solid ${CI.linie};display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:transparent;font-size:10px;transition:all .15s}
-.tld-zeile input:checked ~ .tld-haken{background:${CI.blau};border-color:${CI.blau};color:#fff}
-.tld-zeile b{font-size:13.5px;font-weight:700;color:${CI.text};min-width:56px}
-.tld-zeile em{font-style:normal;font-size:12px;color:${CI.textMatt};margin-left:auto}
+  flex-shrink:0;color:transparent;font-size:10px;transition:all .15s;pointer-events:none}
+.tld-haken.an{background:${CI.blau};border-color:${CI.blau};color:#fff}
+.tld-zeile b{font-size:13.5px;font-weight:700;color:${CI.text};min-width:56px;pointer-events:none}
+.tld-zeile em{font-style:normal;font-size:12px;color:${CI.textMatt};margin-left:auto;pointer-events:none}
 .dcheck-ergebnis{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;color:${CI.text};
   background:#fff;border-radius:18px;padding:16px;box-shadow:0 24px 50px rgba(0,0,0,.35)}
 .dcheck-hinweis{display:flex;gap:8px;justify-content:center;text-align:left;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:18px}
