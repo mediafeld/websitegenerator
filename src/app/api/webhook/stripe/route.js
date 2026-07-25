@@ -6,6 +6,15 @@ import { supabaseAdmin } from '@/lib/supabaseServer'
 // deshalb hier kein automatisches JSON-Parsing.
 export const runtime = 'nodejs'
 
+// Findet das zugehörige Projekt über die Abo-ID in UNSERER eigenen Datenbank,
+// statt sich auf Metadaten in der Stripe-Subscription zu verlassen — die
+// haben sich in der Praxis als nicht zuverlässig genug erwiesen.
+async function projektZuAbo(db, subscriptionId) {
+  if (!subscriptionId) return null
+  const { data } = await db.from('projekte').select('id,user_id').eq('stripe_subscription_id', subscriptionId).maybeSingle()
+  return data || null
+}
+
 export async function POST(req) {
   const stripe = stripeClient()
   const signatur = req.headers.get('stripe-signature')
@@ -46,11 +55,8 @@ export async function POST(req) {
           stripe_subscription_id: s.subscription || null,
         }).eq('id', projekt_id).select()
 
-        if (error) {
-          console.error('[webhook] FEHLER beim Update von projekte:', JSON.stringify(error))
-        } else {
-          console.log('[webhook] projekte erfolgreich aktualisiert, betroffene Zeilen:', data?.length ?? 0, JSON.stringify(data))
-        }
+        if (error) console.error('[webhook] FEHLER beim Update von projekte:', JSON.stringify(error))
+        else console.log('[webhook] projekte erfolgreich aktualisiert:', JSON.stringify(data))
         break
       }
 
@@ -58,14 +64,13 @@ export async function POST(req) {
       // das ist die automatische Rechnungs-Historie fürs Konto.
       case 'invoice.paid': {
         const inv = event.data.object
-        const sub = inv.subscription ? await stripe.subscriptions.retrieve(inv.subscription) : null
-        const meta = sub?.metadata || {}
-        console.log('[webhook] invoice.paid – subscription metadata:', JSON.stringify(meta))
+        const projekt = await projektZuAbo(db, inv.subscription)
+        console.log('[webhook] invoice.paid – zugehöriges Projekt:', JSON.stringify(projekt))
 
         const { data, error } = await db.from('rechnungen').insert({
           stripe_invoice_id: inv.id,
-          user_id: meta.user_id || null,
-          projekt_id: meta.projekt_id || null,
+          user_id: projekt?.user_id || null,
+          projekt_id: projekt?.id || null,
           betrag: (inv.amount_paid || 0) / 100,
           waehrung: inv.currency,
           status: 'bezahlt',
@@ -75,20 +80,16 @@ export async function POST(req) {
           zeitraum_bis: inv.period_end ? new Date(inv.period_end * 1000).toISOString() : null,
         }).select()
 
-        if (error) {
-          console.error('[webhook] FEHLER beim Insert in rechnungen:', JSON.stringify(error))
-        } else {
-          console.log('[webhook] Rechnung erfolgreich angelegt:', JSON.stringify(data))
-        }
+        if (error) console.error('[webhook] FEHLER beim Insert in rechnungen:', JSON.stringify(error))
+        else console.log('[webhook] Rechnung erfolgreich angelegt:', JSON.stringify(data))
         break
       }
 
       case 'invoice.payment_failed': {
         const inv = event.data.object
-        const sub = inv.subscription ? await stripe.subscriptions.retrieve(inv.subscription) : null
-        const meta = sub?.metadata || {}
-        if (meta.projekt_id) {
-          const { error } = await db.from('projekte').update({ status: 'zahlung_fehlgeschlagen' }).eq('id', meta.projekt_id)
+        const projekt = await projektZuAbo(db, inv.subscription)
+        if (projekt?.id) {
+          const { error } = await db.from('projekte').update({ status: 'zahlung_fehlgeschlagen' }).eq('id', projekt.id)
           if (error) console.error('[webhook] FEHLER bei invoice.payment_failed Update:', JSON.stringify(error))
         }
         break
@@ -97,9 +98,9 @@ export async function POST(req) {
       // Kündigung — Mietpaket läuft aus
       case 'customer.subscription.deleted': {
         const sub = event.data.object
-        const meta = sub.metadata || {}
-        if (meta.projekt_id) {
-          const { error } = await db.from('projekte').update({ status: 'gekuendigt' }).eq('id', meta.projekt_id)
+        const projekt = await projektZuAbo(db, sub.id)
+        if (projekt?.id) {
+          const { error } = await db.from('projekte').update({ status: 'gekuendigt' }).eq('id', projekt.id)
           if (error) console.error('[webhook] FEHLER bei subscription.deleted Update:', JSON.stringify(error))
         }
         break
