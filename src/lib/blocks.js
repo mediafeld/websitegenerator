@@ -187,7 +187,7 @@ export const HERO_FULL = {
 </section>`
     },
     {
-      id: 'hero-split', name: 'Text + Bild',
+      id: 'hero-bild', name: 'Text + Bild',
       render: (c) => `
 <section data-block="hero-full" data-variant="hero-split" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:90px 0;position:relative;overflow:hidden;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="about-grid">
@@ -232,6 +232,137 @@ export const HERO_FULL = {
     </div>
     <div data-reveal style="display:flex;gap:48px;flex-wrap:wrap;">
       ${(c.stats || []).map(s => `<div><div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-.02em;">${ed('stat_'+s.label, s.num, 'span')}</div><div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:2px;">${esc(s.label)}</div></div>`).join('')}
+    </div>
+  </div>
+</section>`
+    },
+    {
+      id: 'hero-foto', name: 'Foto Vollbild',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-foto" data-section="1" class="wg-dunkelzone" style="position:relative;min-height:92vh;display:flex;align-items:flex-end;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a);')}">
+  <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,32,.15),rgba(10,20,32,.8));"></div>
+  <div class="wg-wrap" style="position:relative;z-index:1;padding-top:124px;padding-bottom:66px;">
+    <div class="wg-reveal" style="max-width:920px;">
+      <span class="wg-chip glas">${ed('tag', c.tag, 'span')}</span>
+      <h1 class="wg-t1" style="color:#fff;margin-top:22px;">${ed('headline', c.headline, 'span')}</h1>
+      <span class="wg-strichlinie"></span>
+      <p class="wg-lead" style="color:rgba(255,255,255,.8);max-width:600px;">${ed('subline', c.subline, 'span')}</p>
+    </div>
+    <div class="wg-reveal" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:34px;transition-delay:.1s;">
+      <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
+      <a href="#leistungen" class="wg-btn-leer hell">${ed('cta2', c.cta2, 'span')}</a>
+    </div>
+    ${(c.stats && c.stats.length) ? `<div class="wg-reveal" style="display:flex;gap:46px;flex-wrap:wrap;margin-top:48px;transition-delay:.18s;">${c.stats.map(s => `<div><div class="wg-stat-num">${ed('stat_' + s.label, s.num, 'span')}</div><div class="wg-stat-lab">${esc(s.label)}</div></div>`).join('')}</div>` : ''}
+  </div>
+</section>`
+    },
+    {
+      id: 'hero-editorial', name: 'Editorial Hell',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-editorial" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:clamp(96px,12vw,150px) 0 clamp(56px,7vw,88px);position:relative;overflow:hidden;">
+  <div class="wg-wrap">
+    <div class="wg-reveal" style="max-width:780px;">
+      <span class="wg-eyebrow">${ed('tag', c.tag, 'span')}</span>
+      <h1 class="wg-t1" style="margin-top:20px;">${ed('headline', c.headline, 'span')}</h1>
+      <span class="wg-strichlinie"></span>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:end;margin-top:22px;">
+      <div class="wg-reveal li wg-bildbox" style="height:clamp(280px,42vw,460px);transition-delay:.08s;">${img('heroImg', c.heroImg, '')}</div>
+      <div class="wg-reveal re" style="transition-delay:.14s;">
+        <p class="wg-lead" style="margin-bottom:26px;">${ed('subline', c.subline, 'span')}</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;">
+          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
+          <a href="#leistungen" class="wg-btn-leer">${ed('cta2', c.cta2, 'span')}</a>
+        </div>
+        ${(c.stats && c.stats.length) ? `<div style="display:flex;gap:34px;flex-wrap:wrap;border-top:1px solid rgba(15,23,42,.1);padding-top:22px;">${c.stats.map(s => `<div><div class="wg-stat-num">${ed('stat_' + s.label, s.num, 'span')}</div><div class="wg-stat-lab">${esc(s.label)}</div></div>`).join('')}</div>` : ''}
+      </div>
+    </div>
+  </div>
+</section>`
+    },
+    {
+      id: 'hero-akzent', name: 'Akzent Hell',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-akzent" data-section="1" style="${sectionBgStyle(c, 'background:var(--p50);')}padding:clamp(88px,11vw,140px) 0;position:relative;overflow:hidden;">
+  <div aria-hidden="true" style="position:absolute;top:-120px;right:-60px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,var(--p200),transparent 70%);opacity:.55;"></div>
+  <div class="wg-wrap" style="position:relative;z-index:1;">
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${ed('tag', c.tag, 'span')}</span>
+        <h1 class="wg-t1" style="margin-top:18px;">${ed('headline', c.headline, 'span')}</h1>
+        <span class="wg-strichlinie"></span>
+        <p class="wg-lead" style="max-width:480px;margin-bottom:32px;">${ed('subline', c.subline, 'span')}</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
+          <a href="#leistungen" class="wg-btn-leer">${ed('cta2', c.cta2, 'span')}</a>
+        </div>
+      </div>
+      <div class="wg-reveal re" style="position:relative;transition-delay:.12s;">
+        <div class="wg-bildbox" style="height:clamp(320px,44vw,480px);box-shadow:0 30px 70px rgba(15,23,42,.18);">${img('heroImg', c.heroImg, '')}</div>
+        <div style="position:absolute;left:-18px;bottom:26px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 14px 34px rgba(15,23,42,.16);display:flex;align-items:center;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></span>
+          <span style="font-size:13px;font-weight:700;color:#0f172a;">${ed('badge', c.badge || c.tag, 'span')}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>`
+    },
+    {
+      id: 'hero-magazin', name: 'Magazin',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-magazin" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:clamp(80px,10vw,120px) 0;position:relative;overflow:hidden;">
+  <div class="wg-wrap">
+    <div class="wg-split" style="display:grid;grid-template-columns:1.05fr .95fr;gap:0;align-items:center;">
+      <div class="wg-reveal" style="position:relative;z-index:2;">
+        <span class="wg-eyebrow">${ed('tag', c.tag, 'span')}</span>
+        <h1 class="wg-t1" style="margin-top:18px;font-size:clamp(44px,7.5vw,92px);">${ed('headline', c.headline, 'span')}</h1>
+        <p class="wg-lead" style="max-width:440px;margin:22px 0 30px;">${ed('subline', c.subline, 'span')}</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
+          <a href="#leistungen" class="wg-btn-leer">${ed('cta2', c.cta2, 'span')}</a>
+        </div>
+      </div>
+      <div class="wg-reveal re wg-bildbox wg-hide-mob" style="height:clamp(360px,46vw,540px);margin-left:-40px;transition-delay:.12s;">${img('heroImg', c.heroImg, '')}</div>
+    </div>
+  </div>
+</section>`
+    },
+    {
+      id: 'hero-duo', name: 'Duo Karten',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-duo" data-section="1" class="wg-dunkelzone" style="position:relative;min-height:86vh;display:flex;align-items:center;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a 70%);')}">
+  <div class="wg-mesh"><span class="wg-blob wg-blob-a"></span><span class="wg-blob wg-blob-b"></span></div>
+  <div class="wg-wrap" style="position:relative;z-index:1;">
+    <div class="wg-split" style="display:grid;grid-template-columns:1.1fr .9fr;gap:52px;align-items:center;">
+      <div class="wg-reveal">
+        <span class="wg-chip glas">${ed('tag', c.tag, 'span')}</span>
+        <h1 class="wg-t1" style="color:#fff;margin-top:22px;">${ed('headline', c.headline, 'span')}</h1>
+        <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:520px;margin:22px 0 32px;">${ed('subline', c.subline, 'span')}</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
+          <a href="#leistungen" class="wg-btn-leer hell">${ed('cta2', c.cta2, 'span')}</a>
+        </div>
+      </div>
+      <div class="wg-reveal re" style="display:flex;flex-direction:column;gap:16px;transition-delay:.12s;">
+        ${((c.stats && c.stats.length ? c.stats : [{ num: '100%', label: 'Zuverlässig' }, { num: '24/7', label: 'Erreichbar' }]).slice(0, 3)).map(s => `<div class="wg-karte" style="display:flex;align-items:center;gap:16px;padding:20px 22px;"><div class="wg-iconchip" style="width:46px;height:46px;font-size:18px;"><i class="fa-solid fa-check"></i></div><div><div style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.02em;">${esc(s.num)}</div><div style="font-size:13px;color:#64748b;">${esc(s.label)}</div></div></div>`).join('')}
+      </div>
+    </div>
+  </div>
+</section>`
+    },
+    {
+      id: 'hero-minimal', name: 'Vollbild Minimal',
+      render: (c) => `
+<section data-block="hero-full" data-variant="hero-minimal" data-section="1" class="wg-dunkelzone" style="position:relative;min-height:96vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(160deg,#0d1b2a,var(--p900));')}">
+  <div class="wg-mesh"><span class="wg-blob wg-blob-a"></span><span class="wg-blob wg-blob-b"></span><span class="wg-blob wg-blob-c"></span></div>
+  <div class="wg-wrap" style="position:relative;z-index:1;max-width:900px;">
+    <div class="wg-reveal">
+      <span class="wg-chip glas">${ed('tag', c.tag, 'span')}</span>
+      <h1 class="wg-t1" style="color:#fff;margin:24px auto 0;font-size:clamp(44px,8vw,96px);">${ed('headline', c.headline, 'span')}</h1>
+      <span class="wg-strichlinie mitte"></span>
+      <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:560px;margin:0 auto 36px;">${ed('subline', c.subline, 'span')}</p>
+      <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
     </div>
   </div>
 </section>`

@@ -1,4 +1,5 @@
 import { renderBlock } from './blocks'
+import { generatorDesignCSS, GENERATOR_REVEAL_JS, GENERATOR_EDITOR_CSS } from './generatorDesign'
 
 // Animations-CDNs (für die fertige Seite)
 const ANIM_CDN = `
@@ -81,7 +82,7 @@ function applyParallaxAttr(html, c) {
 // Rendere eine komplette Seite aus Block-Array
 export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false }) {
   const fontParam = font.replace(/ /g, '+')
-  const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@400;500;600;700;800;900` : ''
+  const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@200;300;400;500;600;700;800;900` : ''
   const blocksHtml = (blocks || [])
     .map(b => applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content))
     .join('\n')
@@ -102,12 +103,14 @@ ${forEditor ? '' : ANIM_CDN}
   ${buildCSSVars(palette)}
   details summary::-webkit-details-marker{display:none;}
   a{transition:all 0.2s;}
-  ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' : ''}
+  ${generatorDesignCSS({ fontHeadline })}
+  ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' + GENERATOR_EDITOR_CSS : ''}
 </style>
 </head>
 <body>
 ${blocksHtml}
 ${PARALLAX_JS}
+${forEditor ? '' : GENERATOR_REVEAL_JS}
 ${forEditor ? '' : ANIM_INIT}
 </body>
 </html>`
