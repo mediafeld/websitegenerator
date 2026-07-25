@@ -70,6 +70,9 @@ export async function POST(req) {
     return NextResponse.json({ url: session.url })
   } catch (e) {
     console.error('Checkout-Fehler:', e)
-    return NextResponse.json({ error: 'Checkout konnte nicht gestartet werden. Bitte später erneut versuchen.' }, { status: 500 })
+    // Echte Ursache mit ausgeben (z. B. fehlender STRIPE_SECRET_KEY oder
+    // SUPABASE_SERVICE_ROLE_KEY) – sonst tappt man im Dunkeln.
+    const detail = e?.message ? ` (${e.message})` : ''
+    return NextResponse.json({ error: `Checkout konnte nicht gestartet werden${detail}.` }, { status: 500 })
   }
 }

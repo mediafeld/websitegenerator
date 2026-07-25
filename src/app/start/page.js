@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { KAUF } from '@/lib/preise'
+import { KAUF, MIETE, eur } from '@/lib/preise'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
@@ -9,6 +9,12 @@ import MenuBuilder from '@/components/MenuBuilder'
 import { aktuellerNutzer } from '@/lib/projekte'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
+import { useWarenkorb } from '@/lib/warenkorb'
+
+// Größen-Zuordnung: Miet-Stufen und Kauf-Stufen haben denselben Umfang
+const GROESSE_MAP = { start: 'onepager', plus: 'multipage', pro: 'business', onepager: 'onepager', multipage: 'multipage', business: 'business' }
+const MIETE_IDS = new Set(MIETE.map(m => m.id))
+const PAKET_ICON = { onepager: 'fa-file', multipage: 'fa-folder-open', business: 'fa-building' }
 
 // Farbstimmung (nur Optik) – jetzt Teil des Farbwahl-Schritts im Wizard
 const STIMMUNGEN = [
@@ -125,8 +131,9 @@ function WizardInnen() {
   const router = useRouter()
   const params = useSearchParams()
   const [step, setStep] = useState(1)
+  const { setzePaket } = useWarenkorb()
   const [fd, setFd] = useState({
-    paket: 'multipage', preis: 149,
+    paket: 'multipage', preis: 149, zahlungsart: 'kaufen',
     branche: '', brancheCustom: '',
     firmenname: '', email: '', telefon: '', website: '', strasse: '', plz: '', stadt: '', land: 'Deutschland', oeffnung: '',
     gegruendet: '', mitarbeiter: '', beschreibung: '', leistungen: '', usps: '', geschichte: '', auszeichnungen: '', referenzen: '',
@@ -160,18 +167,36 @@ function WizardInnen() {
   // ODER ?paket=plus, je nachdem ob Kauf- oder Mietkarte angeklickt wurde) —
   // Mieten-Stufen und Kauf-Stufen haben denselben Umfang, nur andere Namen.
   useEffect(() => {
-    const GROESSE = { start: 'onepager', plus: 'multipage', pro: 'business', onepager: 'onepager', multipage: 'multipage', business: 'business' }
     const paketId = params.get('paket')
-    const groesse = GROESSE[paketId]
-    if (groesse) {
-      const gewaehlt = KAUF.find(p => p.id === groesse)
-      setFd(prev => ({ ...prev, paket: groesse, preis: gewaehlt?.preis ?? prev.preis }))
+    if (GROESSE_MAP[paketId]) {
+      // Von Startseite/Preise gekommen → Paket setzen + Schritt 1 überspringen
+      const zahlungsart = MIETE_IDS.has(paketId) ? 'mieten' : (params.get('modus') === 'mieten' ? 'mieten' : 'kaufen')
+      waehlePaket(zahlungsart, paketId)
       setStep(2)
+    } else {
+      // Frischer Start → Standard-Paket direkt in den Warenkorb (Badge zeigt 1)
+      waehlePaket('kaufen', 'multipage')
     }
   }, [])
 
   const upd = (k, v) => setFd(prev => ({ ...prev, [k]: v }))
   const updDetail = (k, v) => setFd(prev => ({ ...prev, brancheDetails: { ...prev.brancheDetails, [k]: v } }))
+
+  // Paket wählen (Kauf ODER Miete) → in Wizard-Daten UND direkt in den Warenkorb
+  function waehlePaket(zahlungsart, id) {
+    const size = GROESSE_MAP[id] || 'multipage'
+    const quelle = zahlungsart === 'mieten' ? MIETE : KAUF
+    const p = quelle.find(x => x.id === id) || quelle.find(x => GROESSE_MAP[x.id] === size)
+    if (!p) return
+    setFd(prev => ({ ...prev, paket: size, zahlungsart, preis: p.preis }))
+    setzePaket({
+      id: 'paket-' + p.id,
+      titel: `Website ${zahlungsart === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`,
+      unter: p.kurz,
+      preis: p.preis,
+      art: zahlungsart === 'mieten' ? 'monatlich' : 'einmalig',
+    })
+  }
 
   function handleLogoUpload(e) {
     const file = e.target.files?.[0]
@@ -290,7 +315,7 @@ function WizardInnen() {
             <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}
           </span>
         )}
-        <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{fd.preis} € <span style={{ fontWeight: 500, fontSize: 11, color: '#94a3b8' }}>inkl. MwSt.</span></span>
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{eur(fd.preis)} €{fd.zahlungsart === 'mieten' ? ' /Monat' : ''} <span style={{ fontWeight: 500, fontSize: 11, color: '#94a3b8' }}>inkl. MwSt.</span></span>
       </div>
 
       {/* Steps */}
@@ -312,37 +337,39 @@ function WizardInnen() {
       <div style={{ flex: 1 }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '36px 24px 100px' }}>
 
-          {/* STEP 1 – PAKET */}
+          {/* STEP 1 – PAKET (Kaufen ODER Mieten) */}
           {step === 1 && (
             <>
-              <StepHead n={1} title="Welches Paket passt zu dir?" sub="Einmalig bezahlen – kein Abo. Premium-Design & alle Editor-Funktionen in jedem Paket." />
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16, marginBottom: 24 }}>
-                {[
-                  { id: 'onepager', name: 'Onepager', price: 89, icon: 'fa-file', seiten: '1 Seite', bilder: '6 KI-Bilder' },
-                  { id: 'multipage', name: 'Multipage', price: 149, icon: 'fa-folder-open', seiten: 'Bis 5 Unterseiten', bilder: '8 KI-Bilder', pop: true },
-                  { id: 'business', name: 'Business', price: 199, icon: 'fa-building', seiten: 'Bis 8 Unterseiten', bilder: '12 KI-Bilder' },
-                ].map(p => (
-                  <div key={p.id} onClick={() => { upd('paket', p.id); upd('preis', p.price) }} style={{ border: `2px solid ${fd.paket === p.id ? primary : '#e5e5e5'}`, borderRadius: 16, padding: 24, cursor: 'pointer', background: fd.paket === p.id ? primary + '0a' : '#fff', position: 'relative', transition: 'all 0.15s' }}>
-                    {p.pop && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-star" style={{ fontSize: 9 }} aria-hidden="true" />Beliebteste</div>}
-                    <div style={{ width: 42, height: 42, borderRadius: 12, background: primary + '14', color: primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, marginBottom: 12 }}><i className={`fa-solid ${p.icon}`} aria-hidden="true" /></div>
-                    <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>{p.name}</div>
-                    <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 2 }}>{p.price} <span style={{ fontSize: 14, fontWeight: 400, color: '#888' }}>€</span></div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>inkl. MwSt. · einmalig</div>
-                    <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
-                      <Feat primary={primary} bold>{p.seiten}</Feat>
-                      <Feat primary={primary} bold>{p.bilder}</Feat>
-                      <Feat primary={primary}>Premium-Design</Feat>
-                      <Feat primary={primary}>Live-Editor (Drag & Drop)</Feat>
-                      <Feat primary={primary}>Alle Branchen-Elemente</Feat>
-                      <Feat primary={primary}>Eigene Bilder & Logo</Feat>
-                      <Feat primary={primary}>SEO-optimiert</Feat>
-                      <Feat primary={primary}>ZIP-Download (HTML/CSS)</Feat>
-                    </div>
-                  </div>
+              <StepHead n={1} title="Welches Paket passt zu dir?" sub="Kaufen (einmalig, ZIP-Download) oder mieten (monatlich, Domain & Hosting inklusive) – der Umfang ist identisch." />
+
+              {/* Umschalter Kaufen / Mieten */}
+              <div style={{ display: 'inline-flex', background: '#eef2f6', borderRadius: 99, padding: 4, marginBottom: 24 }}>
+                {[['kaufen', 'Kaufen', 'fa-download'], ['mieten', 'Mieten', 'fa-calendar-days']].map(([za, lab, ic]) => (
+                  <button key={za} onClick={() => { const ziel = za === 'mieten' ? (MIETE.find(m => GROESSE_MAP[m.id] === fd.paket)?.id || 'plus') : fd.paket; waehlePaket(za, ziel) }} style={{ border: 'none', cursor: 'pointer', borderRadius: 99, padding: '9px 22px', fontSize: 13.5, fontWeight: 700, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, background: fd.zahlungsart === za ? '#fff' : 'transparent', color: fd.zahlungsart === za ? primary : '#64748b', boxShadow: fd.zahlungsart === za ? '0 2px 8px rgba(15,23,42,.1)' : 'none', transition: 'all .15s' }}><i className={`fa-solid ${ic}`} aria-hidden="true" />{lab}</button>
                 ))}
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16, marginBottom: 24 }}>
+                {(fd.zahlungsart === 'mieten' ? MIETE : KAUF).map(p => {
+                  const size = GROESSE_MAP[p.id]
+                  const aktiv = fd.paket === size
+                  const miete = fd.zahlungsart === 'mieten'
+                  return (
+                    <div key={p.id} onClick={() => waehlePaket(fd.zahlungsart, p.id)} style={{ border: `2px solid ${aktiv ? primary : '#e5e5e5'}`, borderRadius: 16, padding: 24, cursor: 'pointer', background: aktiv ? primary + '0a' : '#fff', position: 'relative', transition: 'all 0.15s' }}>
+                      {p.beliebt && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-star" style={{ fontSize: 9 }} aria-hidden="true" />Beliebteste</div>}
+                      <div style={{ width: 42, height: 42, borderRadius: 12, background: primary + '14', color: primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, marginBottom: 12 }}><i className={`fa-solid ${PAKET_ICON[size]}`} aria-hidden="true" /></div>
+                      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>{p.name}</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 2 }}>{eur(p.preis)} <span style={{ fontSize: 14, fontWeight: 400, color: '#888' }}>€{miete ? ' /Monat' : ''}</span></div>
+                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>inkl. MwSt. · {miete ? 'monatlich' : 'einmalig'}</div>
+                      <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+                        {(p.punkte || []).slice(0, 7).map((pt, i) => <Feat key={i} primary={primary} bold={i < 2}>{pt}</Feat>)}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
               <InfoBox primary={primary}>
-                <b>In jedem Paket enthalten:</b> Das komplette Premium-Design, der vollständige Live-Editor mit Drag & Drop, alle branchenspezifischen Elemente und KI-Texte. Die Pakete unterscheiden sich nur in der <b>Anzahl der Seiten</b> und der <b>Anzahl inkludierter KI-Bilder</b>.
+                <b>Kaufen</b> = einmalig zahlen, Website als ZIP herunterladen (Domain/Hosting bringst du mit). <b>Mieten</b> = monatlich, Domain, Hosting & SSL inklusive – wir kümmern uns. Dein gewähltes Paket liegt bereits im Warenkorb (oben rechts).
               </InfoBox>
             </>
           )}

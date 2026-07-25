@@ -1,5 +1,9 @@
 'use client'
 import { useWarenkorb } from '@/lib/warenkorb'
+import { starteCheckout } from '@/lib/checkout'
+import { MIETE } from '@/lib/preise'
+
+const MIETE_IDS = new Set(MIETE.map(m => m.id))
 
 // Feste Farbwerte statt Import aus Kopf.js (vermeidet einen Ringimport,
 // da Kopf.js selbst das Warenkorb-CSS mit einbindet).
@@ -28,6 +32,18 @@ export function WarenkorbPanel() {
     const text = encodeURIComponent(`Ich möchte folgende Leistungen bestellen:\n\n${artikel.map(a => `- ${a.menge}× ${a.titel} (${eur(a.preis)} € ${a.art === 'monatlich' ? '/Monat' : 'einmalig'})`).join('\n')}\n\nGesamt: ${eur(gesamt)} € inkl. MwSt.`)
     return `mailto:info@websitegenerator24.de?subject=${encodeURIComponent('Bestellung aus dem Warenkorb')}&body=${text}`
   }
+
+  // Echte Stripe-Kasse: Hauptpaket wird bezahlt (Miete = Abo, Kauf = einmalig).
+  // Stripe kann Abo + Einmalzahlung nicht mischen → Zusatzposten laufen separat.
+  const zurKasse = async () => {
+    const paket = artikel.find(a => String(a.id).startsWith('paket-'))
+    if (!paket) { window.location.href = anfrageLink(); return }
+    const pid = String(paket.id).replace('paket-', '')
+    const modus = MIETE_IDS.has(pid) ? 'mieten' : 'kaufen'
+    const { error } = await starteCheckout({ paketId: pid, modus })
+    if (error) alert(error)
+  }
+  const hatPaket = artikel.some(a => String(a.id).startsWith('paket-'))
 
   return (
     <>
@@ -68,15 +84,21 @@ export function WarenkorbPanel() {
             </div>
 
             <div className="wk-summe">
-              <div><span>Zwischensumme</span><span>{eur(zwischensumme)} €</span></div>
-              <div><span>zzgl. 19 % MwSt.</span><span>{eur(mwst)} €</span></div>
-              <div className="wk-brutto"><span>Gesamt</span><span>{eur(gesamt)} €</span></div>
+              <div><span>Summe</span><span>{eur(zwischensumme)} €</span></div>
+              <div><span>davon 19 % MwSt.</span><span>{eur(mwst)} €</span></div>
+              <div className="wk-brutto"><span>Gesamt (inkl. MwSt.)</span><span>{eur(gesamt)} €</span></div>
             </div>
 
-            <a href={anfrageLink()} className="btnfest" style={{ width: '100%', justifyContent: 'center' }}>
-              <i className="fa-solid fa-paper-plane" aria-hidden="true" />Anfrage mit diesen Positionen senden
-            </a>
-            <p className="wk-hinweis">Direkte Online-Zahlung folgt in Kürze — bis dahin bestätigen wir deine Bestellung persönlich per E-Mail oder Telefon.</p>
+            {hatPaket ? (
+              <button onClick={zurKasse} className="btnfest" style={{ width: '100%', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+                <i className="fa-solid fa-lock" aria-hidden="true" />Sicher bezahlen
+              </button>
+            ) : (
+              <a href={anfrageLink()} className="btnfest" style={{ width: '100%', justifyContent: 'center' }}>
+                <i className="fa-solid fa-paper-plane" aria-hidden="true" />Anfrage mit diesen Positionen senden
+              </a>
+            )}
+            <p className="wk-hinweis">Bezahlung sicher über Stripe. Miete (monatlich) und Kauf (einmalig) werden getrennt abgerechnet.</p>
           </>
         )}
       </aside>
