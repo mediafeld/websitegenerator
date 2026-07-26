@@ -86,6 +86,28 @@ export default function EditorPage() {
   const [speicherStatus, setSpeicherStatus] = useState('')   // '' | 'speichert' | 'gespeichert' | 'fehler'
   const [nutzer, setNutzer] = useState(null)
   const [kauft, setKauft] = useState(false)
+  const [domainModal, setDomainModal] = useState(false)
+  const [domainWunsch, setDomainWunsch] = useState('')
+  const [domainDaten, setDomainDaten] = useState(null)
+  const [domainLaedt, setDomainLaedt] = useState(false)
+
+  // Domain im Editor nachträglich festlegen – gleiche Prüfung wie Startseite/Wizard
+  async function domainPruefen() {
+    const n = (domainWunsch || '').trim()
+    if (!n) return
+    setDomainLaedt(true); setDomainDaten(null)
+    try {
+      const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, tlds: ['de', 'com', 'net', 'org'] }) })
+      setDomainDaten(await res.json())
+    } catch { setDomainDaten({ error: 'Prüfung gerade nicht erreichbar.' }) }
+    setDomainLaedt(false)
+  }
+  function domainWaehlen(d) {
+    formDataRef.current = { ...(formDataRef.current || {}), domain: d }
+    try { sessionStorage.setItem('wg24_formData', JSON.stringify(formDataRef.current)) } catch {}
+    if (projektIdRef.current) projektSpeichern(projektIdRef.current, { form_data: formDataRef.current }).catch(() => {})
+    setDomainModal(false); setDomainDaten(null); setDomainWunsch('')
+  }
   const [kontoMenu, setKontoMenu] = useState(false)
 
   // Angemeldeten Nutzer holen (für Kopfzeile / Konto-Menü)
@@ -726,9 +748,18 @@ export default function EditorPage() {
 
       {/* TOPBAR */}
       <div style={{ height: 50, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8, flexShrink: 0, background: '#fff' }}>
-        <b onClick={() => router.push(nutzer ? '/dashboard' : '/')} title={nutzer ? 'Zu meinen Websites' : 'Zur Startseite'} style={{ fontSize: 14, letterSpacing: -0.5, cursor: 'pointer' }}>websitegenerator24<span style={{ color: '#aaa', fontWeight: 400 }}>.de</span></b>
-        <span style={{ color: '#ddd' }}>|</span>
-        <span style={{ color: '#666', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocks.find(b => b.type === 'nav')?.content?.firmenname}</span>
+        {/* Logo/Login/Warenkorb liefert der echte Seiten-Header oben – hier nur
+            das, was zum Projekt gehört: Firmenname + gebuchte Domain. */}
+        <span style={{ fontWeight: 700, color: '#0f172a', maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocks.find(b => b.type === 'nav')?.content?.firmenname || 'Deine Website'}</span>
+        {formDataRef.current?.domain ? (
+          <a href={`https://${String(formDataRef.current.domain).replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" title="Website ansehen" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '4px 11px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <i className="fa-solid fa-globe" />{formDataRef.current.domain}
+          </a>
+        ) : (
+          <button onClick={() => setDomainModal(true)} title="Domain festlegen" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#64748b', background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: 99, padding: '4px 11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            <i className="fa-solid fa-globe" />Domain festlegen
+          </button>
+        )}
 
         {/* Undo/Redo */}
         <div style={{ display: 'flex', gap: 2, marginLeft: 8 }}>
@@ -742,7 +773,6 @@ export default function EditorPage() {
           <button key={d} onClick={() => setDevice(d)} title={d} style={{ width: 30, height: 30, border: `1px solid ${device === d ? primary : '#e5e5e5'}`, borderRadius: 7, background: device === d ? '#f5f5f5' : '#fff', cursor: 'pointer', fontSize: 14, color: device === d ? primary : '#475569' }}><i className={`fa-solid fa-${ic}`} /></button>
         ))}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
-        <WarenkorbKnopf farbe="#475569" />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
         <button disabled={kauft} onClick={async () => {
           if (!nutzer) { router.push('/login'); return }
@@ -759,25 +789,7 @@ export default function EditorPage() {
           if (error) { setKauft(false); alert(error) }
         }} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>{kauft ? 'Öffne Kasse…' : <>Kaufen &amp; Download<i className="fa-solid fa-arrow-right" /></>}</button>
 
-        {/* Konto */}
-        <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
-        {nutzer ? (
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setKontoMenu(o => !o)} title={nutzer.email} style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
-              {(nutzer.email || '?')[0].toUpperCase()}
-            </button>
-            {kontoMenu && (
-              <div style={{ position: 'absolute', right: 0, top: 36, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, boxShadow: '0 8px 28px rgba(15,23,42,0.12)', minWidth: 190, zIndex: 9999, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: 11, color: '#94a3b8', wordBreak: 'break-all' }}>{nutzer.email}</div>
-                <button onClick={() => router.push('/dashboard')} style={menuBtn}>Meine Websites</button>
-                <button onClick={() => router.push('/start')} style={menuBtn}>Neue Website</button>
-                <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} style={{ ...menuBtn, color: '#dc2626', borderTop: '1px solid #f1f5f9' }}>Abmelden</button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <button onClick={() => router.push('/login')} style={{ border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 11.5, fontWeight: 700, color: '#475569', padding: '7px 12px' }}>Anmelden</button>
-        )}
+        {/* Konto/Warenkorb sitzen im echten Seiten-Header oben – hier bewusst nicht doppelt. */}
       </div>
 
       {/* PAGE TABS */}
@@ -1006,6 +1018,32 @@ export default function EditorPage() {
         <Modal onClose={() => setCustomEditor(null)} title="Eigener Code" sub="HTML, CSS und JS – wird 1:1 eingefügt">
           <textarea defaultValue={blocks[customEditor]?.content?.html || ''} id="customCode" style={{ width: '100%', height: 300, fontFamily: 'monospace', fontSize: 13, border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, boxSizing: 'border-box' }} placeholder="<div>Dein HTML hier...</div>" />
           <button onClick={() => saveCustom(customEditor, document.getElementById('customCode').value)} style={{ marginTop: 12, background: primary, color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Speichern</button>
+        </Modal>
+      )}
+
+      {/* DOMAIN FESTLEGEN */}
+      {domainModal && (
+        <Modal onClose={() => setDomainModal(false)} title="Domain festlegen" sub="Prüfen und übernehmen – erscheint danach dauerhaft oben in der Leiste">
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', border: '2px solid #e5e5e5', borderRadius: 10, padding: '0 12px' }}>
+              <span style={{ color: '#94a3b8', fontSize: 13 }}>www.</span>
+              <input value={domainWunsch} onChange={e => setDomainWunsch(e.target.value)} onKeyDown={e => e.key === 'Enter' && domainPruefen()} placeholder="deinefirma" style={{ flex: 1, border: 'none', outline: 'none', padding: '11px 4px', fontSize: 14, fontFamily: 'inherit' }} />
+            </div>
+            <button onClick={domainPruefen} disabled={domainLaedt} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 10, padding: '0 20px', fontWeight: 700, fontSize: 13, cursor: domainLaedt ? 'wait' : 'pointer', fontFamily: 'inherit' }}>{domainLaedt ? 'Prüfe…' : 'Prüfen'}</button>
+          </div>
+          {domainDaten?.error && <div style={{ fontSize: 12.5, color: '#B4232A', marginBottom: 10 }}>{domainDaten.error}</div>}
+          <div style={{ display: 'grid', gap: 7 }}>
+            {(domainDaten?.ergebnisse || []).map(e => (
+              <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 13px', opacity: e.frei ? 1 : .55 }}>
+                <i className={`fa-solid ${e.frei ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ color: e.frei ? '#1F9D55' : '#B4232A' }} />
+                <span style={{ flex: 1, fontWeight: e.frei ? 700 : 500, fontSize: 13.5 }}>{e.domain}</span>
+                {e.frei
+                  ? <button onClick={() => domainWaehlen(e.domain)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Übernehmen</button>
+                  : <span style={{ fontSize: 11.5, color: '#94a3b8' }}>vergeben</span>}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 12, lineHeight: 1.55 }}>Eine Domain pro Paket. Bei Miete ist sie inklusive – beim Kauf bringst du sie selbst mit.</div>
         </Modal>
       )}
     </div>

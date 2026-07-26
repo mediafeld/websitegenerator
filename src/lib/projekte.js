@@ -73,14 +73,7 @@ export function projektIdAusUrl() {
 // Pflichtangaben, die für ein rechtsgültiges Impressum/eine Rechnung nötig sind.
 // Wird sowohl im Dashboard (Anzeige) als auch in der Checkout-Route (serverseitig,
 // nicht umgehbar) benutzt — bevor "Online schalten" wirklich zu Stripe führt.
-export const PROFIL_PFLICHTFELDER = [
-  ['vorname', 'Vorname'],
-  ['nachname', 'Nachname'],
-  ['strasse', 'Straße & Hausnummer'],
-  ['plz', 'Postleitzahl'],
-  ['ort', 'Ort'],
-]
-
-export function profilLuecken(profil) {
-  return PROFIL_PFLICHTFELDER.filter(([feld]) => !profil?.[feld]?.trim?.()).map(([, label]) => label)
-}
+// Liegen jetzt in lib/profil.js (bewusst OHNE 'use client'), damit auch
+// Server-Routen sie echt importieren können. Hier nur weitergereicht, damit
+// bestehender Client-Code unverändert weiterläuft.
+export { PROFIL_PFLICHTFELDER, profilLuecken } from '@/lib/profil'

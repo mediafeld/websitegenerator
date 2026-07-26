@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe'
 import { nutzerAusToken, supabaseAdmin } from '@/lib/supabaseServer'
 import { MIETE, KAUF } from '@/lib/preise'
-import { profilLuecken } from '@/lib/projekte'
+// WICHTIG: direkt aus lib/profil (kein 'use client'), sonst bekommt der Server
+// nur einen Platzhalter → "m is not a function".
+import { profilLuecken } from '@/lib/profil'
 
 // Erstellt eine Stripe-Checkout-Session. Preise werden NIE vom Client übernommen —
 // wir schlagen sie serverseitig in lib/preise.js nach, damit niemand den Preis
