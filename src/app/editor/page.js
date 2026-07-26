@@ -12,6 +12,7 @@ import { WarenkorbKnopf } from '@/components/Warenkorb'
 import { useWarenkorb } from '@/lib/warenkorb'
 import { KAUF, MIETE } from '@/lib/preise'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
+import { Brotkrumen } from '@/components/Brotkrumen'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -745,6 +746,11 @@ export default function EditorPage() {
     <div style={{ height: 'calc(100vh - 108px)', minHeight: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: '"Inter Tight",sans-serif', fontSize: 13 }}>
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onFile} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      {/* Wo bin ich? */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #f1f5f9', padding: '0 14px', flexShrink: 0 }}>
+        <Brotkrumen pfad={[['Start', '/'], ['Meine Websites', '/dashboard'], [(blocks.find(b => b.type === 'nav')?.content?.firmenname) || 'Website'], ['Editor']]} />
+      </div>
 
       {/* TOPBAR */}
       <div style={{ height: 50, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8, flexShrink: 0, background: '#fff' }}>

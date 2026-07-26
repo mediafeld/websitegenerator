@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { KAUF, MIETE, eur, ALLE_TLDS, TLD_PREISE } from '@/lib/preise'
 import { generateCIPalette } from '@/lib/colorSystem'
@@ -10,6 +10,7 @@ import { aktuellerNutzer } from '@/lib/projekte'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { useWarenkorb } from '@/lib/warenkorb'
+import { Brotkrumen } from '@/components/Brotkrumen'
 
 // Größen-Zuordnung: Miet-Stufen und Kauf-Stufen haben denselben Umfang
 const GROESSE_MAP = { start: 'onepager', plus: 'multipage', pro: 'business', onepager: 'onepager', multipage: 'multipage', business: 'business' }
@@ -35,7 +36,17 @@ function paketLeistungen(size, miete) {
     'SEO-Grundeinstellungen inklusive',
     'Live-Editor (Drag & Drop) inklusive',
     ...(miete
-      ? ['Domain inklusive', 'Hosting & SSL inklusive', 'Laufende Sicherungen']
+      ? [
+          'Domain inklusive (1 pro Paket)',
+          size === 'onepager' ? 'E-Mail-Weiterleitung inklusive'
+            : size === 'multipage' ? 'Echtes E-Mail-Postfach inklusive'
+            : '3 E-Mail-Postfächer inklusive',
+          'Hosting & SSL inklusive',
+          'Laufende Sicherungen',
+          size === 'onepager' ? 'Änderungen jederzeit selbst'
+            : size === 'multipage' ? '1 Änderungswunsch pro Monat durch uns'
+            : '3 Änderungswünsche pro Monat durch uns',
+        ]
       : ['Kompletter Quellcode als ZIP (HTML/CSS/JS)', 'Keine laufenden Kosten']),
   ]
 }
@@ -353,6 +364,12 @@ function WizardInnen() {
     <div style={{ display: 'flex', flexDirection: 'column', fontFamily: '"Inter Tight",sans-serif', background: '#f8fafc' }}>
       {/* Google Fonts laden für Vorschau */}
       <link href={`https://fonts.googleapis.com/css2?${allGoogleFontsParam()}&display=swap`} rel="stylesheet" />
+
+      <div style={{ background: '#fff', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ maxWidth: 1600, margin: '0 auto', padding: '0 24px' }}>
+          <Brotkrumen pfad={[['Start', '/'], ['Website erstellen'], [`Schritt ${step} von ${TOTAL_STEPS}`]]} />
+        </div>
+      </div>
 
       {/* Schritte + Preis/Domain in EINER Zeile */}
       <div style={{ borderBottom: '1px solid #e5e5e5', background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexShrink: 0 }}>
@@ -773,8 +790,19 @@ function DomainCheck({ fd, primary, upd, setzeDomain, setOffen }) {
   const [daten, setDaten] = useState(null)
   const [fehler, setFehler] = useState('')
   const miete = fd.zahlungsart === 'mieten'
+  const tldRef = useRef(null)
   const tldUmschalten = (t) => setTlds(v => v.includes(t) ? v.filter(x => x !== t) : [...v, t])
   const tldTreffer = ALLE_TLDS.filter(t => t.includes(tldSuche.trim().toLowerCase()))
+
+  // Klick daneben oder Escape schließt die Endungs-Auswahl
+  useEffect(() => {
+    if (!tldOffen) { setTldSuche(''); return }
+    const aussen = (e) => { if (tldRef.current && !tldRef.current.contains(e.target)) setTldOffen(false) }
+    const esc = (e) => { if (e.key === 'Escape') setTldOffen(false) }
+    document.addEventListener('mousedown', aussen)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', aussen); document.removeEventListener('keydown', esc) }
+  }, [tldOffen])
 
   async function pruefen() {
     const n = (name || fd.firmenname || '').trim()
@@ -833,7 +861,7 @@ function DomainCheck({ fd, primary, upd, setzeDomain, setOffen }) {
         </div>
 
         {/* Endungs-Auswahl wie auf der Startseite */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} ref={tldRef}>
           <button type="button" onClick={() => setTldOffen(v => !v)} style={{ height: '100%', border: '2px solid #e5e5e5', background: '#fff', borderRadius: 10, padding: '0 14px', fontSize: 13, fontWeight: 700, color: '#334155', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
             {tlds.length === 1 ? `.${tlds[0]}` : `${tlds.length} Endungen`}
             <i className="fa-solid fa-chevron-down" style={{ fontSize: 10, transform: tldOffen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} aria-hidden="true" />

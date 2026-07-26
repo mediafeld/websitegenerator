@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Kopf, D, BASIS_CSS, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
+import { Brotkrumen } from '@/components/Brotkrumen'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 
 const BEREICHE = [
@@ -82,8 +83,17 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
     </Mitte>
   )
 
+  // Wo bin ich? – Brotkrumen aus dem aktiven Bereich ableiten
+  const BEZEICHNUNG = {}
+  BEREICHE.forEach(b => b.punkte.forEach(([id, , , t]) => { BEZEICHNUNG[id] = t }))
+  const krumen = [['Start', '/'], ['Mein Konto', '/dashboard']]
+  krumen.push([(aktiv && aktiv !== 'dashboard') ? (BEZEICHNUNG[aktiv] || titel || 'Bereich') : 'Übersicht'])
+
   return rahmen(
-    <section style={{ padding: '30px 0 66px' }}>
+    <section style={{ padding: '14px 0 66px' }}>
+      <div className="wrap" style={{ maxWidth: 1600 }}>
+        <Brotkrumen pfad={krumen} />
+      </div>
       <div className="wrap kgrid" style={{ maxWidth: 1600 }}>
         {/* Seitenleiste */}
         <aside className="sidebar">

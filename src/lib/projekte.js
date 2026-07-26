@@ -33,6 +33,39 @@ export async function projektAnlegen({ name, firma, branche, form_data, pages, p
   return data?.id || null
 }
 
+// Legt NUR DANN ein neues Projekt an, wenn es noch keinen unbezahlten Entwurf
+// gibt. Sonst wird der vorhandene Entwurf überschrieben.
+// Grund: Vorher entstand bei JEDER Generierung ein neuer Eintrag — nach ein
+// paar Versuchen lagen 7 "Neue Website"-Entwürfe im Konto. Pro gebuchtem bzw.
+// kostenlos getestetem Produkt soll es genau EINE Website geben.
+export async function projektAnlegenOderAktualisieren(daten) {
+  const user = await aktuellerNutzer()
+  if (!user) return null
+
+  const { data: entwurf } = await supabase
+    .from('projekte')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('status', 'entwurf')
+    .order('geaendert_am', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (entwurf?.id) {
+    const ok = await projektSpeichern(entwurf.id, {
+      name: daten.name || daten.firma || 'Neue Website',
+      firma: daten.firma || null,
+      branche: daten.branche || null,
+      form_data: daten.form_data || null,
+      pages: daten.pages || null,
+      palette: daten.palette || null,
+      font: daten.font || null,
+    })
+    if (ok) return entwurf.id
+  }
+  return projektAnlegen(daten)
+}
+
 // Bestehendes Projekt aktualisieren.
 export async function projektSpeichern(id, felder) {
   if (!id) return false

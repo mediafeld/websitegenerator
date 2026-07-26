@@ -32,13 +32,20 @@ function DashboardInnen() {
   const [paketWahl, setPaketWahl] = useState(null)   // Projekt-ID, für die grade das Paket gewählt wird
   const [bucht, setBucht] = useState(null)            // Projekt-ID, die grade zu Stripe unterwegs ist
   const [luecken, setLuecken] = useState(null)         // null = noch nicht geladen, [] = vollständig
+  const [aktivId, setAktivId] = useState(null)        // gewähltes Produkt (Website)
+  const [switcherOffen, setSwitcherOffen] = useState(false)
+  const [umbenennen, setUmbenennen] = useState(null)  // {id, name} während des Umbenennens
 
   const laden = useCallback(async () => {
     if (!supabaseBereit) return
     const { data, error } = await supabase.from('projekte')
       .select('id,name,firma,branche,status,domain,geaendert_am,zahlungsart,paket_id')
       .order('geaendert_am', { ascending: false })
-    if (error) setFehler(fehlerText(error)); else setProjekte(data || [])
+    if (error) setFehler(fehlerText(error))
+    else {
+      setProjekte(data || [])
+      setAktivId(v => v && (data || []).some(p => p.id === v) ? v : (data?.[0]?.id || null))
+    }
 
     const u = await aktuellerNutzer()
     if (u) {
@@ -59,12 +66,22 @@ function DashboardInnen() {
     if (error) { setFehler(error); setBucht(null) }
   }
 
+  async function nameSpeichern(id, name) {
+    if (!supabaseBereit || !name?.trim()) { setUmbenennen(null); return }
+    const { error } = await supabase.from('projekte').update({ name: name.trim() }).eq('id', id)
+    if (error) setFehler(fehlerText(error))
+    else setProjekte(ps => ps.map(p => p.id === id ? { ...p, name: name.trim() } : p))
+    setUmbenennen(null)
+  }
+
   async function loeschen(id, name) {
     if (!supabaseBereit) return
     if (!confirm(`„${name}" wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return
     const { error } = await supabase.from('projekte').delete().eq('id', id)
     if (error) setFehler(fehlerText(error)); else setProjekte(p => p.filter(x => x.id !== id))
   }
+
+  const aktivProjekt = projekte.find(p => p.id === aktivId) || projekte[0] || null
 
   return (
     <KontoLayout aktiv="dashboard" titel="Übersicht"
@@ -78,6 +95,60 @@ function DashboardInnen() {
             </div>
           )}
           {fehler && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '15px 18px', marginBottom: 18, fontSize: 14, color: '#B91C1C' }}>{fehler}</div>}
+
+          {/* PRODUKT-UMSCHALTER: jede gebuchte Website ist ein eigenes Produkt */}
+          {projekte.length > 0 && (
+            <div className="kkarte" style={{ marginBottom: 16, padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: D.hellGrau }}>Gewähltes Produkt</div>
+                <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
+                  <button onClick={() => setSwitcherOffen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: `2px solid ${D.linie}`, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 9, background: D.blauZart, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                      <i className="fa-solid fa-globe" style={{ color: D.blau, fontSize: 16 }} aria-hidden="true" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14.5, fontWeight: 700, color: D.dunkel, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{aktivProjekt?.name || 'Website wählen'}</div>
+                      <div style={{ fontSize: 12, color: D.hellGrau }}>{aktivProjekt?.domain || 'noch keine Domain'} · {(STATUS[aktivProjekt?.status] || STATUS.entwurf).text}</div>
+                    </div>
+                    <i className={`fa-solid fa-chevron-${switcherOffen ? 'up' : 'down'}`} style={{ fontSize: 11, color: D.hellGrau }} aria-hidden="true" />
+                  </button>
+                  {switcherOffen && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: '#fff', border: `1px solid ${D.linie}`, borderRadius: 12, boxShadow: '0 18px 44px rgba(15,23,42,.16)', zIndex: 40, overflow: 'hidden', maxHeight: 340, overflowY: 'auto' }}>
+                      {projekte.map(p => (
+                        <div key={p.id} onClick={() => { setAktivId(p.id); setSwitcherOffen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', cursor: 'pointer', borderBottom: `1px solid ${D.hellGrund}`, background: p.id === aktivId ? D.blauZart : '#fff' }}>
+                          <div style={{ width: 34, height: 34, borderRadius: 8, background: D.blauZart, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <i className="fa-solid fa-globe" style={{ color: D.blau, fontSize: 13 }} aria-hidden="true" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                            <div style={{ fontSize: 11.5, color: D.hellGrau }}>{p.domain || 'noch keine Domain'}</div>
+                          </div>
+                          {p.id === aktivId && <i className="fa-solid fa-check" style={{ color: D.blau, fontSize: 12 }} aria-hidden="true" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {aktivProjekt && (
+                  umbenennen?.id === aktivProjekt.id ? (
+                    <div style={{ display: 'flex', gap: 7 }}>
+                      <input autoFocus value={umbenennen.name} onChange={e => setUmbenennen({ ...umbenennen, name: e.target.value })}
+                        onKeyDown={e => { if (e.key === 'Enter') nameSpeichern(aktivProjekt.id, umbenennen.name); if (e.key === 'Escape') setUmbenennen(null) }}
+                        style={{ border: `2px solid ${D.blau}`, borderRadius: 9, padding: '8px 11px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }} />
+                      <button className="btnfest" style={{ padding: '9px 15px', fontSize: 13 }} onClick={() => nameSpeichern(aktivProjekt.id, umbenennen.name)}>Sichern</button>
+                    </div>
+                  ) : (
+                    <button className="btnleer" style={{ padding: '9px 15px', fontSize: 13 }} onClick={() => setUmbenennen({ id: aktivProjekt.id, name: aktivProjekt.name })}>
+                      <i className="fa-solid fa-pen" style={{ marginRight: 7 }} aria-hidden="true" />Umbenennen
+                    </button>
+                  )
+                )}
+              </div>
+              <p style={{ fontSize: 11.5, color: D.hellGrau, marginTop: 11, lineHeight: 1.55 }}>
+                Jede gebuchte Website ist ein eigenes Produkt mit eigener Domain und eigenem Vertrag. Hier wechselst du zwischen ihnen.
+              </p>
+            </div>
+          )}
 
           <div className="kkarte" style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: projekte.length ? 20 : 6 }}>

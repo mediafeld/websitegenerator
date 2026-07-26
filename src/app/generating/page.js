@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateCIPalette } from '@/lib/colorSystem'
-import { aktuellerNutzer, projektAnlegen } from '@/lib/projekte'
+import { aktuellerNutzer, projektAnlegenOderAktualisieren } from '@/lib/projekte'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 
@@ -76,7 +76,7 @@ export default function GeneratingPage() {
       try {
         const nutzer = await aktuellerNutzer()
         if (nutzer) {
-          projektId = await projektAnlegen({
+          projektId = await projektAnlegenOderAktualisieren({
             name: fdForApi.firmenname || 'Neue Website',
             firma: fdForApi.firmenname,
             branche: fdForApi.branche,

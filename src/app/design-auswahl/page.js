@@ -5,6 +5,7 @@ import { generateCIPalette } from '@/lib/colorSystem'
 import { LAYOUTS, BRANCHEN_LAYOUT, getLayout } from '@/lib/layouts'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
+import { Brotkrumen } from '@/components/Brotkrumen'
 
 // Wireframe-Zone -> Mini-Darstellung
 function WireZone({ kind, p }) {
@@ -66,7 +67,10 @@ export default function DesignAuswahlPage() {
     <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
     <Kopf />
     <div style={{ minHeight: '60vh', background: '#f8fafc', fontFamily: '"Inter Tight",sans-serif' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '10px 24px 0' }}>
+        <Brotkrumen pfad={[['Start', '/'], ['Website erstellen', '/start'], ['Layout wählen']]} />
+      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '14px 24px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -0.5, marginBottom: 8 }}>Wähle dein Layout</h1>
           <p style={{ color: '#64748b', fontSize: 16 }}>Die Anordnung deiner Startseite. Alles lässt sich danach im Editor frei anpassen.</p>
