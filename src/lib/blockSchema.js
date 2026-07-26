@@ -355,6 +355,57 @@ export function wertSetzen(content, key, wert) {
   liste[z.index] = z.unterfeld
     ? { ...(liste[z.index] || {}), [z.unterfeld]: wert }
     : wert
+  // Lücken schließen: eine Liste mit Löchern würde beim Rendern übersprungen
+  // werden – übrig blieben leere Einträge (nur Aufzählungspunkte ohne Text).
+  for (let i = 0; i < liste.length; i++) {
+    if (liste[i] === undefined) liste[i] = z.unterfeld ? {} : ''
+  }
   out[z.feld] = liste
   return out
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// PFAD-SCHREIBER  (neu, eindeutig)
+//
+// Bearbeitbare Elemente tragen ihren EXAKTEN Pfad, z. B.
+//   data-edit="headline"          → content.headline
+//   data-edit="punkte.2"          → content.punkte[2]
+//   data-edit="items.0.title"     → content.items[0].title
+//   data-edit="gruppen.1.items.3.preis"
+// Damit muss nichts mehr geraten werden – jeder Schlüssel sagt selbst,
+// wohin er gehört. Das war die Ursache für vertauschte/verschwundene Texte.
+// ───────────────────────────────────────────────────────────────────────────
+export function istPfad(key) {
+  return typeof key === 'string' && key.includes('.')
+}
+
+export function pfadSetzen(content, pfad, wert) {
+  const teile = String(pfad).split('.')
+  const wurzel = Array.isArray(content) ? [...content] : { ...content }
+  let ziel = wurzel
+  for (let i = 0; i < teile.length - 1; i++) {
+    const t = teile[i]
+    const naechstIstZahl = /^\d+$/.test(teile[i + 1])
+    let vorhanden = ziel[t]
+    if (Array.isArray(vorhanden)) vorhanden = [...vorhanden]
+    else if (vorhanden && typeof vorhanden === 'object') vorhanden = { ...vorhanden }
+    else vorhanden = naechstIstZahl ? [] : {}
+    ziel[t] = vorhanden
+    ziel = vorhanden
+  }
+  ziel[teile[teile.length - 1]] = wert
+  // Lücken in Listen schließen, damit nie halbe Einträge gerendert werden
+  const aufraeumen = (o) => {
+    if (Array.isArray(o)) {
+      for (let i = 0; i < o.length; i++) {
+        if (o[i] === undefined) o[i] = ''
+        else aufraeumen(o[i])
+      }
+    } else if (o && typeof o === 'object') {
+      Object.values(o).forEach(aufraeumen)
+    }
+  }
+  aufraeumen(wurzel)
+  return wurzel
 }

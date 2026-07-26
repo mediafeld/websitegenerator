@@ -90,7 +90,7 @@ export const MEDIA = {
         ${(c.punkte || []).length ? `<ul style="list-style:none;padding:0;margin:0 0 28px;display:grid;gap:11px;">
           ${(c.punkte || []).map((p, i) => `<li style="display:flex;align-items:flex-start;gap:11px;font-size:15px;color:#334155;">
             <span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;"><i class="fa-solid fa-check"></i></span>
-            ${ed('punkt' + i, p)}</li>`).join('')}
+            ${ed(`punkte.${i}`, p)}</li>`).join('')}
         </ul>` : ''}
         <a href="kontakt.html" class="wg-btn">${txt('cta', c.cta, 'Mehr erfahren')}</a>
       </div>
@@ -134,11 +134,11 @@ export const MEDIA = {
     </div>
     ${eintraege.map((e, i) => `
       <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,56px);align-items:center;margin-bottom:${i === eintraege.length - 1 ? 0 : 'clamp(34px,5vw,64px)'};">
-        <div class="wg-reveal ${i % 2 ? 're' : 'li'} wg-bildbox" style="height:clamp(230px,32vw,380px);order:${i % 2 ? 2 : 1};">${bild('zzImg' + i, e.image, '', i + 1)}</div>
+        <div class="wg-reveal ${i % 2 ? 're' : 'li'} wg-bildbox" style="height:clamp(230px,32vw,380px);order:${i % 2 ? 2 : 1};">${bild(`eintraege.${i}.image`, e.image, '', i + 1)}</div>
         <div class="wg-reveal ${i % 2 ? 'li' : 're'}" style="order:${i % 2 ? 1 : 2};transition-delay:.1s;">
           <div style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:15px;margin-bottom:14px;">${i + 1}</div>
-          <h3 class="wg-t3" style="margin-bottom:10px;">${ed('zzTitle' + i, e.title)}</h3>
-          <p class="wg-lead" style="font-size:16px;">${ed('zzText' + i, e.text)}</p>
+          <h3 class="wg-t3" style="margin-bottom:10px;">${ed(`eintraege.${i}.title`, e.title)}</h3>
+          <p class="wg-lead" style="font-size:16px;">${ed(`eintraege.${i}.text`, e.text)}</p>
         </div>
       </div>`).join('')}
   </div>
@@ -268,7 +268,7 @@ export const TEXT = {
       <div class="wg-reveal re" style="display:grid;gap:14px;transition-delay:.1s;">
         ${hl.map((h, i) => `<div class="wg-karte wg-karte-hover" style="display:flex;align-items:center;gap:18px;padding:20px 22px;">
           <div class="wg-stat-num" data-edit="stat${i}" style="min-width:96px;">${esc(h.num)}</div>
-          <div style="font-size:14.5px;color:#64748b;">${ed('statLabel' + i, h.label)}</div>
+          <div style="font-size:14.5px;color:#64748b;">${ed(`stats.${i}.label`, h.label)}</div>
         </div>`).join('')}
       </div>
     </div>
@@ -304,9 +304,9 @@ export const FEATURES = {
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;">
       ${items.map((it, i) => `<div class="wg-reveal wg-karte wg-karte-hover" style="transition-delay:${i * 80}ms;">
-        <div class="wg-iconchip" style="margin-bottom:16px;">${icon('featIcon' + i, it.icon)}</div>
-        <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:9px;">${ed('featTitle' + i, it.title)}</h3>
-        <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed('featText' + i, it.text)}</p>
+        <div class="wg-iconchip" style="margin-bottom:16px;">${icon(`items.${i}.icon`, it.icon)}</div>
+        <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:9px;">${ed(`items.${i}.title`, it.title)}</h3>
+        <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -334,8 +334,8 @@ export const FEATURES = {
       ${items.map((it, i) => `<div class="wg-reveal" style="display:grid;grid-template-columns:88px 1fr;gap:clamp(14px,3vw,32px);align-items:start;padding:clamp(20px,3vw,30px) 0;border-top:1px solid rgba(15,23,42,.09);transition-delay:${i * 70}ms;">
         <div style="font-size:clamp(34px,4vw,52px);font-weight:200;color:var(--accent);line-height:1;">${String(i + 1).padStart(2, '0')}</div>
         <div>
-          <h3 class="wg-t3" style="margin-bottom:8px;">${ed('featTitle' + i, it.title)}</h3>
-          <p class="wg-lead" style="font-size:15.5px;max-width:680px;">${ed('featText' + i, it.text)}</p>
+          <h3 class="wg-t3" style="margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
+          <p class="wg-lead" style="font-size:15.5px;max-width:680px;">${ed(`items.${i}.text`, it.text)}</p>
         </div>
       </div>`).join('')}
     </div>
@@ -363,9 +363,9 @@ export const FEATURES = {
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;">
       ${items.map((it, i) => `<div class="wg-reveal" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:26px;transition-delay:${i * 70}ms;">
-        <div style="width:46px;height:46px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:15px;">${icon('featIcon' + i, it.icon)}</div>
-        <h3 style="font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;">${ed('featTitle' + i, it.title)}</h3>
-        <p style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.65;">${ed('featText' + i, it.text)}</p>
+        <div style="width:46px;height:46px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:15px;">${icon(`items.${i}.icon`, it.icon)}</div>
+        <h3 style="font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.65;">${ed(`items.${i}.text`, it.text)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -391,10 +391,10 @@ export const FEATURES = {
         <span class="wg-strichlinie"></span>
         <div style="display:grid;gap:18px;">
           ${items.map((it, i) => `<div style="display:flex;gap:15px;align-items:flex-start;">
-            <div style="width:40px;height:40px;border-radius:11px;background:var(--p100);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon('featIcon' + i, it.icon)}</div>
+            <div style="width:40px;height:40px;border-radius:11px;background:var(--p100);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
             <div>
-              <h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:4px;">${ed('featTitle' + i, it.title)}</h3>
-              <p style="font-size:14.5px;color:#64748b;line-height:1.65;">${ed('featText' + i, it.text)}</p>
+              <h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:4px;">${ed(`items.${i}.title`, it.title)}</h3>
+              <p style="font-size:14.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</p>
             </div>
           </div>`).join('')}
         </div>
@@ -427,7 +427,7 @@ export const GALERIE = {
       <span class="wg-strichlinie mitte"></span>
     </div>
     <div style="columns:3;column-gap:16px;" class="wg-gal-cols">
-      ${imgs.map((s, i) => `<div class="wg-reveal wg-bildbox" style="break-inside:avoid;margin-bottom:16px;height:${[300, 220, 260, 240, 320, 200][i % 6]}px;transition-delay:${i * 60}ms;">${bild('galImg' + i, s, '', i + 1)}</div>`).join('')}
+      ${imgs.map((s, i) => `<div class="wg-reveal wg-bildbox" style="break-inside:avoid;margin-bottom:16px;height:${[300, 220, 260, 240, 320, 200][i % 6]}px;transition-delay:${i * 60}ms;">${bild(`images.${i}`, s, '', i + 1)}</div>`).join('')}
     </div>
   </div>
   <style>@media(max-width:900px){.wg-gal-cols{columns:2 !important}}@media(max-width:560px){.wg-gal-cols{columns:1 !important}}</style>
@@ -447,7 +447,7 @@ export const GALERIE = {
       <span class="wg-strichlinie"></span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
-      ${imgs.map((s, i) => `<div class="wg-reveal wg-bildbox" style="height:250px;transition-delay:${i * 60}ms;">${bild('galImg' + i, s, '', i + 1)}</div>`).join('')}
+      ${imgs.map((s, i) => `<div class="wg-reveal wg-bildbox" style="height:250px;transition-delay:${i * 60}ms;">${bild(`images.${i}`, s, '', i + 1)}</div>`).join('')}
     </div>
   </div>
 </section>`
@@ -467,7 +467,7 @@ export const GALERIE = {
     </div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-    ${imgs.map((s, i) => `<div class="wg-reveal wg-bildbox" style="border-radius:0;height:clamp(220px,26vw,400px);transition-delay:${i * 80}ms;">${bild('galImg' + i, s, '', i + 1)}</div>`).join('')}
+    ${imgs.map((s, i) => `<div class="wg-reveal wg-bildbox" style="border-radius:0;height:clamp(220px,26vw,400px);transition-delay:${i * 80}ms;">${bild(`images.${i}`, s, '', i + 1)}</div>`).join('')}
   </div>
 </section>`
       }
@@ -500,12 +500,12 @@ export const STIMMEN = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;">
       ${items.map((it, i) => `<div class="wg-reveal wg-karte wg-karte-hover" style="padding:30px;transition-delay:${i * 90}ms;">
         <div style="color:var(--accent);font-size:15px;margin-bottom:14px;">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</div>
-        <p style="font-size:17.5px;line-height:1.65;color:#0f172a;font-weight:300;margin-bottom:22px;">„${ed('stText' + i, it.text)}"</p>
+        <p style="font-size:17.5px;line-height:1.65;color:#0f172a;font-weight:300;margin-bottom:22px;">„${ed(`items.${i}.text`, it.text)}"</p>
         <div style="display:flex;align-items:center;gap:13px;border-top:1px solid rgba(15,23,42,.08);padding-top:18px;">
           <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p500),var(--p700));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">${esc((it.name || 'K')[0])}</div>
           <div>
-            <div style="font-size:14.5px;font-weight:700;color:#0f172a;">${ed('stName' + i, it.name)}</div>
-            <div style="font-size:12.5px;color:#94a3b8;">${ed('stRolle' + i, it.rolle)}</div>
+            <div style="font-size:14.5px;font-weight:700;color:#0f172a;">${ed(`items.${i}.name`, it.name)}</div>
+            <div style="font-size:12.5px;color:#94a3b8;">${ed(`items.${i}.rolle`, it.rolle)}</div>
           </div>
         </div>
       </div>`).join('')}
@@ -657,7 +657,7 @@ export const BANNER = {
       id: 'banner-laufband', name: 'Laufband',
       render: (c) => {
         const punkte = (c.punkte && c.punkte.length) ? c.punkte : ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden', 'Persönliche Beratung']
-        const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed('punkt' + i, p) : esc(p)}</span>`
+        const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : esc(p)}</span>`
         const reihe = punkte.map((p, i) => zeile(p, i, true)).join('')
         const reiheKopie = punkte.map((p, i) => zeile(p, i, false)).join('')
         return `
@@ -706,7 +706,7 @@ export const KONTAKT_PLUS = {
             <div style="width:42px;height:42px;border-radius:11px;background:var(--p100);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;"><i class="fa-solid fa-${ic}"></i></div>
             <div style="min-width:0;">
               <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;">${label}</div>
-              <div style="font-size:15px;font-weight:600;color:#0f172a;">${ed('kontakt' + i, wert)}</div>
+              <div style="font-size:15px;font-weight:600;color:#0f172a;">${ed(`kontaktfelder.${i}`, wert)}</div>
             </div>
           </div>`).join('')}
       </div>

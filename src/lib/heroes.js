@@ -84,8 +84,8 @@ const statReihe = (c, mitte = false) => {
   if (!st) return ''
   return `<div style="display:flex;gap:clamp(26px,4vw,52px);flex-wrap:wrap;margin-top:clamp(30px,4vw,50px);${mitte ? 'justify-content:center;' : ''}">
     ${st.map((s, i) => `<div>
-      <div style="font-size:clamp(26px,3.2vw,38px);font-weight:800;letter-spacing:-.02em;color:${tf(c)};line-height:1;">${ed('stat' + i, s.num)}${esc(s.suffix || '')}</div>
-      <div style="font-size:13px;color:${tm(c)};margin-top:5px;">${ed('statLabel' + i, s.label)}</div>
+      <div style="font-size:clamp(26px,3.2vw,38px);font-weight:800;letter-spacing:-.02em;color:${tf(c)};line-height:1;">${ed(`stats.${i}.num`, s.num)}${esc(s.suffix || '')}</div>
+      <div style="font-size:13px;color:${tm(c)};margin-top:5px;">${ed(`stats.${i}.label`, s.label)}</div>
     </div>`).join('')}
   </div>`
 }
@@ -265,8 +265,8 @@ M.push({ id: 'h-panel', name: 'Mit Werte-Karten', render: (c) => {
       <div class="wg-reveal re" style="display:grid;gap:14px;transition-delay:.12s;">
         ${st.slice(0, 3).map((s, i) => `<div class="wg-karte" style="display:flex;align-items:center;gap:17px;padding:20px 22px;">
           <div class="wg-iconchip" style="width:46px;height:46px;font-size:17px;flex-shrink:0;"><i class="fa-solid fa-check"></i></div>
-          <div><div style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.02em;">${ed('stat' + i, s.num)}${esc(s.suffix || '')}</div>
-          <div style="font-size:13.5px;color:#64748b;">${ed('statLabel' + i, s.label)}</div></div>
+          <div><div style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.02em;">${ed(`stats.${i}.num`, s.num)}${esc(s.suffix || '')}</div>
+          <div style="font-size:13.5px;color:#64748b;">${ed(`stats.${i}.label`, s.label)}</div></div>
         </div>`).join('')}
       </div>
     </div>
@@ -344,7 +344,7 @@ M.push({ id: 'h-liste', name: 'Mit Häkchenliste', render: (c) => {
         <span class="wg-strichlinie"></span>
         <ul style="list-style:none;padding:0;margin:0 0 30px;display:grid;gap:12px;">
           ${pk.map((p, i) => `<li style="display:flex;align-items:flex-start;gap:12px;font-size:16px;color:${c.hell ? '#334155' : 'rgba(255,255,255,.84)'};">
-            <span style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;"><i class="fa-solid fa-check"></i></span>${ed('punkt' + i, p)}</li>`).join('')}
+            <span style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;"><i class="fa-solid fa-check"></i></span>${ed(`punkte.${i}`, p)}</li>`).join('')}
         </ul>
         ${knoepfe(c)}
       </div>
@@ -355,9 +355,11 @@ M.push({ id: 'h-liste', name: 'Mit Häkchenliste', render: (c) => {
 
 // 14 — Hero mit Laufband
 M.push({ id: 'h-laufband', name: 'Mit Laufband unten', render: (c) => {
-  const pk = c.punkte && c.punkte.length ? c.punkte : ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden']
+  // Leere/lückenhafte Einträge herausfiltern, damit nie ein Punkt ohne Text bleibt
+  const roh = (c.punkte || []).filter(x => x !== undefined && String(x).trim() !== '')
+  const pk = roh.length ? roh : ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden']
   // Erste Reihe ist bearbeitbar, die zweite ist nur die nahtlose Wiederholung.
-  const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed('punkt' + i, p) : esc(p)}</span>`
+  const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : esc(p)}</span>`
   const reihe = pk.map((p, i) => zeile(p, i, true)).join('')
   const reiheKopie = pk.map((p, i) => zeile(p, i, false)).join('')
   return `
@@ -436,8 +438,8 @@ M.push({ id: 'h-karten-drei', name: 'Mit drei Karten', render: (c) => {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:clamp(34px,5vw,58px);transform:translateY(clamp(20px,3vw,34px));">
       ${items.map((it, i) => `<div class="wg-reveal wg-karte" style="transition-delay:${i * 80}ms;">
         <div class="wg-iconchip" style="width:44px;height:44px;font-size:16px;margin-bottom:14px;"><i class="fa-solid fa-${esc(it.icon || 'check')}"></i></div>
-        <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed('kTitle' + i, it.title)}</h3>
-        <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed('kText' + i, it.text)}</p>
+        <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed(`karten.${i}.title`, it.title)}</h3>
+        <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`karten.${i}.text`, it.text)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -499,7 +501,7 @@ M.push({ id: 'h-logos', name: 'Mit Partner-Leiste', render: (c) => {
   </div>
   <div style="position:relative;z-index:1;border-top:1px solid ${c.hell ? 'rgba(15,23,42,.09)' : 'rgba(255,255,255,.13)'};">
     <div class="wg-wrap" style="display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,54px);align-items:center;justify-content:space-between;padding:22px 24px;">
-      ${logos.map((l, i) => `<span style="font-size:14px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:${c.hell ? '#94a3b8' : 'rgba(255,255,255,.5)'};">${ed('logo' + i, l)}</span>`).join('')}
+      ${logos.map((l, i) => `<span style="font-size:14px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:${c.hell ? '#94a3b8' : 'rgba(255,255,255,.5)'};">${ed(`logos.${i}`, l)}</span>`).join('')}
     </div>
   </div>
 </section>` } })

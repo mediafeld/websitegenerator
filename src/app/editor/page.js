@@ -13,7 +13,7 @@ import { useWarenkorb } from '@/lib/warenkorb'
 import { KAUF, MIETE } from '@/lib/preise'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Brotkrumen } from '@/components/Brotkrumen'
-import { wertSetzen } from '@/lib/blockSchema'
+import { istPfad, pfadSetzen } from '@/lib/blockSchema'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -339,10 +339,10 @@ export default function EditorPage() {
       /* Bewegung bleibt an – nur wenn "Bewegung anhalten" aktiv ist, wird
          alles eingefroren. Zusätzlich halten Laufbänder beim Drüberfahren
          von selbst an, damit man sie treffen kann. */
-      /* Nur die Laufbänder stehen im Editor still – sie tragen anklickbaren
-         Text und wären sonst nicht zu treffen. Farbflecken, Verläufe und
-         alle übrigen Effekte laufen weiter, damit die Seite lebendig bleibt. */
-      .wg-laufband{animation-play-state:paused !important;}
+      /* Alle Effekte laufen normal weiter. Nur der ausgewählte Bereich hält
+         an, damit man bewegte Inhalte in Ruhe bearbeiten kann. */
+      [data-block].wg-aktiv .wg-laufband,
+      [data-block].wg-aktiv .wg-blob{animation-play-state:paused !important;}
       /* Mit dem Pause-Schalter friert alles ein. */
       body.wg-stopp *{animation-play-state:paused !important;}
       .wg-spur{scroll-behavior:auto !important;}
@@ -389,6 +389,9 @@ export default function EditorPage() {
 
       function selectEl(el){
         if(sel)sel.classList.remove('wg-on');
+        // Nur der Block des ausgewaehlten Elements haelt seine Bewegung an
+        document.querySelectorAll('[data-block].wg-aktiv').forEach(function(b){b.classList.remove('wg-aktiv')});
+        var sec=el.closest('[data-block]'); if(sec)sec.classList.add('wg-aktiv');
         sel=el;
         el.classList.add('wg-on');
         el.setAttribute('data-label',labelFor(el));
@@ -441,6 +444,25 @@ export default function EditorPage() {
       });
 
       // Text-Speichern bei Blur
+      // Bestandsaufnahme: alle sichtbaren Inhalte an den Editor melden.
+      // Nötig, weil Bausteine Standardwerte anzeigen, die noch nicht im
+      // gespeicherten Inhalt stehen. Ohne das gingen beim Ändern eines
+      // Eintrags alle übrigen verloren.
+      (function(){
+        var bloecke=document.querySelectorAll('[data-block]');
+        var inventar=[];
+        for(var b=0;b<bloecke.length;b++){
+          var felder={};
+          var els=bloecke[b].querySelectorAll('[data-edit]');
+          for(var i=0;i<els.length;i++){
+            var k=els[i].getAttribute('data-edit');
+            if(k)felder[k]=els[i].innerHTML;
+          }
+          inventar.push({block:b,felder:felder});
+        }
+        parent.postMessage({t:'inventar',inventar:inventar},'*');
+      })();
+
       document.querySelectorAll('[data-edit]').forEach(function(el){
         el.addEventListener('blur',function(){
           parent.postMessage({t:'edit',key:el.dataset.edit,val:el.innerHTML,block:bIdx(el)},'*');
@@ -539,6 +561,7 @@ export default function EditorPage() {
     function onMsg(e) {
       const d = e.data
       if (!d?.t) return
+      if (d.t === 'inventar') { inventarUebernehmen(d.inventar); return }
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
       if (d.t === 'imgClick') { setLastImgClick({ blockIdx: d.block, key: d.key }) }
       if (d.t === 'iconClick') setIconPicker({ blockIdx: d.block, key: d.key })
@@ -580,17 +603,49 @@ export default function EditorPage() {
   }
 
   // ── Content-Operationen ──
-  function updateContent(blockIdx, key, val, isImage = false) {
+  // Schreibt eine komplette Liste (alle Einträge auf einmal). Verhindert
+  // lückenhafte Listen, wenn der Baustein bisher nur Standardwerte zeigte.
+  // Schreibt alle in der Vorschau sichtbaren Werte in den gespeicherten Inhalt,
+  // sofern dort noch nichts steht. Danach ist jede Liste vollständig und
+  // einzelne Änderungen können nichts mehr überschreiben.
+  const inventarGesetzt = useRef(false)
+  useEffect(() => { inventarGesetzt.current = false }, [activePage])
+  function inventarUebernehmen(inventar) {
+    if (!inventar || inventarGesetzt.current) return
+    inventarGesetzt.current = true
+    const arr = [...(pages[activePage] || [])]
+    let geaendert = false
+    inventar.forEach(({ block, felder }) => {
+      if (!arr[block]) return
+      let content = { ...(arr[block].content || {}) }
+      Object.entries(felder || {}).forEach(([pfad, wert]) => {
+        if (!istPfad(pfad)) { if (content[pfad] === undefined) { content[pfad] = wert; geaendert = true } return }
+        const teile = pfad.split('.')
+        let ziel = content, fehlt = false
+        for (let i = 0; i < teile.length; i++) {
+          if (ziel === undefined || ziel === null) { fehlt = true; break }
+          ziel = ziel[teile[i]]
+        }
+        if (fehlt || ziel === undefined) { content = pfadSetzen(content, pfad, wert); geaendert = true }
+      })
+      arr[block] = { ...arr[block], content }
+    })
+    if (!geaendert) return
+    const next = { ...pages }; next[activePage] = arr
+    setPages(next)
+  }
+
+  function updateContent(blockIdx, key, val, isImage = false, neuAufbau = false) {
     const next = { ...pages }
     const arr = [...next[activePage]]
     const block = { ...arr[blockIdx] }
     const content = { ...block.content }
 
-    // Zentrale Listen-Zuordnung (deckt alle neuen Bausteine ab)
-    const zentral = wertSetzen(content, key, val)
-    if (zentral) {
-      block.content = zentral; arr[blockIdx] = block; next[activePage] = arr
-      applyPages(next, true, true); return
+    // Eindeutiger Pfad (z. B. "items.2.title") – kein Raten mehr nötig.
+    if (istPfad(key)) {
+      block.content = pfadSetzen(content, key, val)
+      arr[blockIdx] = block; next[activePage] = arr
+      applyPages(next, true, !!neuAufbau); return
     }
 
     if (key.startsWith('svc_icon_')) {
@@ -927,7 +982,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} onTextChange={(v) => { updateContent(selected.block, selected.key, v, true); setSelected(sx => sx ? { ...sx, text: v } : sx) }} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} onTextChange={(v) => { updateContent(selected.block, selected.key, v, false, true); setSelected(sx => sx ? { ...sx, text: v } : sx) }} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>

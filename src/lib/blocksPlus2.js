@@ -60,9 +60,9 @@ export const KICKSTART = {
       </div>
       <div class="wg-reveal re" style="display:grid;gap:14px;transition-delay:.1s;">
         ${items.map((it, i) => `<div class="wg-karte wg-karte-hover" style="display:flex;align-items:flex-start;gap:16px;padding:20px 22px;">
-          <div class="wg-iconchip" style="width:44px;height:44px;font-size:17px;flex-shrink:0;">${icon('kickIcon' + i, it.icon)}</div>
-          <div><h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:4px;">${ed('kickTitle' + i, it.title)}</h3>
-          <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed('kickText' + i, it.text)}</p></div>
+          <div class="wg-iconchip" style="width:44px;height:44px;font-size:17px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
+          <div><h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:4px;">${ed(`items.${i}.title`, it.title)}</h3>
+          <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, it.text)}</p></div>
         </div>`).join('')}
       </div>
     </div>
@@ -82,8 +82,8 @@ export const KICKSTART = {
   <div class="wg-wrap">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
       ${items.map((it, i) => `<div class="wg-reveal" style="display:flex;align-items:center;gap:13px;transition-delay:${i * 70}ms;">
-        <div style="width:42px;height:42px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon('kickIcon' + i, it.icon)}</div>
-        <span style="font-size:15px;font-weight:700;color:#0f172a;">${ed('kickTitle' + i, it.title)}</span>
+        <div style="width:42px;height:42px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
+        <span style="font-size:15px;font-weight:700;color:#0f172a;">${ed(`items.${i}.title`, it.title)}</span>
       </div>`).join('')}
     </div>
   </div>
@@ -115,10 +115,10 @@ export const STEPBOX = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:22px;position:relative;">
       ${items.map((it, i) => `<div class="wg-reveal" style="text-align:center;position:relative;transition-delay:${i * 90}ms;">
         ${i < items.length - 1 ? `<div class="wg-hide-mob" style="position:absolute;top:32px;left:calc(50% + 42px);right:calc(-50% + 42px);height:2px;background:repeating-linear-gradient(90deg,var(--p200) 0 7px,transparent 7px 14px);"></div>` : ''}
-        <div style="width:64px;height:64px;border-radius:50%;background:var(--p50);border:2px solid var(--p200);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;position:relative;z-index:1;">${icon('stepIcon' + i, it.icon)}</div>
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--p50);border:2px solid var(--p200);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;position:relative;z-index:1;">${icon(`items.${i}.icon`, it.icon)}</div>
         <div style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);margin-bottom:7px;">SCHRITT ${i + 1}</div>
-        <h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed('stepTitle' + i, it.title)}</h3>
-        <p style="font-size:14px;color:#64748b;line-height:1.65;max-width:250px;margin:0 auto;">${ed('stepText' + i, it.text)}</p>
+        <h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed(`items.${i}.title`, it.title)}</h3>
+        <p style="font-size:14px;color:#64748b;line-height:1.65;max-width:250px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -140,8 +140,8 @@ export const STEPBOX = {
       <div style="position:absolute;left:19px;top:8px;bottom:8px;width:2px;background:var(--p200);"></div>
       ${items.map((it, i) => `<div class="wg-reveal" style="position:relative;padding-bottom:${i === items.length - 1 ? 0 : '32px'};transition-delay:${i * 80}ms;">
         <div style="position:absolute;left:-52px;top:0;width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">${i + 1}</div>
-        <h3 class="wg-t3" style="font-size:20px;margin-bottom:6px;">${ed('stepTitle' + i, it.title)}</h3>
-        <p class="wg-lead" style="font-size:15px;">${ed('stepText' + i, it.text)}</p>
+        <h3 class="wg-t3" style="font-size:20px;margin-bottom:6px;">${ed(`items.${i}.title`, it.title)}</h3>
+        <p class="wg-lead" style="font-size:15px;">${ed(`items.${i}.text`, it.text)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -169,10 +169,10 @@ export const IMAGEBOX = {
     ${kopf(c, 'Bereiche', 'Was wir übernehmen')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px;">
       ${items.map((it, i) => `<div class="wg-reveal wg-karte wg-karte-hover" style="padding:0;overflow:hidden;transition-delay:${i * 80}ms;">
-        <div class="wg-bildbox" style="border-radius:0;height:210px;">${bild('ibImg' + i, it.image, '', i + 1)}</div>
+        <div class="wg-bildbox" style="border-radius:0;height:210px;">${bild(`items.${i}.image`, it.image, '', i + 1)}</div>
         <div style="padding:22px 24px;">
-          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('ibTitle' + i, it.title)}</h3>
-          <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed('ibText' + i, it.text)}</p>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
+          <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</p>
         </div>
       </div>`).join('')}
     </div>
@@ -192,11 +192,11 @@ export const IMAGEBOX = {
     ${kopf(c, 'Leistungen', 'Unsere Schwerpunkte')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
       ${items.map((it, i) => `<div class="wg-reveal wg-bildbox" style="height:330px;position:relative;transition-delay:${i * 80}ms;">
-        ${bild('ibImg' + i, it.image, '', i + 2)}
+        ${bild(`items.${i}.image`, it.image, '', i + 2)}
         <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,32,.05),rgba(10,20,32,.82));"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;padding:24px;">
-          <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:5px;">${ed('ibTitle' + i, it.title)}</h3>
-          <p style="font-size:14px;color:rgba(255,255,255,.78);">${ed('ibText' + i, it.text)}</p>
+          <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:5px;">${ed(`items.${i}.title`, it.title)}</h3>
+          <p style="font-size:14px;color:rgba(255,255,255,.78);">${ed(`items.${i}.text`, it.text)}</p>
         </div>
       </div>`).join('')}
     </div>
@@ -224,9 +224,9 @@ export const ICONBOX = {
     ${kopf(c, 'Vorteile', 'Warum Kunden uns wählen')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:26px;">
       ${items.map((it, i) => `<div class="wg-reveal" style="text-align:center;transition-delay:${i * 60}ms;">
-        <div style="width:58px;height:58px;border-radius:16px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px;">${icon('icIcon' + i, it.icon)}</div>
-        <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed('icTitle' + i, it.title)}</h3>
-        <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('icText' + i, it.text)}</p>
+        <div style="width:58px;height:58px;border-radius:16px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px;">${icon(`items.${i}.icon`, it.icon)}</div>
+        <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed(`items.${i}.title`, it.title)}</h3>
+        <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -246,9 +246,9 @@ export const ICONBOX = {
     ${kopf(c, 'Unsere Stärken', 'Darauf können Sie zählen', false)}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px;">
       ${items.map((it, i) => `<div class="wg-reveal" style="display:flex;gap:17px;align-items:flex-start;transition-delay:${i * 70}ms;">
-        <div class="wg-iconchip" style="flex-shrink:0;">${icon('icIcon' + i, it.icon)}</div>
-        <div><h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed('icTitle' + i, it.title)}</h3>
-        <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed('icText' + i, it.text)}</p></div>
+        <div class="wg-iconchip" style="flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
+        <div><h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed(`items.${i}.title`, it.title)}</h3>
+        <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</p></div>
       </div>`).join('')}
     </div>
   </div>
@@ -313,7 +313,7 @@ export const COUNTER = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;text-align:center;">
       ${items.map((it, i) => `<div class="wg-reveal" style="transition-delay:${i * 80}ms;">
         <div class="wg-stat-num" style="font-size:clamp(36px,4.6vw,54px);"><span data-zahl="${esc(it.num)}">0</span>${esc(it.suffix || '')}</div>
-        <div class="wg-stat-lab" style="font-size:14px;margin-top:7px;">${ed('cLabel' + i, it.label)}</div>
+        <div class="wg-stat-lab" style="font-size:14px;margin-top:7px;">${ed(`items.${i}.label`, it.label)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -335,7 +335,7 @@ export const COUNTER = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:26px;text-align:center;">
       ${items.map((it, i) => `<div class="wg-reveal" style="transition-delay:${i * 80}ms;">
         <div style="font-size:clamp(38px,5vw,62px);font-weight:200;color:#fff;letter-spacing:-.03em;line-height:1;"><span data-zahl="${esc(it.num)}">0</span>${esc(it.suffix || '')}</div>
-        <div style="font-size:13.5px;color:rgba(255,255,255,.62);margin-top:9px;">${ed('cLabel' + i, it.label)}</div>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.62);margin-top:9px;">${ed(`items.${i}.label`, it.label)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -386,7 +386,7 @@ export const LISTE = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 30px;">
       ${items.map((it, i) => `<div class="wg-reveal" style="display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid rgba(15,23,42,.07);transition-delay:${i * 40}ms;">
         <span style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;"><i class="fa-solid fa-check"></i></span>
-        <span style="font-size:15.5px;color:#334155;font-weight:500;">${ed('listItem' + i, it)}</span>
+        <span style="font-size:15.5px;color:#334155;font-weight:500;">${ed(`items.${i}`, it)}</span>
       </div>`).join('')}
     </div>
   </div>
@@ -404,7 +404,7 @@ export const LISTE = {
     <div>
       ${items.map((it, i) => `<div class="wg-reveal" style="display:flex;align-items:center;gap:20px;padding:18px 0;border-bottom:1px solid rgba(15,23,42,.08);transition-delay:${i * 60}ms;">
         <span style="font-size:26px;font-weight:200;color:var(--accent);min-width:44px;">${String(i + 1).padStart(2, '0')}</span>
-        <span style="font-size:17px;color:#0f172a;font-weight:500;">${ed('listItem' + i, it)}</span>
+        <span style="font-size:17px;color:#0f172a;font-weight:500;">${ed(`items.${i}`, it)}</span>
       </div>`).join('')}
     </div>
   </div>
@@ -439,14 +439,14 @@ export const PRICELIST = {
   <div class="wg-wrap" style="max-width:880px;">
     ${kopf(c, 'Preise', 'Was kostet was?')}
     ${gruppen.map((g, gi) => `<div class="wg-reveal" style="margin-bottom:34px;transition-delay:${gi * 90}ms;">
-      <h3 style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">${ed('plGroup' + gi, g.name)}</h3>
+      <h3 style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">${ed(`gruppen.${gi}.name`, g.name)}</h3>
       ${(g.items || []).map((it, i) => `<div style="display:flex;align-items:baseline;gap:14px;padding:14px 0;border-bottom:1px dashed rgba(15,23,42,.14);">
         <div style="flex-shrink:0;">
-          <div style="font-size:16.5px;font-weight:700;color:#0f172a;">${ed('plName' + gi + '_' + i, it.name)}</div>
-          <div style="font-size:13.5px;color:#94a3b8;">${ed('plDesc' + gi + '_' + i, it.desc)}</div>
+          <div style="font-size:16.5px;font-weight:700;color:#0f172a;">${ed(`gruppen.${gi}.items.${i}.name`, it.name)}</div>
+          <div style="font-size:13.5px;color:#94a3b8;">${ed(`gruppen.${gi}.items.${i}.desc`, it.desc)}</div>
         </div>
         <div style="flex:1;border-bottom:1px dotted rgba(15,23,42,.18);transform:translateY(-4px);"></div>
-        <div style="font-size:17px;font-weight:800;color:var(--accent);white-space:nowrap;">${ed('plPreis' + gi + '_' + i, it.preis)}</div>
+        <div style="font-size:17px;font-weight:800;color:var(--accent);white-space:nowrap;">${ed(`gruppen.${gi}.items.${i}.preis`, it.preis)}</div>
       </div>`).join('')}
     </div>`).join('')}
     <p style="font-size:12.5px;color:#94a3b8;text-align:center;">${txt('hinweis', c.hinweis, 'Alle Preise inkl. gesetzlicher MwSt. Endpreis nach Aufmaß vor Ort.', 'span')}</p>
@@ -477,17 +477,17 @@ export const PRICINGTABLE = {
           ? 'background:linear-gradient(160deg,var(--p900),#0d1b2a);color:#fff;box-shadow:0 30px 64px rgba(15,23,42,.24);'
           : 'background:#fff;border:1px solid rgba(15,23,42,.09);'}">
         ${p.beliebt ? `<div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;padding:6px 16px;border-radius:99px;white-space:nowrap;">BELIEBT</div>` : ''}
-        <div style="font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${p.beliebt ? 'var(--accent)' : 'var(--p600)'};margin-bottom:12px;">${ed('ptName' + i, p.name)}</div>
+        <div style="font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${p.beliebt ? 'var(--accent)' : 'var(--p600)'};margin-bottom:12px;">${ed(`pakete.${i}.name`, p.name)}</div>
         <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
-          <span style="font-size:clamp(38px,4.4vw,52px);font-weight:200;letter-spacing:-.03em;color:${p.beliebt ? '#fff' : '#0f172a'};">${ed('ptPreis' + i, p.preis)}</span>
-          <span style="font-size:14px;color:${p.beliebt ? 'rgba(255,255,255,.6)' : '#94a3b8'};">${ed('ptEinheit' + i, p.einheit)}</span>
+          <span style="font-size:clamp(38px,4.4vw,52px);font-weight:200;letter-spacing:-.03em;color:${p.beliebt ? '#fff' : '#0f172a'};">${ed(`pakete.${i}.preis`, p.preis)}</span>
+          <span style="font-size:14px;color:${p.beliebt ? 'rgba(255,255,255,.6)' : '#94a3b8'};">${ed(`pakete.${i}.einheit`, p.einheit)}</span>
         </div>
         <div style="height:1px;background:${p.beliebt ? 'rgba(255,255,255,.16)' : 'rgba(15,23,42,.09)'};margin:18px 0 20px;"></div>
         <ul style="list-style:none;padding:0;margin:0 0 26px;display:grid;gap:11px;flex:1;">
           ${(p.punkte || []).map((pt, j) => `<li style="display:flex;align-items:flex-start;gap:11px;font-size:14.5px;color:${p.beliebt ? 'rgba(255,255,255,.82)' : '#475569'};">
-            <i class="fa-solid fa-check" style="color:var(--accent);font-size:11px;margin-top:5px;flex-shrink:0;"></i>${ed('ptPunkt' + i + '_' + j, pt)}</li>`).join('')}
+            <i class="fa-solid fa-check" style="color:var(--accent);font-size:11px;margin-top:5px;flex-shrink:0;"></i>${ed(`pakete.${i}.punkte.${j}`, pt)}</li>`).join('')}
         </ul>
-        <a href="kontakt.html" class="${p.beliebt ? 'wg-btn' : 'wg-btn-leer'}" style="justify-content:center;width:100%;">${ed('ptCta' + i, p.cta)}</a>
+        <a href="kontakt.html" class="${p.beliebt ? 'wg-btn' : 'wg-btn-leer'}" style="justify-content:center;width:100%;">${ed(`pakete.${i}.cta`, p.cta)}</a>
       </div>`).join('')}
     </div>
   </div>
@@ -517,11 +517,11 @@ export const TEAMGRID = {
     ${kopf(c, 'Team', 'Die Menschen dahinter')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
       ${items.map((m, i) => `<div class="wg-reveal wg-karte wg-karte-hover" style="padding:0;overflow:hidden;text-align:center;transition-delay:${i * 80}ms;">
-        <div class="wg-bildbox" style="border-radius:0;height:280px;">${bild('tmImg' + i, m.image, '', i + 1)}</div>
+        <div class="wg-bildbox" style="border-radius:0;height:280px;">${bild(`items.${i}.image`, m.image, '', i + 1)}</div>
         <div style="padding:22px;">
-          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed('tmName' + i, m.name)}</h3>
-          <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:9px;">${ed('tmRolle' + i, m.rolle)}</div>
-          <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed('tmText' + i, m.text)}</p>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed(`items.${i}.name`, m.name)}</h3>
+          <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:9px;">${ed(`items.${i}.rolle`, m.rolle)}</div>
+          <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, m.text)}</p>
         </div>
       </div>`).join('')}
     </div>
@@ -542,9 +542,9 @@ export const TEAMGRID = {
     ${kopf(c, 'Team', 'Ihre Ansprechpartner')}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:28px;text-align:center;">
       ${items.map((m, i) => `<div class="wg-reveal" style="transition-delay:${i * 70}ms;">
-        <div class="wg-bildbox" style="width:150px;height:150px;border-radius:50%;margin:0 auto 16px;">${bild('tmImg' + i, m.image, '', i + 2)}</div>
-        <h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed('tmName' + i, m.name)}</h3>
-        <div style="font-size:13px;color:#94a3b8;">${ed('tmRolle' + i, m.rolle)}</div>
+        <div class="wg-bildbox" style="width:150px;height:150px;border-radius:50%;margin:0 auto 16px;">${bild(`items.${i}.image`, m.image, '', i + 2)}</div>
+        <h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed(`items.${i}.name`, m.name)}</h3>
+        <div style="font-size:13px;color:#94a3b8;">${ed(`items.${i}.rolle`, m.rolle)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -636,8 +636,8 @@ export const OEFFNUNG = {
       </div>
       <div class="wg-reveal re wg-karte" style="padding:8px 26px;transition-delay:.1s;">
         ${tage.map((t, i) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0;${i < tage.length - 1 ? 'border-bottom:1px solid rgba(15,23,42,.08);' : ''}">
-          <span style="font-size:15px;font-weight:600;color:#0f172a;">${ed('oTag' + i, t.tag)}</span>
-          <span style="font-size:14.5px;font-weight:700;color:${t.zu ? '#94a3b8' : 'var(--accent)'};">${ed('oZeit' + i, t.zeit)}</span>
+          <span style="font-size:15px;font-weight:600;color:#0f172a;">${ed(`tage.${i}.tag`, t.tag)}</span>
+          <span style="font-size:14.5px;font-weight:700;color:${t.zu ? '#94a3b8' : 'var(--accent)'};">${ed(`tage.${i}.zeit`, t.zeit)}</span>
         </div>`).join('')}
       </div>
     </div>
@@ -737,10 +737,10 @@ export const FAQ_PLUS = {
     <div style="display:grid;gap:11px;">
       ${items.map((it, i) => `<details class="wg-reveal wg-karte" style="padding:0;transition-delay:${i * 60}ms;">
         <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:16px;padding:20px 24px;font-size:16.5px;font-weight:700;color:#0f172a;">
-          <span style="flex:1;">${ed('faqQ' + i, it.q)}</span>
+          <span style="flex:1;">${ed(`items.${i}.q`, it.q)}</span>
           <span class="wg-faq-plus" style="width:30px;height:30px;border-radius:50%;background:var(--p50);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:transform .25s;"><i class="fa-solid fa-plus"></i></span>
         </summary>
-        <div style="padding:0 24px 22px;font-size:15px;color:#64748b;line-height:1.75;">${ed('faqA' + i, it.a)}</div>
+        <div style="padding:0 24px 22px;font-size:15px;color:#64748b;line-height:1.75;">${ed(`items.${i}.a`, it.a)}</div>
       </details>`).join('')}
     </div>
   </div>
@@ -764,8 +764,8 @@ export const FAQ_PLUS = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px 40px;">
       ${items.map((it, i) => `<div class="wg-reveal" style="transition-delay:${i * 60}ms;">
         <h3 style="display:flex;gap:11px;font-size:17px;font-weight:700;color:#0f172a;margin-bottom:9px;">
-          <i class="fa-solid fa-circle-question" style="color:var(--accent);font-size:15px;margin-top:3px;"></i>${ed('faqQ' + i, it.q)}</h3>
-        <p style="font-size:14.5px;color:#64748b;line-height:1.72;padding-left:26px;">${ed('faqA' + i, it.a)}</p>
+          <i class="fa-solid fa-circle-question" style="color:var(--accent);font-size:15px;margin-top:3px;"></i>${ed(`items.${i}.q`, it.q)}</h3>
+        <p style="font-size:14.5px;color:#64748b;line-height:1.72;padding-left:26px;">${ed(`items.${i}.a`, it.a)}</p>
       </div>`).join('')}
     </div>
   </div>
@@ -845,11 +845,11 @@ export const SLIDER = {
     <div class="wg-spur" data-spur>
       ${items.map((it, i) => `<div class="wg-karte" style="width:min(400px,84vw);padding:28px;">
         <div style="color:var(--accent);font-size:14px;margin-bottom:13px;">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</div>
-        <p style="font-size:16.5px;line-height:1.68;color:#0f172a;font-weight:300;margin-bottom:20px;">„${ed('slText' + i, it.text)}"</p>
+        <p style="font-size:16.5px;line-height:1.68;color:#0f172a;font-weight:300;margin-bottom:20px;">„${ed(`items.${i}.text`, it.text)}"</p>
         <div style="display:flex;align-items:center;gap:12px;border-top:1px solid rgba(15,23,42,.08);padding-top:16px;">
           <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--p500),var(--p700));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;">${esc((it.name || 'K')[0])}</div>
-          <div><div style="font-size:14px;font-weight:700;color:#0f172a;">${ed('slName' + i, it.name)}</div>
-          <div style="font-size:12px;color:#94a3b8;">${ed('slRolle' + i, it.rolle)}</div></div>
+          <div><div style="font-size:14px;font-weight:700;color:#0f172a;">${ed(`items.${i}.name`, it.name)}</div>
+          <div style="font-size:12px;color:#94a3b8;">${ed(`items.${i}.rolle`, it.rolle)}</div></div>
         </div>
       </div>`).join('')}
     </div>
@@ -878,7 +878,7 @@ export const SLIDER = {
       </div>
     </div>
     <div class="wg-spur" data-spur>
-      ${imgs.map((s, i) => `<div class="wg-bildbox" style="width:min(480px,86vw);height:340px;">${bild('slImg' + i, s, '', i + 1)}</div>`).join('')}
+      ${imgs.map((s, i) => `<div class="wg-bildbox" style="width:min(480px,86vw);height:340px;">${bild(`images.${i}`, s, '', i + 1)}</div>`).join('')}
     </div>
     <div class="wg-punkte">${imgs.map((_, i) => `<button class="wg-punkt" data-punkt style="${i === 0 ? 'opacity:1;width:26px;' : ''}" aria-label="Zu ${i + 1}"></button>`).join('')}</div>
   </div>
@@ -898,7 +898,7 @@ export const SLIDER = {
       ${logos.map((l, i) => `<div style="width:190px;height:82px;background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:14px;display:flex;align-items:center;justify-content:center;">
         ${(typeof l === 'string' && l.startsWith('data:')) || (typeof l === 'string' && l.startsWith('http'))
           ? `<img data-img="logo${i}" src="${esc(l)}" alt="" style="max-width:70%;max-height:56%;object-fit:contain;">`
-          : `<span style="font-size:14px;font-weight:800;letter-spacing:.05em;color:#94a3b8;">${ed('logoText' + i, l)}</span>`}
+          : `<span style="font-size:14px;font-weight:800;letter-spacing:.05em;color:#94a3b8;">${ed(`logos.${i}`, l)}</span>`}
       </div>`).join('')}
     </div>
   </div>
@@ -921,11 +921,11 @@ export const SLIDER = {
       ${f.image ? `<img src="${esc(f.image)}" data-img="folieImg${i}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.42;">` : `<div class="wg-mesh"><span class="wg-blob wg-blob-a"></span><span class="wg-blob wg-blob-b"></span></div>`}
       <div class="wg-wrap" style="position:relative;z-index:1;">
         <div style="max-width:720px;">
-          <span class="wg-chip glas">${ed('folieTag' + i, f.tag)}</span>
-          <h2 class="wg-t1" style="color:#fff;margin-top:20px;">${ed('folieHead' + i, f.headline)}</h2>
+          <span class="wg-chip glas">${ed(`folien.${i}.tag`, f.tag)}</span>
+          <h2 class="wg-t1" style="color:#fff;margin-top:20px;">${ed(`folien.${i}.headline`, f.headline)}</h2>
           <span class="wg-strichlinie"></span>
-          <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:520px;margin-bottom:30px;">${ed('folieText' + i, f.text)}</p>
-          <a href="kontakt.html" class="wg-btn">${ed('folieCta' + i, f.cta)}</a>
+          <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:520px;margin-bottom:30px;">${ed(`folien.${i}.text`, f.text)}</p>
+          <a href="kontakt.html" class="wg-btn">${ed(`folien.${i}.cta`, f.cta)}</a>
         </div>
       </div>
     </div>`).join('')}
