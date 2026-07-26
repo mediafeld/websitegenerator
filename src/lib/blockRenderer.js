@@ -81,12 +81,50 @@ function applyParallaxAttr(html, c) {
   return html.replace(/(<section\b)/i, `$1 data-parallax="${sp}"`)
 }
 
+// ── Freie Bearbeitung für JEDEN Baustein ───────────────────────────────────
+// Jeder Block kann zusätzlich mitbringen:
+//   content.customHTML → ersetzt den Baustein komplett durch eigenen Code
+//   content.customCSS  → eigenes CSS, automatisch NUR auf diesen Block begrenzt
+//   content.customJS   → eigenes JavaScript für diesen Block
+// Damit ist jeder Baustein frei änderbar – auch die alten.
+function mitEigenemCode(html, c, index) {
+  if (!c) return html
+  const id = `wgb${index}`
+  let out = html
+
+  if (c.customHTML && String(c.customHTML).trim()) {
+    out = `<section data-block="eigen" data-eigen="1">${c.customHTML}</section>`
+  }
+
+  const hatCSS = c.customCSS && String(c.customCSS).trim()
+  const hatJS = c.customJS && String(c.customJS).trim()
+  if (!hatCSS && !hatJS) return out
+
+  // Kennung ans äußerste Element hängen, damit CSS/JS zielen können
+  out = out.replace(/^(\s*<(?:section|nav|footer|div|header)\b)/i, `$1 id="${id}"`)
+
+  let zusatz = ''
+  if (hatCSS) {
+    // "&" steht für den Baustein selbst. Ohne "&" wird jede Regel automatisch
+    // auf diesen Baustein begrenzt, damit eigenes CSS nie die ganze Seite trifft.
+    const css = String(c.customCSS)
+    const begrenzt = css.includes('&')
+      ? css.replace(/&/g, `#${id}`)
+      : css.replace(/(^|\})\s*([^{}@]+)\s*\{/g, (m, vor, sel) => `${vor} #${id} ${sel.trim()} {`)
+    zusatz += `\n<style data-eigen-css="${id}">${begrenzt}</style>`
+  }
+  if (hatJS) {
+    zusatz += `\n<script data-eigen-js="${id}">(function(){var block=document.getElementById('${id}');try{${c.customJS}}catch(e){console.warn('Eigener Code:',e)}})();</script>`
+  }
+  return out + zusatz
+}
+
 // Rendere eine komplette Seite aus Block-Array
 export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false }) {
   const fontParam = font.replace(/ /g, '+')
   const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@200;300;400;500;600;700;800;900` : ''
   const blocksHtml = (blocks || [])
-    .map(b => applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content))
+    .map((b, i) => mitEigenemCode(applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content), b.content, i))
     .join('\n')
 
   return `<!DOCTYPE html>

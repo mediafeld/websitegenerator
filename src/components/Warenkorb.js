@@ -137,17 +137,16 @@ export const WARENKORB_CSS = `
   display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,.25);animation:wkpanelein .25s cubic-bezier(.2,.7,.3,1)}
 /* Dauerhaft sichtbarer Warenkorb-Reiter — am rechten Rand, MITTIG.
    Bewusst nicht unten rechts: dort sitzt der Chat-Knopf. */
-.wk-fab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147482000;
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  background:#1B93D2;color:#fff;border:none;cursor:pointer;border-radius:14px 0 0 14px;padding:14px 11px 13px;
-  box-shadow:-6px 8px 26px rgba(10,24,36,.28);font-family:inherit;font-weight:800;font-size:10.5px;
-  letter-spacing:.04em;text-transform:uppercase;transition:padding .18s,box-shadow .18s}
-.wk-fab:hover{padding-right:16px;box-shadow:-8px 10px 32px rgba(10,24,36,.36)}
-.wk-fab-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:20px}
-.wk-fab-zahl{position:absolute;top:-8px;right:-10px;background:#FF5722;color:#fff;font-size:10.5px;font-weight:800;
-  min-width:18px;height:18px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
-.wk-fab-txt{writing-mode:vertical-rl;text-orientation:mixed}
-@media(max-width:600px){.wk-fab-txt{display:none}.wk-fab{padding:12px 9px}}
+.wk-fab{position:fixed;right:18px;top:12px;z-index:2147482000;
+  display:inline-flex;align-items:center;gap:10px;
+  background:#1B93D2;color:#fff;border:none;cursor:pointer;border-radius:99px;padding:9px 17px 9px 13px;
+  box-shadow:0 8px 22px rgba(10,24,36,.3);font-family:inherit;font-weight:800;font-size:12.5px;
+  letter-spacing:.03em;transition:transform .18s,box-shadow .18s}
+.wk-fab:hover{transform:translateY(1px);box-shadow:0 12px 28px rgba(10,24,36,.4)}
+.wk-fab-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
+.wk-fab-zahl{position:absolute;top:-8px;right:-9px;background:#FF5722;color:#fff;font-size:10px;font-weight:800;
+  min-width:17px;height:17px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+@media(max-width:600px){.wk-fab-txt{display:none}.wk-fab{padding:10px;right:12px;top:9px}}
 @keyframes wkpanelein{from{transform:translateX(100%)}to{transform:translateX(0)}}
 .wk-kopf{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid ${CI.linie};
   font-size:16px;font-weight:700;color:${CI.text}}

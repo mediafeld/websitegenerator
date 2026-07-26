@@ -407,8 +407,21 @@ export default function EditorPage() {
         el.addEventListener('click',function(e){
           e.stopPropagation();e.preventDefault();
           selectEl(this);
-          // Text: editierbar machen
-          if(this.hasAttribute('data-edit')){this.contentEditable=true;}
+          // Text: editierbar machen UND den Cursor wirklich hineinsetzen.
+          // Vorher wurde das Element zwar auf "bearbeitbar" gesetzt, bekam aber
+          // nie den Fokus – deshalb liess sich nichts tippen.
+          if(this.hasAttribute('data-edit')){
+            var elx=this;
+            elx.contentEditable=true;
+            elx.spellcheck=false;
+            setTimeout(function(){
+              elx.focus();
+              try{
+                var r=document.createRange();r.selectNodeContents(elx);r.collapse(false);
+                var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+              }catch(err){}
+            },0);
+          }
           else if(this.hasAttribute('data-icon')){parent.postMessage({t:'iconClick',key:this.getAttribute('data-icon'),block:bIdx(this)},'*');}
           else if(this.hasAttribute('data-img')){parent.postMessage({t:'imgClick',key:this.getAttribute('data-img'),block:bIdx(this)},'*');}
         });
@@ -1223,6 +1236,18 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick
 
       {selected.isSection ? (
         <>
+          <Section title="Eigener Code (HTML / CSS / JS)">
+            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.55, marginBottom: 9 }}>
+              Volle Freiheit für diesen Bereich. CSS wirkt automatisch nur hier – mit <code style={{ background: '#f1f5f9', padding: '1px 4px', borderRadius: 4 }}>&amp;</code> sprichst du den Bereich selbst an.
+            </div>
+            <CodeFeld label="HTML (ersetzt den Bereich)" wert={sectionContent?.customHTML || ''} sprache="html" primary={primary}
+              onSpeichern={v => onSectionField({ customHTML: v })} />
+            <CodeFeld label="CSS" wert={sectionContent?.customCSS || ''} sprache="css" primary={primary}
+              onSpeichern={v => onSectionField({ customCSS: v })} />
+            <CodeFeld label="JavaScript" wert={sectionContent?.customJS || ''} sprache="js" primary={primary}
+              onSpeichern={v => onSectionField({ customJS: v })} />
+          </Section>
+
           <Section title="Aktueller Hintergrund">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 46, height: 32, borderRadius: 7, flexShrink: 0, boxShadow: '0 0 0 1px #e5e5e5', background: sectionContent?.bgImg ? `center/cover url(${sectionContent.bgImg})` : (sectionContent?.bgGradient || sectionContent?.bgColor || '#f1f5f9') }} />
@@ -1508,4 +1533,38 @@ function buildDefaultContent(type) {
     custom: { html: '' },
   }
   return d[type] || {}
+}
+
+
+// Eingabefeld für eigenen Code (HTML/CSS/JS) – speichert erst auf Klick,
+// damit nicht bei jedem Tastendruck neu gerendert wird.
+function CodeFeld({ label, wert, sprache, primary, onSpeichern }) {
+  const [text, setText] = useState(wert || '')
+  const [offen, setOffen] = useState(false)
+  const [gespeichert, setGespeichert] = useState(false)
+  useEffect(() => { setText(wert || '') }, [wert])
+  const farbe = { html: '#e11d48', css: '#2563eb', js: '#ca8a04' }[sprache] || '#475569'
+  return (
+    <div style={{ marginBottom: 10, border: '1px solid #e5e5e5', borderRadius: 9, overflow: 'hidden' }}>
+      <button onClick={() => setOffen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', background: '#fafbfc', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: farbe, flexShrink: 0 }} />
+        <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: '#334155' }}>{label}</span>
+        {!!(wert || '').trim() && <span style={{ fontSize: 9.5, fontWeight: 800, background: primary, color: '#fff', padding: '2px 6px', borderRadius: 99 }}>AKTIV</span>}
+        <i className={`fa-solid fa-chevron-${offen ? 'up' : 'down'}`} style={{ fontSize: 10, color: '#94a3b8' }} />
+      </button>
+      {offen && (
+        <div style={{ padding: 10, borderTop: '1px solid #eef2f6' }}>
+          <textarea value={text} onChange={e => { setText(e.target.value); setGespeichert(false) }} rows={8} spellCheck={false}
+            placeholder={sprache === 'html' ? '<div>Eigenes HTML …</div>' : sprache === 'css' ? '& { background: #111; }\n& h2 { color: gold; }' : "block.querySelector('h2').style.opacity = .9"}
+            style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: 11.5, fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', lineHeight: 1.55, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+          <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
+            <button onClick={() => { onSpeichern(text); setGespeichert(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {gespeichert ? '✓ Übernommen' : 'Übernehmen'}
+            </button>
+            {!!text && <button onClick={() => { setText(''); onSpeichern('') }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 7, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}>Leeren</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
