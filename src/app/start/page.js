@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { KAUF, MIETE, eur } from '@/lib/preise'
+import { KAUF, MIETE, eur, STANDARD_TLDS } from '@/lib/preise'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
@@ -16,6 +16,10 @@ const GROESSE_MAP = { start: 'onepager', plus: 'multipage', pro: 'business', one
 const MIETE_IDS = new Set(MIETE.map(m => m.id))
 const PAKET_ICON = { onepager: 'fa-file', multipage: 'fa-folder-open', business: 'fa-building' }
 const MAX_SEITEN = { onepager: 1, multipage: 5, business: 8 }
+// Miet-Stufen tragen andere Namen – der Umfang ist identisch. Damit klar ist,
+// dass "Start" ein Onepager ist, zeigen wir den Umfang immer mit an.
+const UMFANG_NAME = { onepager: 'Onepager', multipage: 'Multipage', business: 'Business' }
+const UMFANG_KURZ = { onepager: '1 Seite', multipage: 'bis 5 Unterseiten', business: 'bis 8 Unterseiten' }
 const DEFAULT_MENU = () => ([
   { id: 'p_start', label: 'Startseite', fix: true, children: [] },
   { id: 'p_leist', label: 'Leistungen', children: [] },
@@ -140,7 +144,7 @@ function WizardInnen() {
   const router = useRouter()
   const params = useSearchParams()
   const [step, setStep] = useState(1)
-  const { setzePaket } = useWarenkorb()
+  const { setzePaket, setOffen } = useWarenkorb()
   const [fd, setFd] = useState({
     paket: 'multipage', preis: 149, zahlungsart: 'kaufen',
     branche: '', brancheCustom: '',
@@ -191,8 +195,10 @@ function WizardInnen() {
   const upd = (k, v) => setFd(prev => ({ ...prev, [k]: v }))
   const updDetail = (k, v) => setFd(prev => ({ ...prev, brancheDetails: { ...prev.brancheDetails, [k]: v } }))
 
-  // Paket wählen (Kauf ODER Miete) → in Wizard-Daten UND direkt in den Warenkorb
-  function waehlePaket(zahlungsart, id) {
+  // Paket wählen (Kauf ODER Miete) → in Wizard-Daten UND direkt in den Warenkorb.
+  // oeffnen=true klappt den Warenkorb auf, damit jede Preisänderung sofort
+  // sichtbar ist (keine bösen Überraschungen).
+  function waehlePaket(zahlungsart, id, oeffnen = false) {
     const size = GROESSE_MAP[id] || 'multipage'
     const quelle = zahlungsart === 'mieten' ? MIETE : KAUF
     const p = quelle.find(x => x.id === id) || quelle.find(x => GROESSE_MAP[x.id] === size)
@@ -209,11 +215,12 @@ function WizardInnen() {
     })
     setzePaket({
       id: 'paket-' + p.id,
-      titel: `Website ${zahlungsart === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`,
+      titel: `Website ${zahlungsart === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}${p.name !== UMFANG_NAME[size] ? ` (${UMFANG_NAME[size]})` : ''}`,
       unter: p.kurz,
       preis: p.preis,
       art: zahlungsart === 'mieten' ? 'monatlich' : 'einmalig',
     })
+    if (oeffnen) setOffen(true)
   }
 
   function handleLogoUpload(e) {
@@ -376,7 +383,8 @@ function WizardInnen() {
                     <div key={p.id} onClick={() => waehlePaket(fd.zahlungsart, p.id)} style={{ border: `2px solid ${aktiv ? primary : '#e5e5e5'}`, borderRadius: 16, padding: 24, cursor: 'pointer', background: aktiv ? primary + '0a' : '#fff', position: 'relative', transition: 'all 0.15s' }}>
                       {p.beliebt && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-star" style={{ fontSize: 9 }} aria-hidden="true" />Beliebteste</div>}
                       <div style={{ width: 42, height: 42, borderRadius: 12, background: primary + '14', color: primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, marginBottom: 12 }}><i className={`fa-solid ${PAKET_ICON[size]}`} aria-hidden="true" /></div>
-                      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>{p.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 2 }}>{p.name}{miete && <span style={{ fontWeight: 500, fontSize: 13, color: '#64748b' }}> · {UMFANG_NAME[size]}</span>}</div>
+                      <div style={{ fontSize: 11.5, color: '#94a3b8', marginBottom: 6 }}>{UMFANG_KURZ[size]}</div>
                       <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 2 }}>{eur(p.preis)} <span style={{ fontSize: 14, fontWeight: 400, color: '#888' }}>€{miete ? ' /Monat' : ''}</span></div>
                       <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>inkl. MwSt. · {miete ? 'monatlich' : 'einmalig'}</div>
                       <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
@@ -464,9 +472,8 @@ function WizardInnen() {
               </Panel>
 
               <Panel>
-                <SectionTitle sub="Wird für Impressum, Kontakt und später für die Veröffentlichung verwendet">Wunsch-Domain</SectionTitle>
-                <Field label="Domain" value={fd.domain || ''} onChange={v => upd('domain', v)} placeholder="z. B. mueller-sanitaer.de" primary={primary}
-                  hint="Auf der Startseite geprüft und übernommen. Du kannst sie hier ändern oder später festlegen." />
+                <SectionTitle sub={fd.zahlungsart === 'mieten' ? 'Im Mietpaket ist eine Domain enthalten – hier prüfen und sichern.' : 'Wird für Impressum, Kontakt und die Veröffentlichung verwendet.'}>Wunsch-Domain</SectionTitle>
+                <DomainCheck fd={fd} primary={primary} upd={upd} />
               </Panel>
 
               <Panel>
@@ -673,19 +680,23 @@ function WizardInnen() {
               <StepHead n={8} title="Seiten & Menü" sub={fd.paket === 'onepager' ? 'Dein Onepager läuft auf EINER Seite – kein Menü nötig.' : `Dein ${fd.paket === 'business' ? 'Business' : 'Multipage'}-Paket erlaubt bis zu ${MAX_SEITEN[fd.paket]} Unterseiten.`} />
               <Panel>
                 {fd.paket === 'onepager' ? (
-                  <div style={{ textAlign: 'center', padding: '10px 8px' }}>
-                    <div style={{ width: 54, height: 54, borderRadius: 14, background: primary + '14', color: primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 14 }}><i className="fa-solid fa-file" aria-hidden="true" /></div>
-                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#0f172a' }}>Alles auf einer Seite</div>
-                    <p style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.6, maxWidth: 460, margin: '0 auto 18px' }}>
-                      Beim Onepager werden Leistungen, Über uns und Kontakt als Abschnitte <b>auf der Startseite</b> angelegt – genau das, was du gebucht hast.
-                    </p>
-                    <button onClick={() => waehlePaket(fd.zahlungsart, fd.zahlungsart === 'mieten' ? 'plus' : 'multipage')} style={{ background: '#fff', border: `2px solid ${primary}`, color: primary, padding: '11px 22px', borderRadius: 99, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <i className="fa-solid fa-arrow-up" aria-hidden="true" />Mehr Seiten? Auf Multipage upgraden
-                    </button>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>Aktualisiert automatisch deinen Warenkorb.</div>
+                  <div style={{ padding: '4px 2px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 22 }}>
+                      <div style={{ width: 54, height: 54, borderRadius: 14, background: primary + '14', color: primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 14 }}><i className="fa-solid fa-file" aria-hidden="true" /></div>
+                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#0f172a' }}>Alles auf einer Seite</div>
+                      <p style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.6, maxWidth: 470, margin: '0 auto' }}>
+                        Beim Onepager werden Leistungen, Über uns und Kontakt als Abschnitte <b>auf der Startseite</b> angelegt – genau das, was du gebucht hast.
+                      </p>
+                    </div>
+                    <PaketWechsel fd={fd} primary={primary} waehlePaket={waehlePaket} />
                   </div>
                 ) : (
-                  <MenuBuilder value={fd.menu} onChange={v => upd('menu', v)} primary={primary} maxPages={MAX_SEITEN[fd.paket] || 5} />
+                  <>
+                    <MenuBuilder value={fd.menu} onChange={v => upd('menu', v)} primary={primary} maxPages={MAX_SEITEN[fd.paket] || 5} />
+                    <div style={{ marginTop: 22, borderTop: '1px solid #eef2f6', paddingTop: 20 }}>
+                      <PaketWechsel fd={fd} primary={primary} waehlePaket={waehlePaket} />
+                    </div>
+                  </>
                 )}
               </Panel>
 
@@ -726,6 +737,112 @@ function StepHead({ n, title, sub }) {
       <p style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Schritt {n} von {TOTAL_STEPS}</p>
       <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, marginBottom: 8, color: '#0f172a' }}>{title}</h1>
       {sub && <p style={{ color: '#64748b', fontSize: 15 }}>{sub}</p>}
+    </div>
+  )
+}
+
+// Domainprüfung im Wizard – gleiche Logik wie der Checker auf der Startseite.
+// Es kann immer nur EINE Domain gewählt werden (1 Domain pro Paket).
+function DomainCheck({ fd, primary, upd }) {
+  const [name, setName] = useState('')
+  const [laedt, setLaedt] = useState(false)
+  const [daten, setDaten] = useState(null)
+  const [fehler, setFehler] = useState('')
+  const miete = fd.zahlungsart === 'mieten'
+
+  async function pruefen() {
+    const n = (name || fd.firmenname || '').trim()
+    if (!n) { setFehler('Bitte einen Wunschnamen eingeben.'); return }
+    setLaedt(true); setFehler(''); setDaten(null)
+    try {
+      const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, tlds: STANDARD_TLDS }) })
+      const j = await res.json()
+      if (j.error) setFehler(j.error); else setDaten(j)
+    } catch { setFehler('Die Domainprüfung ist gerade nicht erreichbar. Du kannst die Domain auch später festlegen.') }
+    setLaedt(false)
+  }
+
+  const frei = (daten?.ergebnisse || []).filter(e => e.frei)
+  const belegt = (daten?.ergebnisse || []).filter(e => !e.frei)
+
+  return (
+    <div>
+      {fd.domain ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${primary}`, background: primary + '0a', borderRadius: 12, padding: '14px 16px' }}>
+          <i className="fa-solid fa-circle-check" style={{ color: '#1F9D55', fontSize: 18 }} aria-hidden="true" />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{fd.domain}</div>
+            <div style={{ fontSize: 11.5, color: '#64748b' }}>{miete ? 'Im Mietpaket inklusive – läuft auf deinen Namen.' : 'Beim Kauf bringst du die Domain selbst mit.'}</div>
+          </div>
+          <button onClick={() => { upd('domain', ''); setDaten(null) }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#64748b' }}>Ändern</button>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', border: '2px solid #e5e5e5', borderRadius: 10, padding: '0 14px', background: '#fff' }}>
+              <span style={{ color: '#94a3b8', fontSize: 13.5 }}>www.</span>
+              <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()} placeholder={fd.firmenname || 'deinefirma'} style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 4px', fontSize: 14, fontFamily: 'inherit' }} />
+            </div>
+            <button onClick={pruefen} disabled={laedt} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 10, padding: '0 22px', fontWeight: 700, fontSize: 13.5, cursor: laedt ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <i className={`fa-solid ${laedt ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true" />{laedt ? 'Prüfe…' : 'Prüfen'}
+            </button>
+          </div>
+          {fehler && <div style={{ fontSize: 12.5, color: '#B4232A', background: '#FDECEC', border: '1px solid #F5C6C6', borderRadius: 8, padding: '9px 12px', marginBottom: 10 }}>{fehler}</div>}
+          {daten && (
+            <div style={{ display: 'grid', gap: 7 }}>
+              {frei.map(e => (
+                <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 11, border: '1px solid #e5e5e5', borderRadius: 10, padding: '11px 14px' }}>
+                  <i className="fa-solid fa-circle-check" style={{ color: '#1F9D55' }} aria-hidden="true" />
+                  <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{e.domain}</span>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>{miete ? 'inklusive' : e.preis ? `${eur(e.preis)} € / Jahr` : ''}</span>
+                  <button onClick={() => upd('domain', e.domain)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Auswählen</button>
+                </div>
+              ))}
+              {belegt.map(e => (
+                <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 11, border: '1px solid #f1f5f9', borderRadius: 10, padding: '11px 14px', opacity: .6 }}>
+                  <i className="fa-solid fa-circle-xmark" style={{ color: '#B4232A' }} aria-hidden="true" />
+                  <span style={{ flex: 1, fontSize: 13.5 }}>{e.domain}</span>
+                  <span style={{ fontSize: 11.5, color: '#94a3b8' }}>schon vergeben</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 10, lineHeight: 1.55 }}>
+        <i className="fa-solid fa-lock" style={{ marginRight: 6 }} aria-hidden="true" />
+        {miete ? 'Eine Domain ist in deinem Mietpaket enthalten (1 Domain pro Paket).' : 'Beim Kauf bringst du Domain und Hosting selbst mit – du kannst hier trotzdem festhalten, wie deine Seite heißen soll.'}
+      </div>
+    </div>
+  )
+}
+
+// Paket wechseln / upgraden – zeigt IMMER alle drei Pakete mit echtem Preis,
+// damit klar ist, was der Wechsel kostet. Warenkorb klappt danach auf.
+function PaketWechsel({ fd, primary, waehlePaket }) {
+  const miete = fd.zahlungsart === 'mieten'
+  const liste = miete ? MIETE : KAUF
+  return (
+    <div>
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 3 }}>Brauchst du mehr Seiten?</div>
+      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>Paket wechseln – dein Warenkorb aktualisiert sich sofort und zeigt dir den neuen Preis.</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 10 }}>
+        {liste.map(p => {
+          const size = GROESSE_MAP[p.id]
+          const aktiv = fd.paket === size
+          return (
+            <div key={p.id} onClick={() => !aktiv && waehlePaket(fd.zahlungsart, p.id, true)} style={{ border: `2px solid ${aktiv ? primary : '#e5e5e5'}`, background: aktiv ? primary + '0a' : '#fff', borderRadius: 12, padding: '13px 14px', cursor: aktiv ? 'default' : 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                <i className={`fa-solid ${PAKET_ICON[size]}`} style={{ color: primary, fontSize: 12 }} aria-hidden="true" />
+                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{p.name}</span>
+                {aktiv && <span style={{ fontSize: 9.5, fontWeight: 800, background: primary, color: '#fff', padding: '2px 7px', borderRadius: 99 }}>AKTUELL</span>}
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 2 }}>{eur(p.preis)} <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>€{miete ? ' /Monat' : ' einmalig'}</span></div>
+              <div style={{ fontSize: 11.5, color: '#64748b' }}>{UMFANG_NAME[size]} · {UMFANG_KURZ[size]}</div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

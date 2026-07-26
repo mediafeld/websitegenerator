@@ -11,6 +11,7 @@ import { starteCheckout } from '@/lib/checkout'
 import { WarenkorbKnopf } from '@/components/Warenkorb'
 import { useWarenkorb } from '@/lib/warenkorb'
 import { KAUF, MIETE } from '@/lib/preise'
+import { Kopf, BASIS_CSS } from '@/components/Kopf'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -84,6 +85,7 @@ export default function EditorPage() {
   const projektIdRef = useRef(null)
   const [speicherStatus, setSpeicherStatus] = useState('')   // '' | 'speichert' | 'gespeichert' | 'fehler'
   const [nutzer, setNutzer] = useState(null)
+  const [kauft, setKauft] = useState(false)
   const [kontoMenu, setKontoMenu] = useState(false)
 
   // Angemeldeten Nutzer holen (für Kopfzeile / Konto-Menü)
@@ -714,7 +716,11 @@ export default function EditorPage() {
   )
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: '"Inter Tight",sans-serif', fontSize: 13 }}>
+    <>
+    {/* Editor ist Teil der eigentlichen Seite: echter Header oben (mit Warenkorb) */}
+    <style dangerouslySetInnerHTML={{ __html: BASIS_CSS }} />
+    <Kopf />
+    <div style={{ height: 'calc(100vh - 108px)', minHeight: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: '"Inter Tight",sans-serif', fontSize: 13 }}>
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onFile} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
@@ -738,16 +744,20 @@ export default function EditorPage() {
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <WarenkorbKnopf farbe="#475569" />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
-        <button onClick={() => {
-          // Alles über den Warenkorb: aktuelles Paket in den Korb legen + öffnen
+        <button disabled={kauft} onClick={async () => {
+          if (!nutzer) { router.push('/login'); return }
           const fd = formDataRef.current || {}
           const za = fd.zahlungsart === 'mieten' ? 'mieten' : 'kaufen'
           const quelle = za === 'mieten' ? MIETE : KAUF
           const size = fd.paket || 'multipage'
           const p = quelle.find(x => (x.id === size) || (za === 'mieten' && { start: 'onepager', plus: 'multipage', pro: 'business' }[x.id] === size)) || quelle[1]
+          // Warenkorb synchron halten …
           setzePaket({ id: 'paket-' + p.id, titel: `Website ${za === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`, unter: p.kurz, preis: p.preis, art: za === 'mieten' ? 'monatlich' : 'einmalig' })
-          setOffen(true)
-        }} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>Kaufen &amp; Download<i className="fa-solid fa-arrow-right" /></button>
+          // … und direkt zu Stripe weiterleiten
+          setKauft(true)
+          const { error } = await starteCheckout({ paketId: p.id, modus: za, projektId: projektIdRef.current, domain: fd.domain })
+          if (error) { setKauft(false); alert(error) }
+        }} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>{kauft ? 'Öffne Kasse…' : <>Kaufen &amp; Download<i className="fa-solid fa-arrow-right" /></>}</button>
 
         {/* Konto */}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
@@ -999,6 +1009,7 @@ export default function EditorPage() {
         </Modal>
       )}
     </div>
+    </>
   )
 }
 
