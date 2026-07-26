@@ -476,7 +476,7 @@ export const PRICINGTABLE = {
       ${pakete.map((p, i) => `<div class="wg-reveal ${p.beliebt ? '' : 'wg-karte-hover'}" style="position:relative;border-radius:20px;padding:32px 28px;display:flex;flex-direction:column;transition-delay:${i * 90}ms;${p.beliebt
           ? 'background:linear-gradient(160deg,var(--p900),#0d1b2a);color:#fff;box-shadow:0 30px 64px rgba(15,23,42,.24);'
           : 'background:#fff;border:1px solid rgba(15,23,42,.09);'}">
-        ${p.beliebt ? `<div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;padding:6px 16px;border-radius:99px;white-space:nowrap;">BELIEBT</div>` : ''}
+        ${p.beliebt ? `<div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;padding:6px 16px;border-radius:99px;white-space:nowrap;">${ed(`pakete.${i}.hinweis`, p.hinweis || 'BELIEBT')}</div>` : ''}
         <div style="font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${p.beliebt ? 'var(--accent)' : 'var(--p600)'};margin-bottom:12px;">${ed(`pakete.${i}.name`, p.name)}</div>
         <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
           <span style="font-size:clamp(38px,4.4vw,52px);font-weight:200;letter-spacing:-.03em;color:${p.beliebt ? '#fff' : '#0f172a'};">${ed(`pakete.${i}.preis`, p.preis)}</span>

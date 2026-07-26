@@ -341,6 +341,10 @@ export default function EditorPage() {
          von selbst an, damit man sie treffen kann. */
       /* Alle Effekte laufen normal weiter. Nur der ausgewählte Bereich hält
          an, damit man bewegte Inhalte in Ruhe bearbeiten kann. */
+      /* Sobald die Maus irgendwo im Bereich ist, hält sein Laufband an –
+         große, ruhige Trefferfläche statt millimetergenauem Zielen.
+         Verlässt man den Bereich, läuft es sofort weiter. */
+      [data-block]:hover .wg-laufband{animation-play-state:paused !important;}
       [data-block].wg-aktiv .wg-laufband,
       [data-block].wg-aktiv .wg-blob{animation-play-state:paused !important;}
       /* Mit dem Pause-Schalter friert alles ein. */
@@ -351,6 +355,7 @@ export default function EditorPage() {
       [data-sel]{ position:relative; transition:outline 0.1s; }
       [data-sel]:hover{ outline:2px solid ${primary}55; outline-offset:1px; cursor:pointer; }
       .wg-on{ outline:2px solid ${primary} !important; outline-offset:1px; }
+      .wg-hover{ outline:1px dashed ${primary}88 !important; outline-offset:1px; cursor:pointer; }
       .wg-on::after{ content:attr(data-label); position:absolute; top:-19px; left:-2px; background:${primary}; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px 4px 0 0; white-space:nowrap; z-index:99999; pointer-events:none; font-family:sans-serif; }
       [data-block]{ position:relative; }
       [data-block]:hover{ outline:1px solid ${primary}33; outline-offset:-1px; }
@@ -416,34 +421,97 @@ export default function EditorPage() {
         },'*');
       }
 
-      // Klick auf Element = auswählen (nicht navigieren)
-      document.querySelectorAll(SEL).forEach(function(el){
-        if(el.closest('.wg-bc'))return;
-        el.setAttribute('data-sel','1');
-        el.addEventListener('click',function(e){
-          e.stopPropagation();e.preventDefault();
-          selectEl(this);
-          // Text: editierbar machen UND den Cursor wirklich hineinsetzen.
-          // Vorher wurde das Element zwar auf "bearbeitbar" gesetzt, bekam aber
-          // nie den Fokus – deshalb liess sich nichts tippen.
-          if(this.hasAttribute('data-edit')){
-            var elx=this;
-            elx.contentEditable=true;
-            elx.spellcheck=false;
-            setTimeout(function(){
-              elx.focus();
-              try{
-                var r=document.createRange();r.selectNodeContents(elx);r.collapse(false);
-                var s=window.getSelection();s.removeAllRanges();s.addRange(r);
-              }catch(err){}
-            },0);
-          }
-          else if(this.hasAttribute('data-icon')){parent.postMessage({t:'iconClick',key:this.getAttribute('data-icon'),block:bIdx(this)},'*');}
-          else if(this.hasAttribute('data-img')){parent.postMessage({t:'imgClick',key:this.getAttribute('data-img'),block:bIdx(this)},'*');}
-        });
-      });
+      // ─────────────────────────────────────────────────────────────
+      // AUSWAHL – neu und einheitlich.
+      // EIN einziger Klick-Empfänger für das ganze Dokument. Er findet
+      // immer das RICHTIGE Ziel, egal wo genau man hinklickt:
+      //   1. Text/Bild/Icon unter dem Mauszeiger? -> das nehmen
+      //   2. Sonst: enthält das Angeklickte genau EIN bearbeitbares
+      //      Element? -> dieses nehmen (Klick auf den Rahmen zählt also)
+      //   3. Sonst: das nächste sinnvolle Gestaltungs-Element
+      // Damit ist nichts mehr "nicht wählbar".
+      // ─────────────────────────────────────────────────────────────
+      var BEARBEITBAR='[data-edit],[data-img],[data-icon],[data-stars]';
+      var GESTALTBAR='h1,h2,h3,h4,h5,p,a,button,li,span,div,section,nav,footer';
 
-      // Text-Speichern bei Blur
+      // Findet zu einem Klick immer das passende Ziel.
+      // mx/my = Mausposition, damit bei mehreren Möglichkeiten das
+      // nächstgelegene Element gewinnt.
+      function zielFinden(start,mx,my){
+        if(!start||start.closest('.wg-bc'))return null;
+        // 1) direkt auf/über einem bearbeitbaren Element
+        var t=start.closest(BEARBEITBAR);
+        if(t)return t;
+        // 2) nach oben laufen und im jeweiligen Rahmen suchen
+        var el=start;
+        for(var tiefe=0; el && tiefe<5; tiefe++){
+          var innen=el.querySelectorAll(BEARBEITBAR);
+          if(innen.length===1)return innen[0];
+          if(innen.length>1){
+            // mehrere: das dem Klick am nächsten liegende nehmen
+            if(typeof mx!=='number')return innen[0];
+            var best=null,bestD=Infinity;
+            for(var i=0;i<innen.length;i++){
+              var r=innen[i].getBoundingClientRect();
+              if(!r.width&&!r.height)continue;
+              var dx=Math.max(r.left-mx,0,mx-r.right);
+              var dy=Math.max(r.top-my,0,my-r.bottom);
+              var d=dx*dx+dy*dy;
+              if(d<bestD){bestD=d;best=innen[i];}
+            }
+            if(best)return best;
+          }
+          el=el.parentElement;
+        }
+        // 3) irgendein gestaltbares Element
+        return start.closest(GESTALTBAR)||start;
+      }
+
+      document.addEventListener('click',function(e){
+        if(e.target.closest('.wg-bc'))return;      // eigene Werkzeugleiste
+        if(e.target.isContentEditable)return;      // schon im Schreibmodus
+        var ziel=zielFinden(e.target,e.clientX,e.clientY);
+        if(!ziel)return;
+        e.stopPropagation();e.preventDefault();
+        selectEl(ziel);
+        if(ziel.hasAttribute('data-edit')){
+          ziel.contentEditable=true;
+          ziel.spellcheck=false;
+          setTimeout(function(){
+            ziel.focus();
+            try{
+              var r=document.createRange();r.selectNodeContents(ziel);r.collapse(false);
+              var sl=window.getSelection();sl.removeAllRanges();sl.addRange(r);
+            }catch(err){}
+          },0);
+        } else if(ziel.hasAttribute('data-icon')){
+          parent.postMessage({t:'iconClick',key:ziel.getAttribute('data-icon'),block:bIdx(ziel)},'*');
+        } else if(ziel.hasAttribute('data-img')){
+          parent.postMessage({t:'imgClick',key:ziel.getAttribute('data-img'),block:bIdx(ziel)},'*');
+        }
+      },false);
+
+      // Umrandung beim Überfahren, damit man sieht was man trifft
+      document.addEventListener('mouseover',function(e){
+        if(e.target.closest('.wg-bc'))return;
+        var z=zielFinden(e.target,e.clientX,e.clientY);
+        document.querySelectorAll('.wg-hover').forEach(function(x){x.classList.remove('wg-hover')});
+        if(z&&z!==sel)z.classList.add('wg-hover');
+      },false);
+
+      // Speichern beim Verlassen
+      document.addEventListener('blur',function(e){
+        var el=e.target;
+        if(el&&el.hasAttribute&&el.hasAttribute('data-edit')&&el.isContentEditable){
+          el.contentEditable=false;
+          parent.postMessage({t:'edit',key:el.getAttribute('data-edit'),val:el.innerHTML,block:bIdx(el)},'*');
+        }
+      },true);
+      document.addEventListener('keydown',function(e){
+        if(e.key==='Enter'&&!e.shiftKey&&e.target.isContentEditable){e.preventDefault();e.target.blur();}
+        if(e.key==='Escape'&&e.target.isContentEditable){e.target.blur();}
+      },true);
+
       // Bestandsaufnahme: alle sichtbaren Inhalte an den Editor melden.
       // Nötig, weil Bausteine Standardwerte anzeigen, die noch nicht im
       // gespeicherten Inhalt stehen. Ohne das gingen beim Ändern eines
@@ -463,12 +531,6 @@ export default function EditorPage() {
         parent.postMessage({t:'inventar',inventar:inventar},'*');
       })();
 
-      document.querySelectorAll('[data-edit]').forEach(function(el){
-        el.addEventListener('blur',function(){
-          parent.postMessage({t:'edit',key:el.dataset.edit,val:el.innerHTML,block:bIdx(el)},'*');
-        });
-        el.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.blur();}});
-      });
 
       // 3) Befehle von React empfangen (Formatierung etc.)
       window.addEventListener('message',function(e){
