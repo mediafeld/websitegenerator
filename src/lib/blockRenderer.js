@@ -1,5 +1,6 @@
 import { renderBlock } from './blocks'
 import { generatorDesignCSS, GENERATOR_REVEAL_JS, GENERATOR_EDITOR_CSS } from './generatorDesign'
+import { FREITEXT_CSS } from './blocksPlus2'
 
 // Animations-CDNs (für die fertige Seite)
 const ANIM_CDN = `
@@ -104,6 +105,7 @@ ${forEditor ? '' : ANIM_CDN}
   details summary::-webkit-details-marker{display:none;}
   a{transition:all 0.2s;}
   ${generatorDesignCSS({ fontHeadline })}
+  ${FREITEXT_CSS}
   ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' + GENERATOR_EDITOR_CSS : ''}
 </style>
 </head>

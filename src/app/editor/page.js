@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { renderPage } from '@/lib/blockRenderer'
-import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY, ZUSATZ_DEFAULTS } from '@/lib/blocks'
+import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY, ALLE_DEFAULTS } from '@/lib/blocks'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
 import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer } from '@/lib/projekte'
@@ -1488,7 +1488,7 @@ function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, for
 
 function buildDefaultContent(type) {
   const d = {
-    ...ZUSATZ_DEFAULTS,
+    ...ALLE_DEFAULTS,
     'hero-full': { tag: 'Willkommen', headline: 'Deine Überschrift', subline: 'Beschreibe dein Angebot.', cta1: 'Kontakt', cta2: 'Mehr', stats: [{ num: '10+', label: 'Jahre' }, { num: '200+', label: 'Kunden' }, { num: '100%', label: 'Qualität' }] },
     'header-slim': { tag: 'Seite', headline: 'Seitentitel', subline: 'Beschreibung.' },
     services: { tag: 'Leistungen', title: 'Was wir bieten', subtitle: 'Überblick.', items: [{ icon: '⚡', title: 'Leistung 1', text: 'Beschreibung.' }, { icon: '🎯', title: 'Leistung 2', text: 'Beschreibung.' }, { icon: '🤝', title: 'Leistung 3', text: 'Beschreibung.' }] },
