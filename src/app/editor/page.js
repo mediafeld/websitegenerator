@@ -334,6 +334,10 @@ export default function EditorPage() {
   function injectEditor(html) {
     const css = `<style id="wg-ed">
       * { scroll-behavior: auto !important; }
+      /* Bewegte Elemente in der Bearbeitung anhalten – sonst kann man
+         Laufbänder, Slider und Farbflecken nicht anklicken. */
+      *{animation-play-state:paused !important;}
+      .wg-spur{scroll-behavior:auto !important;}
       [data-edit]{ cursor:text; border-radius:3px; }
       [data-edit]:hover{ outline:1px dashed ${primary}99; outline-offset:2px; }
       [data-sel]{ position:relative; transition:outline 0.1s; }
@@ -389,6 +393,7 @@ export default function EditorPage() {
           isStars:el.hasAttribute('data-stars'),
           rating:el.hasAttribute('data-stars')?(parseInt(el.getAttribute('data-rating'))||5):0,
           isText:el.hasAttribute('data-edit'),
+          text:el.hasAttribute('data-edit')?el.innerHTML:'',
           key:el.getAttribute('data-edit')||el.getAttribute('data-img')||el.getAttribute('data-icon')||el.getAttribute('data-stars')||'',
           iconName:el.hasAttribute('data-icon')?(((el.getAttribute('class')||'').match(/fa-(?!solid|regular|brands)[a-z0-9-]+/)||[''])[0]):'',
           align:cs.textAlign,
@@ -901,7 +906,7 @@ export default function EditorPage() {
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {selected ? (
-            <PropsPanel selected={selected} primary={primary} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} onTextChange={(v) => { updateContent(selected.block, selected.key, v, true); setSelected(sx => sx ? { ...sx, text: v } : sx) }} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -1166,7 +1171,7 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
   const pp = palette?.primary || {}
   const ac = palette?.accent?.base || primary
@@ -1233,6 +1238,16 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onImageClick
         <button onClick={() => sendCmd('dupEl')} title="Duplizieren" style={{ flex: 1, padding: '8px 0', border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#475569' }}>⧉ Klonen</button>
         <button onClick={() => sendCmd('delEl')} title="Löschen" style={{ flex: 1, padding: '8px 0', border: '1px solid #fecaca', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#dc2626' }}>✕ Löschen</button>
       </div>
+
+      {selected.isText && (
+        <Section title="Inhalt bearbeiten">
+          <TextFeld
+            wert={selected.text || ''}
+            primary={primary}
+            onSpeichern={v => onTextChange(v)}
+          />
+        </Section>
+      )}
 
       {selected.isSection ? (
         <>
@@ -1565,6 +1580,43 @@ function CodeFeld({ label, wert, sprache, primary, onSpeichern }) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+
+// Panel-Eingabe für Texte, Zahlen und Beschriftungen.
+// Zusätzlich zur Direktbearbeitung in der Vorschau – wichtig bei Elementen,
+// die sich bewegen oder schwer zu treffen sind.
+function TextFeld({ wert, primary, onSpeichern }) {
+  const [text, setText] = useState(wert || '')
+  const [htmlModus, setHtmlModus] = useState(false)
+  const [ok, setOk] = useState(false)
+  useEffect(() => { setText(wert || '') }, [wert])
+  const nurText = (h) => String(h || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
+  const anzeige = htmlModus ? text : nurText(text)
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
+        {[['Text', false], ['HTML', true]].map(([l, v]) => (
+          <button key={l} onClick={() => setHtmlModus(v)} style={{ flex: 1, padding: '6px 0', border: `1px solid ${htmlModus === v ? primary : '#e5e5e5'}`, borderRadius: 6, background: htmlModus === v ? primary + '12' : '#fff', color: htmlModus === v ? primary : '#64748b', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+        ))}
+      </div>
+      <textarea
+        value={anzeige}
+        onChange={e => { setText(htmlModus ? e.target.value : e.target.value.replace(/\n/g, '<br>')); setOk(false) }}
+        rows={htmlModus ? 7 : 4}
+        spellCheck={false}
+        placeholder={htmlModus ? '<b>Fett</b> und <span style="color:red">farbig</span>' : 'Text eingeben …'}
+        style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: htmlModus ? 11.5 : 13, fontFamily: htmlModus ? 'ui-monospace,SFMono-Regular,Menlo,monospace' : 'inherit', lineHeight: 1.6, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+      <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
+        <button onClick={() => { onSpeichern(text); setOk(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {ok ? '✓ Übernommen' : 'Übernehmen'}
+        </button>
+      </div>
+      <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 7, lineHeight: 1.5 }}>
+        Im HTML-Modus sind Formatierungen wie &lt;b&gt;, &lt;span style="…"&gt; oder &lt;br&gt; erlaubt.
+      </div>
     </div>
   )
 }
