@@ -87,19 +87,36 @@ ${formData.seoSekundaer ? `Sekundaer-Keywords: ${formData.seoSekundaer}` : ''}
 
 SEITEN: ${seiten.join(', ')}
 
-VERFUEGBARE BLOECKE:
-- hero-full (hero-gradient, hero-split, hero-center) NUR Startseite
+VERFUEGBARE BLOECKE (Premium-Bausteine bevorzugt verwenden!):
+PREMIUM (schoen, animiert - diese ZUERST waehlen):
+- media (media-links, media-rechts, media-zickzack, media-gross, media-overlap)
+  -> Bild + Text nebeneinander. content: {"tag","title","text","cta","image","punkte":["..."]}
+  -> media-zickzack zusaetzlich: {"eintraege":[{"title","text"},{...},{...}]}
+- text (text-zentriert, text-zwei, text-zitat, text-akzent, text-highlights)
+  -> Reine Textbereiche. content: {"tag","title","text"} | text-zitat: {"zitat","autor"}
+  -> text-highlights zusaetzlich: {"highlights":[{"num":"15+","label":"Jahre Erfahrung"}]}
+- features (feat-karten, feat-liste-gross, feat-dunkel, feat-split-bild)
+  -> content: {"tag","title","items":[{"icon","title","text"}]}
+- galerie (gal-masonry, gal-raster, gal-breit) -> {"tag","title","images":["","","","","",""]}
+- stimmen (stimmen-gross, stimmen-einzeln)
+  -> {"tag","title","items":[{"text","name","rolle"}]} | stimmen-einzeln: {"zitat","name","rolle"}
+- cta-plus (ctap-mesh, ctap-band, ctap-karte) -> {"title","text","cta1","cta2"}
+- kontakt-plus (kontaktp-split) -> {"tag","title","text","adresse","telefon","email","oeffnung","cta"}
+- banner (banner-info, banner-laufband) -> {"text","icon"} | laufband: {"punkte":["...","..."]}
+- video (video-breit) -> {"tag","title","videoUrl"}
+- trenner (trenner-linie, trenner-akzent, trenner-luft) -> {}
+HERO (NUR Startseite): hero-full (hero-foto, hero-editorial, hero-akzent, hero-magazin, hero-duo, hero-minimal, hero-mesh, hero-gradient, hero-center, hero-bild)
+KLASSISCH (nur wenn kein Premium-Baustein passt):
 - header-slim (header-gradient, header-light) Unterseiten
 - services (services-cards, services-list, services-icons)
 - about (about-split, about-stats)
 - team (team-cards)
-- testimonials (testi-cards)
 - stats (stats-bar)
-- cta (cta-gradient)
-- gallery (gallery-grid)
 - faq (faq-accordion)
-- contact (contact-split)
 - menu (menu-cards) NUR bei Restaurant/Cafe - Speisekarte mit Kategorien und Preisen
+
+TEXTMENGE: Jeder Text muss ECHT und AUSFORMULIERT sein. "text"-Felder in media/text-Bloecken
+bekommen 3-5 vollstaendige Saetze, keine Stichworte. Lieber zu viel Inhalt als eine leer wirkende Seite.
 
 WICHTIG bei Restaurant: Fuege auf der Startseite ODER einer Speisekarte-Seite einen "menu" Block ein.
 
@@ -110,13 +127,13 @@ FAQ: Jeder "faq"-Block braucht 4-5 ECHTE, branchenspezifische Fragen mit ausfueh
 REGELN:
 1. STARTSEITE: Verwende GENAU diese Block-Reihenfolge und Varianten: ${layoutBeschreibung}
 2. UNTERSEITEN: Jede Unterseite beginnt mit header-slim (Variante "${stil.header}") und bekommt DANACH zur Seite passende, UNTERSCHIEDLICHE Bloecke:
-   - "Leistungen"/"Angebot": services + faq + cta
-   - "Ueber uns": about + team + stats + testimonials
-   - "Team": team + about
-   - "Galerie": gallery + cta
-   - "Preise": services (als Preisliste) + faq + cta
-   - "Kontakt": contact + faq
-   - "Portfolio": gallery + testimonials
+   - "Leistungen"/"Angebot": features + media + faq + cta-plus
+   - "Ueber uns": media + text + team + stimmen
+   - "Team": team + text
+   - "Galerie": galerie + cta-plus
+   - "Preise": features + faq + cta-plus
+   - "Kontakt": kontakt-plus + faq
+   - "Portfolio": galerie + stimmen
    WICHTIG: Jede Seite MUSS andere Bloecke haben - niemals zwei identische Seiten! Variiere auch die Varianten.
 3. Halte dich strikt an die vorgegebene Startseiten-Struktur
 4. ALLE Texte: echt, ${anrede}, Ton "${ton}", branchenspezifisch
@@ -179,10 +196,21 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
     Object.entries(pageData).forEach(([seite, data]) => {
       const blocks = (data.blocks || []).map(b => {
         const c = { ...(b.content || {}) }
-        // Hero: IMMER ein Hintergrundbild + Overlay (egal welche Variante)
+        // Hero: Bild ja – aber NICHT mehr pauschal abdunkeln.
+        // Frueher bekam JEDE Hero-Variante dasselbe dunkle Foto-Overlay,
+        // dadurch sahen alle generierten Seiten oben gleich aus. Jetzt bekommen
+        // nur die dafuer gebauten Varianten einen Vollflaechen-Hintergrund,
+        // helle/geteilte Heros behalten ihr eigenes Erscheinungsbild.
         if (b.type === 'hero-full') {
+          const dunkleVollflaeche = ['hero-foto', 'hero-gradient', 'hero-center'].includes(b.variant)
           if (!c.heroImg) c.heroImg = stock.hero
-          if (!c.bgImg) { c.bgImg = stock.hero; c.bgOverlay = 'rgba(15,23,42,0.62)' }
+          if (dunkleVollflaeche && !c.bgImg) { c.bgImg = stock.hero; c.bgOverlay = 'rgba(15,23,42,0.62)' }
+        }
+        // Premium-Bausteine mit Bild versorgen
+        if (b.type === 'media' && !c.image) c.image = stock.about
+        if (b.type === 'features' && b.variant === 'feat-split-bild' && !c.image) c.image = stock.about
+        if (b.type === 'galerie') {
+          c.images = (c.images && c.images.length ? c.images : [0,1,2,3,4,5]).map((im, i) => (typeof im === 'string' && im) ? im : stock.gallery[i % stock.gallery.length])
         }
         if (b.type === 'header-slim' && !c.bgImg) { c.bgImg = stock.about; c.bgOverlay = 'rgba(15,23,42,0.6)' }
         if (b.type === 'about' && !c.aboutImg) c.aboutImg = stock.about

@@ -939,7 +939,10 @@ export const IMAGE = {
 // ─────────────────────────────────────────────────────────────
 // REGISTRY
 // ─────────────────────────────────────────────────────────────
+import { ZUSATZ_BLOECKE, ZUSATZ_ADDABLE, ZUSATZ_DEFAULTS } from './blocksPlus'
+
 export const BLOCK_REGISTRY = {
+  ...ZUSATZ_BLOECKE,
   nav: NAV,
   'hero-full': HERO_FULL,
   'header-slim': HEADER_SLIM,
@@ -962,7 +965,9 @@ export const BLOCK_REGISTRY = {
 }
 
 // Blöcke die der Nutzer im Editor hinzufügen kann
+// (Premium-Bausteine aus blocksPlus.js zuerst – das sind die schönen.)
 export const ADDABLE_BLOCKS = [
+  ...ZUSATZ_ADDABLE,
   { type: 'hero-full', label: 'Hero', emoji: '🦸', fa: 'rectangle-ad', cat: 'Kopf & Hero' },
   { type: 'header-slim', label: 'Seiten-Header', emoji: '📰', fa: 'window-minimize', cat: 'Kopf & Hero' },
   { type: 'services', label: 'Leistungen', emoji: '⚡', fa: 'bolt', cat: 'Inhalt' },
@@ -989,6 +994,9 @@ export const BLOCK_CATEGORIES = ['Kopf & Hero', 'Inhalt', 'Vertrauen', 'Konversi
 export function getVariants(type) {
   return BLOCK_REGISTRY[type]?.variants || []
 }
+
+// Standard-Inhalte für neu eingefügte Premium-Bausteine
+export { ZUSATZ_DEFAULTS }
 
 // Rendere einen Block
 export function renderBlock(type, variantId, content) {
