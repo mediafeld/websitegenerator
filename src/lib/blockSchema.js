@@ -272,3 +272,89 @@ export function befuelleBlock(type, content = {}, fd = {}) {
   }
   return out
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// LISTEN-ZUORDNUNG
+//
+// Bausteine mit Listen benutzen Schlüssel wie "featTitle2" oder "faqQ0".
+// Hier steht, in welches Feld so ein Schlüssel gehört:
+//   Präfix → [Feldname, Unterfeld]   (Unterfeld null = einfache Textliste)
+// Dadurch landet jede Änderung im Editor an der richtigen Stelle, ohne dass
+// für jeden Baustein eine Sonderregel geschrieben werden muss.
+// ───────────────────────────────────────────────────────────────────────────
+export const LISTEN_ZUORDNUNG = {
+  punkt: ['punkte', null],
+  listItem: ['items', null],
+  logo: ['logos', null],
+  logoText: ['logos', null],
+
+  featTitle: ['items', 'title'], featText: ['items', 'text'], featIcon: ['items', 'icon'],
+  icTitle: ['items', 'title'], icText: ['items', 'text'], icIcon: ['items', 'icon'],
+  ibTitle: ['items', 'title'], ibText: ['items', 'text'],
+  stepTitle: ['items', 'title'], stepText: ['items', 'text'], stepIcon: ['items', 'icon'],
+  kickTitle: ['items', 'title'], kickText: ['items', 'text'], kickIcon: ['items', 'icon'],
+  tmName: ['items', 'name'], tmRolle: ['items', 'rolle'], tmText: ['items', 'text'],
+  faqQ: ['items', 'q'], faqA: ['items', 'a'],
+  stText: ['items', 'text'], stName: ['items', 'name'], stRolle: ['items', 'rolle'],
+  slText: ['items', 'text'], slName: ['items', 'name'], slRolle: ['items', 'rolle'],
+  cLabel: ['items', 'label'], cNum: ['items', 'num'],
+
+  zzTitle: ['eintraege', 'title'], zzText: ['eintraege', 'text'],
+  kTitle: ['karten', 'title'], kText: ['karten', 'text'],
+  stat: ['stats', 'num'], statLabel: ['stats', 'label'],
+  oTag: ['tage', 'tag'], oZeit: ['tage', 'zeit'],
+  ptName: ['pakete', 'name'], ptPreis: ['pakete', 'preis'], ptEinheit: ['pakete', 'einheit'], ptCta: ['pakete', 'cta'],
+  folieTag: ['folien', 'tag'], folieHead: ['folien', 'headline'], folieText: ['folien', 'text'], folieCta: ['folien', 'cta'],
+  fTitel: ['spalten', 'titel'],
+}
+
+// Zerlegt einen Schlüssel wie "featTitle2" → { feld:'items', unterfeld:'title', index:2 }
+// oder "ptPunkt1_3" → verschachtelte Liste.
+export function schluesselZerlegen(key) {
+  if (!key) return null
+  // Verschachtelt: name<i>_<j>
+  const m2 = String(key).match(/^([a-zA-Z]+)(\d+)_(\d+)$/)
+  if (m2) {
+    const [, name, i, j] = m2
+    if (name === 'ptPunkt') return { feld: 'pakete', index: +i, unterliste: 'punkte', unterindex: +j }
+    if (name === 'fPunkt') return { feld: 'spalten', index: +i, unterliste: 'punkte', unterindex: +j }
+    if (name === 'plName') return { feld: 'gruppen', index: +i, unterliste: 'items', unterindex: +j, unterfeld: 'name' }
+    if (name === 'plDesc') return { feld: 'gruppen', index: +i, unterliste: 'items', unterindex: +j, unterfeld: 'desc' }
+    if (name === 'plPreis') return { feld: 'gruppen', index: +i, unterliste: 'items', unterindex: +j, unterfeld: 'preis' }
+    return null
+  }
+  const m = String(key).match(/^([a-zA-Z]+)(\d+)$/)
+  if (!m) return null
+  const [, name, i] = m
+  const z = LISTEN_ZUORDNUNG[name]
+  if (!z) return null
+  return { feld: z[0], unterfeld: z[1], index: +i }
+}
+
+// Schreibt einen Wert anhand des Schlüssels an die richtige Stelle im Inhalt.
+// Gibt das neue Inhaltsobjekt zurück – oder null, wenn der Schlüssel nicht passt.
+export function wertSetzen(content, key, wert) {
+  const z = schluesselZerlegen(key)
+  if (!z) return null
+  const out = { ...content }
+
+  if (z.unterliste) {
+    const liste = [...(out[z.feld] || [])]
+    const eintrag = { ...(liste[z.index] || {}) }
+    const unter = [...(eintrag[z.unterliste] || [])]
+    unter[z.unterindex] = z.unterfeld
+      ? { ...(unter[z.unterindex] || {}), [z.unterfeld]: wert }
+      : wert
+    eintrag[z.unterliste] = unter
+    liste[z.index] = eintrag
+    out[z.feld] = liste
+    return out
+  }
+
+  const liste = [...(out[z.feld] || [])]
+  liste[z.index] = z.unterfeld
+    ? { ...(liste[z.index] || {}), [z.unterfeld]: wert }
+    : wert
+  out[z.feld] = liste
+  return out
+}

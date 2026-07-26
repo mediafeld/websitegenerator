@@ -657,11 +657,13 @@ export const BANNER = {
       id: 'banner-laufband', name: 'Laufband',
       render: (c) => {
         const punkte = (c.punkte && c.punkte.length) ? c.punkte : ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden', 'Persönliche Beratung']
-        const reihe = punkte.map(p => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${esc(p)}</span>`).join('')
+        const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed('punkt' + i, p) : esc(p)}</span>`
+        const reihe = punkte.map((p, i) => zeile(p, i, true)).join('')
+        const reiheKopie = punkte.map((p, i) => zeile(p, i, false)).join('')
         return `
 <section data-block="banner" data-variant="banner-laufband" style="${bg(c, 'background:var(--p900);')}padding:16px 0;overflow:hidden;">
-  <div style="display:flex;width:max-content;animation:wgLauf 26s linear infinite;">
-    <div style="display:flex;">${reihe}</div><div style="display:flex;">${reihe}</div>
+  <div class="wg-laufband" style="display:flex;width:max-content;animation:wgLauf 26s linear infinite;">
+    <div style="display:flex;">${reihe}</div><div style="display:flex;" aria-hidden="true">${reiheKopie}</div>
   </div>
   <style>@keyframes wgLauf{from{transform:translateX(0)}to{transform:translateX(-50%)}}</style>
 </section>`

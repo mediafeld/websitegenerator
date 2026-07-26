@@ -595,7 +595,7 @@ export const STATS = {
     render: (c) => `
 <section data-block="stats" data-variant="stats-bar" data-section="1" style="${sectionBgStyle(c,'background:linear-gradient(135deg,var(--p600),var(--p800));')}padding:60px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:32px;">
-    ${(c.items || []).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed('stat_'+i, s.num, 'span')}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${esc(s.label)}</div></div>`).join('')}
+    ${((c.items && c.items.length) ? c.items : [{num:'15+',label:'Jahre Erfahrung'},{num:'500+',label:'Zufriedene Kunden'},{num:'100%',label:'Termintreue'}]).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed('stat_'+i, s.num, 'span')}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${ed('statLabel_'+i, s.label, 'span')}</div></div>`).join('')}
   </div>
 </section>`
   }]

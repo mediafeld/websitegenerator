@@ -83,6 +83,10 @@ export function generatorDesignCSS({ fontHeadline } = {}) {
 @keyframes wgDriftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,50px) scale(1.18)}}
 @keyframes wgDriftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-40px) scale(1.14)}}
 
+/* Laufbänder halten an, sobald die Maus darüber ist – dadurch anklickbar,
+   laufen aber sonst normal weiter. */
+.wg-laufband:hover{animation-play-state:paused !important;}
+
 /* ── Reveal beim Scrollen (bidirektional, wie auf der Hauptseite) ── */
 .wg-reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1);}
 .wg-reveal.an{opacity:1;transform:none;}

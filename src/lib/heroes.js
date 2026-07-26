@@ -356,7 +356,10 @@ M.push({ id: 'h-liste', name: 'Mit Häkchenliste', render: (c) => {
 // 14 — Hero mit Laufband
 M.push({ id: 'h-laufband', name: 'Mit Laufband unten', render: (c) => {
   const pk = c.punkte && c.punkte.length ? c.punkte : ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden']
-  const reihe = pk.map(p => `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${esc(p)}</span>`).join('')
+  // Erste Reihe ist bearbeitbar, die zweite ist nur die nahtlose Wiederholung.
+  const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed('punkt' + i, p) : esc(p)}</span>`
+  const reihe = pk.map((p, i) => zeile(p, i, true)).join('')
+  const reiheKopie = pk.map((p, i) => zeile(p, i, false)).join('')
   return `
 <section data-block="hero-full" data-variant="h-laufband" class="${zone(c)}" style="position:relative;overflow:hidden;${flaeche(c)}">
   ${musterEbene(c)}
@@ -371,7 +374,7 @@ M.push({ id: 'h-laufband', name: 'Mit Laufband unten', render: (c) => {
     </div>
   </div>
   <div style="position:relative;z-index:1;border-top:1px solid ${c.hell ? 'rgba(15,23,42,.09)' : 'rgba(255,255,255,.14)'};padding:16px 0;overflow:hidden;">
-    <div style="display:flex;width:max-content;animation:wgLaufH 28s linear infinite;"><div style="display:flex;">${reihe}</div><div style="display:flex;">${reihe}</div></div>
+    <div class="wg-laufband" style="display:flex;width:max-content;animation:wgLaufH 28s linear infinite;"><div style="display:flex;">${reihe}</div><div style="display:flex;" aria-hidden="true">${reiheKopie}</div></div>
   </div>
   <style>@keyframes wgLaufH{from{transform:translateX(0)}to{transform:translateX(-50%)}}</style>
 </section>` } })

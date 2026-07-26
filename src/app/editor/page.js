@@ -13,6 +13,7 @@ import { useWarenkorb } from '@/lib/warenkorb'
 import { KAUF, MIETE } from '@/lib/preise'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Brotkrumen } from '@/components/Brotkrumen'
+import { wertSetzen } from '@/lib/blockSchema'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -87,6 +88,7 @@ export default function EditorPage() {
   const [speicherStatus, setSpeicherStatus] = useState('')   // '' | 'speichert' | 'gespeichert' | 'fehler'
   const [nutzer, setNutzer] = useState(null)
   const [kauft, setKauft] = useState(false)
+  const [bewegungStopp, setBewegungStopp] = useState(false)
   const [domainModal, setDomainModal] = useState(false)
   const [domainWunsch, setDomainWunsch] = useState('')
   const [domainDaten, setDomainDaten] = useState(null)
@@ -334,9 +336,15 @@ export default function EditorPage() {
   function injectEditor(html) {
     const css = `<style id="wg-ed">
       * { scroll-behavior: auto !important; }
-      /* Bewegte Elemente in der Bearbeitung anhalten – sonst kann man
-         Laufbänder, Slider und Farbflecken nicht anklicken. */
-      *{animation-play-state:paused !important;}
+      /* Bewegung bleibt an – nur wenn "Bewegung anhalten" aktiv ist, wird
+         alles eingefroren. Zusätzlich halten Laufbänder beim Drüberfahren
+         von selbst an, damit man sie treffen kann. */
+      /* Nur die Laufbänder stehen im Editor still – sie tragen anklickbaren
+         Text und wären sonst nicht zu treffen. Farbflecken, Verläufe und
+         alle übrigen Effekte laufen weiter, damit die Seite lebendig bleibt. */
+      .wg-laufband{animation-play-state:paused !important;}
+      /* Mit dem Pause-Schalter friert alles ein. */
+      body.wg-stopp *{animation-play-state:paused !important;}
       .wg-spur{scroll-behavior:auto !important;}
       [data-edit]{ cursor:text; border-radius:3px; }
       [data-edit]:hover{ outline:1px dashed ${primary}99; outline-offset:2px; }
@@ -456,6 +464,7 @@ export default function EditorPage() {
         if(d.cmd==='sectionBg'){var s=sel.closest('[data-section]')||sel.closest('[data-block]');if(s){s.style.backgroundImage="linear-gradient("+d.overlay+","+d.overlay+"),url('"+d.img+"')";s.style.backgroundSize='cover';s.style.backgroundPosition='center';}parent.postMessage({t:'sectionStyle',block:bIdx(sel),img:d.img,overlay:d.overlay,parallax:d.parallax},'*');}
         if(d.cmd==='dupEl'){var cl=sel.cloneNode(true);cl.classList.remove('wg-on');sel.parentNode.insertBefore(cl,sel.nextSibling);}
         if(d.cmd==='delEl'){var pn=sel.parentNode;sel.remove();sel=null;parent.postMessage({t:'deselect'},'*');}
+        if(d.cmd==='bewegung'){document.body.classList.toggle('wg-stopp',!!d.stopp);return;}
         if(d.cmd==='deselect'){if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}}
       });
       function toggleStyle(el,prop,on,off){
@@ -576,6 +585,13 @@ export default function EditorPage() {
     const arr = [...next[activePage]]
     const block = { ...arr[blockIdx] }
     const content = { ...block.content }
+
+    // Zentrale Listen-Zuordnung (deckt alle neuen Bausteine ab)
+    const zentral = wertSetzen(content, key, val)
+    if (zentral) {
+      block.content = zentral; arr[blockIdx] = block; next[activePage] = arr
+      applyPages(next, true, true); return
+    }
 
     if (key.startsWith('svc_icon_')) {
       const idx = parseInt(key.split('_').pop())
@@ -796,6 +812,11 @@ export default function EditorPage() {
         {[['desktop','desktop'],['tablet-screen-button','tablet'],['mobile-screen','mobile']].map(([ic, d]) => (
           <button key={d} onClick={() => setDevice(d)} title={d} style={{ width: 30, height: 30, border: `1px solid ${device === d ? primary : '#e5e5e5'}`, borderRadius: 7, background: device === d ? '#f5f5f5' : '#fff', cursor: 'pointer', fontSize: 14, color: device === d ? primary : '#475569' }}><i className={`fa-solid fa-${ic}`} /></button>
         ))}
+        <button onClick={() => { const n = !bewegungStopp; setBewegungStopp(n); iframeRef.current?.contentWindow?.postMessage({ cmd: 'bewegung', stopp: n }, '*') }}
+          title={bewegungStopp ? 'Bewegung läuft wieder' : 'Bewegung anhalten (zum Bearbeiten)'}
+          style={{ width: 30, height: 30, border: `1px solid ${bewegungStopp ? primary : '#e5e5e5'}`, borderRadius: 7, background: bewegungStopp ? primary + '14' : '#fff', cursor: 'pointer', fontSize: 13, color: bewegungStopp ? primary : '#475569' }}>
+          <i className={`fa-solid fa-${bewegungStopp ? 'play' : 'pause'}`} />
+        </button>
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
         <button disabled={kauft} onClick={async () => {
