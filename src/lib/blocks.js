@@ -941,6 +941,10 @@ export const IMAGE = {
 // ─────────────────────────────────────────────────────────────
 import { ZUSATZ_BLOECKE, ZUSATZ_ADDABLE, ZUSATZ_DEFAULTS } from './blocksPlus'
 import { ZUSATZ2_BLOECKE, ZUSATZ2_ADDABLE, ZUSATZ2_DEFAULTS } from './blocksPlus2'
+import { HERO_VARIANTEN } from './heroes'
+
+// Neue Hero-Muster vor die alten stellen (die schönen zuerst)
+HERO_FULL.variants = [...HERO_VARIANTEN, ...HERO_FULL.variants]
 
 export const BLOCK_REGISTRY = {
   ...ZUSATZ_BLOECKE,
