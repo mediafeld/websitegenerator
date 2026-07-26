@@ -43,6 +43,14 @@ export function WarenkorbProvider({ children }) {
     })
   }, [])
 
+  // Genau EINE Domain im Warenkorb (1 Domain pro Paket)
+  const setzeDomain = useCallback((domain) => {
+    setArtikel(v => {
+      const ohne = v.filter(a => !String(a.id).startsWith('domain-'))
+      return domain ? [...ohne, { menge: 1, ...domain }] : ohne
+    })
+  }, [])
+
   const entfernen = useCallback((id) => setArtikel(v => v.filter(a => a.id !== id)), [])
   const mengeAendern = useCallback((id, delta) => {
     setArtikel(v => v.map(a => a.id === id ? { ...a, menge: Math.max(1, a.menge + delta) } : a).filter(a => a.menge > 0))
@@ -56,7 +64,7 @@ export function WarenkorbProvider({ children }) {
   const zwischensumme = gesamt
   const mwst = gesamt - gesamt / 1.19
 
-  const wert = { artikel, offen, setOffen, hinzufuegen, setzePaket, entfernen, mengeAendern, leeren, anzahl, zwischensumme, mwst, gesamt }
+  const wert = { artikel, offen, setOffen, hinzufuegen, setzePaket, setzeDomain, entfernen, mengeAendern, leeren, anzahl, zwischensumme, mwst, gesamt }
   return <WarenkorbContext.Provider value={wert}>{children}</WarenkorbContext.Provider>
 }
 
@@ -65,7 +73,7 @@ export function useWarenkorb() {
   // Fällt außerhalb des Providers auf einen leeren, funktionslosen Warenkorb zurück
   // (z. B. falls eine Seite den Provider noch nicht eingebunden hat) — bricht dadurch nie.
   if (!ctx) {
-    return { artikel: [], offen: false, setOffen: () => {}, hinzufuegen: () => {}, setzePaket: () => {}, entfernen: () => {}, mengeAendern: () => {}, leeren: () => {}, anzahl: 0, zwischensumme: 0, mwst: 0, gesamt: 0 }
+    return { artikel: [], offen: false, setOffen: () => {}, hinzufuegen: () => {}, setzePaket: () => {}, setzeDomain: () => {}, entfernen: () => {}, mengeAendern: () => {}, leeren: () => {}, anzahl: 0, zwischensumme: 0, mwst: 0, gesamt: 0 }
   }
   return ctx
 }

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { KAUF, MIETE, eur, STANDARD_TLDS } from '@/lib/preise'
+import { KAUF, MIETE, eur, ALLE_TLDS, TLD_PREISE } from '@/lib/preise'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
@@ -20,6 +20,25 @@ const MAX_SEITEN = { onepager: 1, multipage: 5, business: 8 }
 // dass "Start" ein Onepager ist, zeigen wir den Umfang immer mit an.
 const UMFANG_NAME = { onepager: 'Onepager', multipage: 'Multipage', business: 'Business' }
 const UMFANG_KURZ = { onepager: '1 Seite', multipage: 'bis 5 Unterseiten', business: 'bis 8 Unterseiten' }
+const KI_BILDER = { onepager: 6, multipage: 8, business: 12 }
+
+// Was im Paket steckt – wird im Warenkorb aufgelistet, damit der Kunde sieht,
+// wie viel er tatsächlich bekommt.
+function paketLeistungen(size, miete) {
+  return [
+    `${UMFANG_KURZ[size]} – fertig aufgebaut`,
+    `${KI_BILDER[size]} KI-Bilder inklusive`,
+    'Impressum & Datenschutzerklärung inklusive',
+    'Cookie-Hinweis inklusive',
+    'Kontaktformular inklusive',
+    'Für Handy & Tablet optimiert',
+    'SEO-Grundeinstellungen inklusive',
+    'Live-Editor (Drag & Drop) inklusive',
+    ...(miete
+      ? ['Domain inklusive', 'Hosting & SSL inklusive', 'Laufende Sicherungen']
+      : ['Kompletter Quellcode als ZIP (HTML/CSS/JS)', 'Keine laufenden Kosten']),
+  ]
+}
 const DEFAULT_MENU = () => ([
   { id: 'p_start', label: 'Startseite', fix: true, children: [] },
   { id: 'p_leist', label: 'Leistungen', children: [] },
@@ -144,7 +163,7 @@ function WizardInnen() {
   const router = useRouter()
   const params = useSearchParams()
   const [step, setStep] = useState(1)
-  const { setzePaket, setOffen } = useWarenkorb()
+  const { setzePaket, setzeDomain, setOffen } = useWarenkorb()
   const [fd, setFd] = useState({
     paket: 'multipage', preis: 149, zahlungsart: 'kaufen',
     branche: '', brancheCustom: '',
@@ -219,6 +238,8 @@ function WizardInnen() {
       unter: p.kurz,
       preis: p.preis,
       art: zahlungsart === 'mieten' ? 'monatlich' : 'einmalig',
+      fest: true,
+      punkte: paketLeistungen(size, zahlungsart === 'mieten'),
     })
     if (oeffnen) setOffen(true)
   }
@@ -473,7 +494,7 @@ function WizardInnen() {
 
               <Panel>
                 <SectionTitle sub={fd.zahlungsart === 'mieten' ? 'Im Mietpaket ist eine Domain enthalten – hier prüfen und sichern.' : 'Wird für Impressum, Kontakt und die Veröffentlichung verwendet.'}>Wunsch-Domain</SectionTitle>
-                <DomainCheck fd={fd} primary={primary} upd={upd} />
+                <DomainCheck fd={fd} primary={primary} upd={upd} setzeDomain={setzeDomain} setOffen={setOffen} />
               </Panel>
 
               <Panel>
@@ -743,75 +764,141 @@ function StepHead({ n, title, sub }) {
 
 // Domainprüfung im Wizard – gleiche Logik wie der Checker auf der Startseite.
 // Es kann immer nur EINE Domain gewählt werden (1 Domain pro Paket).
-function DomainCheck({ fd, primary, upd }) {
+function DomainCheck({ fd, primary, upd, setzeDomain, setOffen }) {
   const [name, setName] = useState('')
+  const [tlds, setTlds] = useState(['de', 'com', 'net', 'org'])
+  const [tldOffen, setTldOffen] = useState(false)
+  const [tldSuche, setTldSuche] = useState('')
   const [laedt, setLaedt] = useState(false)
   const [daten, setDaten] = useState(null)
   const [fehler, setFehler] = useState('')
   const miete = fd.zahlungsart === 'mieten'
+  const tldUmschalten = (t) => setTlds(v => v.includes(t) ? v.filter(x => x !== t) : [...v, t])
+  const tldTreffer = ALLE_TLDS.filter(t => t.includes(tldSuche.trim().toLowerCase()))
 
   async function pruefen() {
     const n = (name || fd.firmenname || '').trim()
     if (!n) { setFehler('Bitte einen Wunschnamen eingeben.'); return }
+    if (!tlds.length) { setFehler('Bitte mindestens eine Endung auswählen.'); setTldOffen(true); return }
     setLaedt(true); setFehler(''); setDaten(null)
     try {
-      const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, tlds: STANDARD_TLDS }) })
+      const res = await fetch('/api/domain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, tlds }) })
       const j = await res.json()
       if (j.error) setFehler(j.error); else setDaten(j)
     } catch { setFehler('Die Domainprüfung ist gerade nicht erreichbar. Du kannst die Domain auch später festlegen.') }
     setLaedt(false)
   }
 
+  // Domain übernehmen → Wizard-Daten UND Warenkorb (klappt auf, damit der
+  // Preis sofort sichtbar ist). Bei Miete ist die erste Domain inklusive.
+  function waehlen(e) {
+    upd('domain', e.domain)
+    setzeDomain({
+      id: 'domain-' + e.domain,
+      titel: `Domain ${e.domain}`,
+      unter: miete ? 'Im Mietpaket enthalten – läuft auf deinen Namen' : `Registrierung & Verwaltung · ${e.tld?.toUpperCase?.() || ''}`,
+      preis: miete ? 0 : (e.preis || 0),
+      gratis: miete,
+      fest: true,
+      art: 'jaehrlich',
+      punkte: miete
+        ? ['Domain inklusive (1 pro Paket)', 'SSL-Zertifikat inklusive', 'DNS-Verwaltung durch uns']
+        : ['Läuft auf deinen Namen', 'SSL-Zertifikat inklusive', 'Jährliche Verlängerung'],
+    })
+    setOffen(true)
+  }
+
   const frei = (daten?.ergebnisse || []).filter(e => e.frei)
   const belegt = (daten?.ergebnisse || []).filter(e => !e.frei)
 
+  if (fd.domain) return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${primary}`, background: primary + '0a', borderRadius: 12, padding: '14px 16px' }}>
+        <i className="fa-solid fa-circle-check" style={{ color: '#1F9D55', fontSize: 18 }} aria-hidden="true" />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{fd.domain}</div>
+          <div style={{ fontSize: 11.5, color: '#64748b' }}>{miete ? 'Im Mietpaket inklusive – liegt im Warenkorb.' : 'Liegt im Warenkorb.'}</div>
+        </div>
+        <button onClick={() => { upd('domain', ''); setzeDomain(null); setDaten(null) }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#64748b' }}>Ändern</button>
+      </div>
+    </div>
+  )
+
   return (
     <div>
-      {fd.domain ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: `2px solid ${primary}`, background: primary + '0a', borderRadius: 12, padding: '14px 16px' }}>
-          <i className="fa-solid fa-circle-check" style={{ color: '#1F9D55', fontSize: 18 }} aria-hidden="true" />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{fd.domain}</div>
-            <div style={{ fontSize: 11.5, color: '#64748b' }}>{miete ? 'Im Mietpaket inklusive – läuft auf deinen Namen.' : 'Beim Kauf bringst du die Domain selbst mit.'}</div>
-          </div>
-          <button onClick={() => { upd('domain', ''); setDaten(null) }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#64748b' }}>Ändern</button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', border: '2px solid #e5e5e5', borderRadius: 10, padding: '0 14px', background: '#fff' }}>
+          <span style={{ color: '#94a3b8', fontSize: 13.5 }}>www.</span>
+          <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()} placeholder={fd.firmenname || 'deinefirma'} style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 4px', fontSize: 14, fontFamily: 'inherit', minWidth: 0 }} />
         </div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', border: '2px solid #e5e5e5', borderRadius: 10, padding: '0 14px', background: '#fff' }}>
-              <span style={{ color: '#94a3b8', fontSize: 13.5 }}>www.</span>
-              <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && pruefen()} placeholder={fd.firmenname || 'deinefirma'} style={{ flex: 1, border: 'none', outline: 'none', padding: '12px 4px', fontSize: 14, fontFamily: 'inherit' }} />
-            </div>
-            <button onClick={pruefen} disabled={laedt} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 10, padding: '0 22px', fontWeight: 700, fontSize: 13.5, cursor: laedt ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <i className={`fa-solid ${laedt ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true" />{laedt ? 'Prüfe…' : 'Prüfen'}
-            </button>
-          </div>
-          {fehler && <div style={{ fontSize: 12.5, color: '#B4232A', background: '#FDECEC', border: '1px solid #F5C6C6', borderRadius: 8, padding: '9px 12px', marginBottom: 10 }}>{fehler}</div>}
-          {daten && (
-            <div style={{ display: 'grid', gap: 7 }}>
-              {frei.map(e => (
-                <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 11, border: '1px solid #e5e5e5', borderRadius: 10, padding: '11px 14px' }}>
-                  <i className="fa-solid fa-circle-check" style={{ color: '#1F9D55' }} aria-hidden="true" />
-                  <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{e.domain}</span>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>{miete ? 'inklusive' : e.preis ? `${eur(e.preis)} € / Jahr` : ''}</span>
-                  <button onClick={() => upd('domain', e.domain)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Auswählen</button>
-                </div>
-              ))}
-              {belegt.map(e => (
-                <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 11, border: '1px solid #f1f5f9', borderRadius: 10, padding: '11px 14px', opacity: .6 }}>
-                  <i className="fa-solid fa-circle-xmark" style={{ color: '#B4232A' }} aria-hidden="true" />
-                  <span style={{ flex: 1, fontSize: 13.5 }}>{e.domain}</span>
-                  <span style={{ fontSize: 11.5, color: '#94a3b8' }}>schon vergeben</span>
-                </div>
-              ))}
+
+        {/* Endungs-Auswahl wie auf der Startseite */}
+        <div style={{ position: 'relative' }}>
+          <button type="button" onClick={() => setTldOffen(v => !v)} style={{ height: '100%', border: '2px solid #e5e5e5', background: '#fff', borderRadius: 10, padding: '0 14px', fontSize: 13, fontWeight: 700, color: '#334155', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+            {tlds.length === 1 ? `.${tlds[0]}` : `${tlds.length} Endungen`}
+            <i className="fa-solid fa-chevron-down" style={{ fontSize: 10, transform: tldOffen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} aria-hidden="true" />
+          </button>
+          {tldOffen && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 290, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, boxShadow: '0 18px 44px rgba(15,23,42,.16)', zIndex: 60, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 13px', borderBottom: '1px solid #f1f5f9', fontSize: 11.5, fontWeight: 700, color: '#475569' }}>
+                Endungen <span style={{ color: primary }}>{tlds.length} gewählt</span>
+                <button type="button" onClick={() => setTlds([])} style={{ marginLeft: 'auto', border: 'none', background: '#f1f5f9', borderRadius: 99, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: '#64748b' }}>Alle abwählen</button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderBottom: '1px solid #f1f5f9' }}>
+                <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 11, color: '#94a3b8' }} aria-hidden="true" />
+                <input value={tldSuche} onChange={e => setTldSuche(e.target.value)} placeholder="Endung suchen … z. B. shop" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12.5, fontFamily: 'inherit' }} />
+              </div>
+              <div style={{ maxHeight: 230, overflowY: 'auto' }}>
+                {tldTreffer.length === 0 && <p style={{ padding: '14px', fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>Keine Endung gefunden.</p>}
+                {tldTreffer.map(t => (
+                  <div key={t} onClick={() => tldUmschalten(t)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 13px', cursor: 'pointer', borderBottom: '1px solid #fafbfc' }}>
+                    <span style={{ width: 17, height: 17, borderRadius: 5, border: `2px solid ${tlds.includes(t) ? primary : '#cbd5e1'}`, background: tlds.includes(t) ? primary : '#fff', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}>{tlds.includes(t) && <i className="fa-solid fa-check" />}</span>
+                    <b style={{ fontSize: 13 }}>.{t}</b>
+                    <em style={{ marginLeft: 'auto', fontStyle: 'normal', fontSize: 11.5, color: '#94a3b8' }}>{eur(TLD_PREISE[t])} €/Jahr</em>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </>
+        </div>
+
+        <button onClick={pruefen} disabled={laedt} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 10, padding: '0 22px', fontWeight: 700, fontSize: 13.5, cursor: laedt ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+          <i className={`fa-solid ${laedt ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true" />{laedt ? 'Prüfe…' : 'Prüfen'}
+        </button>
+      </div>
+
+      {fehler && <div style={{ fontSize: 12.5, color: '#B4232A', background: '#FDECEC', border: '1px solid #F5C6C6', borderRadius: 8, padding: '9px 12px', marginBottom: 10 }}>{fehler}</div>}
+
+      {daten && (
+        <div style={{ display: 'grid', gap: 7, marginBottom: 10 }}>
+          {frei.map(e => (
+            <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 11, border: '1px solid #e5e5e5', borderRadius: 10, padding: '11px 14px' }}>
+              <i className="fa-solid fa-circle-check" style={{ color: '#1F9D55' }} aria-hidden="true" />
+              <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{e.domain}</span>
+              <span style={{ fontSize: 12, color: miete ? '#1F9D55' : '#64748b', fontWeight: miete ? 700 : 500 }}>{miete ? 'inklusive' : e.preis ? `${eur(e.preis)} € / Jahr` : ''}</span>
+              <button onClick={() => waehlen(e)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>In den Warenkorb</button>
+            </div>
+          ))}
+          {belegt.map(e => (
+            <div key={e.domain} style={{ display: 'flex', alignItems: 'center', gap: 11, border: '1px solid #f1f5f9', borderRadius: 10, padding: '11px 14px', opacity: .6 }}>
+              <i className="fa-solid fa-circle-xmark" style={{ color: '#B4232A' }} aria-hidden="true" />
+              <span style={{ flex: 1, fontSize: 13.5 }}>{e.domain}</span>
+              <span style={{ fontSize: 11.5, color: '#94a3b8' }}>schon vergeben</span>
+            </div>
+          ))}
+        </div>
       )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <button onClick={() => upd('domainSpaeter', true)} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 99, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <i className="fa-solid fa-clock" aria-hidden="true" />Domain später wählen
+        </button>
+        {fd.domainSpaeter && <span style={{ fontSize: 11.5, color: '#1F9D55', fontWeight: 700 }}><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Du kannst sie jederzeit im Editor festlegen.</span>}
+      </div>
+
       <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 10, lineHeight: 1.55 }}>
         <i className="fa-solid fa-lock" style={{ marginRight: 6 }} aria-hidden="true" />
-        {miete ? 'Eine Domain ist in deinem Mietpaket enthalten (1 Domain pro Paket).' : 'Beim Kauf bringst du Domain und Hosting selbst mit – du kannst hier trotzdem festhalten, wie deine Seite heißen soll.'}
+        {miete ? 'Eine Domain ist in deinem Mietpaket enthalten (1 Domain pro Paket).' : 'Beim Kauf bringst du Domain und Hosting selbst mit – du kannst sie hier trotzdem direkt mitbestellen.'}
       </div>
     </div>
   )

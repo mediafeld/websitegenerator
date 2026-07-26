@@ -82,15 +82,22 @@ export function WarenkorbPanel() {
                   <div className="wk-artikel-info">
                     <b>{a.titel}</b>
                     {a.unter && <span>{a.unter}</span>}
-                    <em>{a.art === 'monatlich' ? 'monatlich' : 'einmalig'}</em>
+                    <em>{a.gratis ? 'inklusive' : a.art === 'monatlich' ? 'monatlich' : 'einmalig'}</em>
+                    {!!(a.punkte?.length) && (
+                      <ul className="wk-punkte">
+                        {a.punkte.map((p, i) => <li key={i}><i className="fa-solid fa-check" aria-hidden="true" />{p}</li>)}
+                      </ul>
+                    )}
                   </div>
                   <div className="wk-artikel-steuer">
-                    <div className="wk-menge">
-                      <button onClick={() => mengeAendern(a.id, -1)} aria-label="Weniger">–</button>
-                      <span>{a.menge}</span>
-                      <button onClick={() => mengeAendern(a.id, 1)} aria-label="Mehr">+</button>
-                    </div>
-                    <b>{eur(a.preis * a.menge)} €</b>
+                    {a.fest ? <span className="wk-fest">1 ×</span> : (
+                      <div className="wk-menge">
+                        <button onClick={() => mengeAendern(a.id, -1)} aria-label="Weniger">–</button>
+                        <span>{a.menge}</span>
+                        <button onClick={() => mengeAendern(a.id, 1)} aria-label="Mehr">+</button>
+                      </div>
+                    )}
+                    <b>{a.gratis ? 'inklusive' : `${eur(a.preis * a.menge)} €`}</b>
                     <button className="wk-entfernen" onClick={() => entfernen(a.id)} aria-label="Entfernen"><i className="fa-solid fa-trash" aria-hidden="true" /></button>
                   </div>
                 </div>
@@ -155,6 +162,10 @@ export const WARENKORB_CSS = `
 .wk-artikel-info b{font-size:14.5px;color:${CI.text}}
 .wk-artikel-info span{font-size:12.5px;color:${CI.textMatt}}
 .wk-artikel-info em{font-style:normal;font-size:11px;color:${CI.blau};font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.wk-punkte{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
+.wk-punkte li{display:flex;align-items:flex-start;gap:7px;font-size:11.5px;color:${CI.textMatt};line-height:1.45}
+.wk-punkte li i{color:#1F9D55;font-size:9.5px;margin-top:3px;flex-shrink:0}
+.wk-fest{font-size:12px;font-weight:700;color:${CI.textZart}}
 .wk-artikel-steuer{display:flex;align-items:center;gap:12px}
 .wk-menge{display:flex;align-items:center;gap:0;border:1px solid ${CI.linie};border-radius:99px;overflow:hidden}
 .wk-menge button{width:26px;height:26px;border:none;background:${CI.grau};cursor:pointer;font-size:14px;color:${CI.text}}
