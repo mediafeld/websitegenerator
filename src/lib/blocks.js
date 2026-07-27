@@ -120,13 +120,13 @@ export const NAV = {
       ${c.logo ? '' : ed('firmenname', c.firmenname, 'span')}
     </a>
     <div style="display:flex;align-items:center;gap:4px;" class="nav-desktop">
-      ${(c.navLinks || []).map(l => `<a href="${l.href}" style="font-size:14px;font-weight:500;color:#475569;text-decoration:none;padding:8px 14px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='var(--p50)';this.style.color='var(--p700)'" onmouseout="this.style.background='transparent';this.style.color='#475569'">${esc(l.label)}</a>`).join('')}
-      <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-weight:600;font-size:14px;margin-left:8px;">Kontakt</a>
+      ${(c.navLinks || []).map((l, i) => `<a href="${l.href}" style="font-size:14px;font-weight:500;color:#475569;text-decoration:none;padding:8px 14px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='var(--p50)';this.style.color='var(--p700)'" onmouseout="this.style.background='transparent';this.style.color='#475569'">${ed(`navLinks.${i}.label`, l.label)}</a>`).join('')}
+      <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-weight:600;font-size:14px;margin-left:8px;">${ed('navCta', c.navCta || 'Kontakt')}</a>
     </div>
     <button class="nav-burger" onclick="this.nextElementSibling?this.parentElement.parentElement.querySelector('.nav-mobile').classList.toggle('hidden'):0" style="display:none;background:none;border:none;cursor:pointer;font-size:22px;color:var(--p700);"><i class="fa-solid fa-bars"></i></button>
   </div>
   <div class="nav-mobile hidden" style="display:none;padding:12px 24px;border-top:1px solid #f0f0f0;flex-direction:column;gap:4px;">
-    ${(c.navLinks || []).map(l => `<a href="${l.href}" style="font-size:15px;font-weight:500;color:#475569;text-decoration:none;padding:10px;">${esc(l.label)}</a>`).join('')}
+    ${(c.navLinks || []).map((l, i) => `<a href="${l.href}" style="font-size:15px;font-weight:500;color:#475569;text-decoration:none;padding:10px;"><span data-kopie="navLinks.${i}.label">${esc(l.label)}</span></a>`).join('')}
   </div>
 </nav>`
   }]
@@ -278,7 +278,7 @@ export const ABOUT = {
       <div style="font-size:15px;color:#64748b;line-height:1.8;">${ed('text2', c.text2, 'span')}</div>
     </div>
     <div data-reveal style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      ${(c.stats || []).map((s, i) => `<div style="background:${i%2===0?'linear-gradient(135deg,var(--p500),var(--p700))':'var(--p50)'};color:${i%2===0?'#fff':'#0f172a'};border-radius:16px;padding:28px;text-align:center;${i%2!==0?'border:1px solid var(--p100);':''}"><div style="font-size:36px;font-weight:900;letter-spacing:-0.02em;${i%2!==0?'color:var(--p600);':''}">${ed(`stats.${i}.num`, s.num)}</div><div style="font-size:13px;${i%2===0?'opacity:0.8;':'color:#94a3b8;'}margin-top:4px;">${esc(s.label)}</div></div>`).join('')}
+      ${(c.stats || []).map((s, i) => `<div style="background:${i%2===0?'linear-gradient(135deg,var(--p500),var(--p700))':'var(--p50)'};color:${i%2===0?'#fff':'#0f172a'};border-radius:16px;padding:28px;text-align:center;${i%2!==0?'border:1px solid var(--p100);':''}"><div style="font-size:36px;font-weight:900;letter-spacing:-0.02em;${i%2!==0?'color:var(--p600);':''}">${ed(`stats.${i}.num`, s.num)}</div><div style="font-size:13px;${i%2===0?'opacity:0.8;':'color:#94a3b8;'}margin-top:4px;">${ed(`stats.${i}.label`, s.label)}</div></div>`).join('')}
     </div>
   </div>
 </section>`
@@ -459,18 +459,18 @@ export const CONTACT = {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;" class="contact-grid">
       <form action="mail.php" method="POST" data-contact-form>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">Name *</label><input type="text" name="name" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
-          <div><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">E-Mail *</label><input type="email" name="email" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
+          <div><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">${ed('lblName', c.lblName || 'Name *')}</label><input type="text" name="name" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
+          <div><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">${ed('lblEmail', c.lblEmail || 'E-Mail *')}</label><input type="email" name="email" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
         </div>
-        <div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">Telefon</label><input type="tel" name="telefon" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
-        <div style="margin-bottom:16px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">Nachricht *</label><textarea name="nachricht" rows="5" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></textarea></div>
-        <button type="submit" style="width:100%;background:var(--p500);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;">Nachricht senden <i class="fa-solid fa-paper-plane" style="margin-left:6px;"></i></button>
+        <div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">${ed('lblTelefon', c.lblTelefon || 'Telefon')}</label><input type="tel" name="telefon" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></div>
+        <div style="margin-bottom:16px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">${ed('lblNachricht', c.lblNachricht || 'Nachricht *')}</label><textarea name="nachricht" rows="5" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;" onfocus="this.style.borderColor='var(--p500)'" onblur="this.style.borderColor='#e2e8f0'"></textarea></div>
+        <button type="submit" style="width:100%;background:var(--p500);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;">${ed('ctaSenden', c.ctaSenden || 'Nachricht senden')} <i class="fa-solid fa-paper-plane" style="margin-left:6px;"></i></button>
       </form>
       <div style="display:flex;flex-direction:column;gap:14px;justify-content:center;">
         ${[['location-dot','Adresse','adresse'],['phone','Telefon','telefon'],['envelope','E-Mail','email'],['clock','Öffnungszeiten','oeffnung']].map(([ic,lb,k]) => `
           <div style="background:var(--p50);border:1px solid var(--p100);border-radius:12px;padding:18px;display:flex;align-items:center;gap:14px;">
             <div style="width:44px;height:44px;background:var(--p100);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--p600);flex-shrink:0;"><i class="fa-solid fa-${ic}"></i></div>
-            <div><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${lb}</div><div style="font-size:14px;font-weight:600;color:#0f172a;">${ed(k, c[k], 'span')}</div></div>
+            <div><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${ed('lbl_' + k, c['lbl_' + k] || lb)}</div><div style="font-size:14px;font-weight:600;color:#0f172a;">${ed(k, c[k], 'span')}</div></div>
           </div>`).join('')}
       </div>
     </div>
@@ -499,26 +499,26 @@ export const FOOTER = {
         <div style="font-size:14px;line-height:1.7;max-width:260px;">${ed('footerDesc', c.footerDesc || c.beschreibung || 'Ihr verlässlicher Partner in der Region – persönlich, sauber, termintreu.')}</div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">Navigation</div>
-        ${(c.navLinks || []).map(l => `<a href="${l.href}" style="font-size:14px;color:rgba(255,255,255,0.5);text-decoration:none;display:block;margin-bottom:8px;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">${esc(l.label)}</a>`).join('')}
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">${ed('spTitelNav', c.spTitelNav || 'Navigation')}</div>
+        ${(c.navLinks || []).map((l, i) => `<a href="${l.href}" style="font-size:14px;color:rgba(255,255,255,0.5);text-decoration:none;display:block;margin-bottom:8px;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">${ed(`navLinks.${i}.label`, l.label)}</a>`).join('')}
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">Kontakt</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">${ed('spTitelKontakt', c.spTitelKontakt || 'Kontakt')}</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
           <span>${ed('telefon', c.telefon, 'span')}</span>
           <span>${ed('email', c.email, 'span')}</span>
         </div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">Öffnungszeiten</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">${ed('spTitelZeiten', c.spTitelZeiten || 'Öffnungszeiten')}</div>
         <div style="font-size:14px;line-height:1.8;">${ed('oeffnung', c.oeffnung, 'span')}</div>
       </div>
     </div>
     <div style="border-top:1px solid rgba(255,255,255,0.08);padding:20px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-      <span style="font-size:13px;">© ${new Date().getFullYear()} ${esc(c.firmenname || 'Ihr Unternehmen')}. Alle Rechte vorbehalten.</span>
+      <span style="font-size:13px;">© ${new Date().getFullYear()} ${ed('rechteText', c.rechteText || 'Ihr Unternehmen. Alle Rechte vorbehalten.')}</span>
       <div style="display:flex;gap:20px;">
-        <a href="impressum.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">Impressum</a>
-        <a href="datenschutz.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">Datenschutz</a>
+        <a href="impressum.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">${ed('lblImpressum', c.lblImpressum || 'Impressum')}</a>
+        <a href="datenschutz.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">${ed('lblDatenschutz', c.lblDatenschutz || 'Datenschutz')}</a>
       </div>
     </div>
   </div>
@@ -572,7 +572,7 @@ export const CUSTOM = {
     render: (c) => `
 <section data-block="custom" data-variant="custom-html" style="padding:40px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
-    ${c.html || '<div style="padding:60px;text-align:center;border:2px dashed #cbd5e1;border-radius:12px;color:#94a3b8;">Eigener Code-Block – im Editor bearbeiten</div>'}
+    <div data-edit="html" style="outline:none;">${c.html || '<div style="padding:60px;text-align:center;border:2px dashed #cbd5e1;border-radius:12px;color:#94a3b8;">Eigener Code-Block – hier klicken und Inhalt einfügen</div>'}</div>
   </div>
 </section>`
   }]

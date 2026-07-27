@@ -2,7 +2,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { renderPage } from '@/lib/blockRenderer'
-import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY, ALLE_DEFAULTS } from '@/lib/blocks'
+import { getVariants, ADDABLE_BLOCKS, BLOCK_CATEGORIES, BLOCK_REGISTRY, ALLE_DEFAULTS, renderBlock } from '@/lib/blocks'
+
+// Einzel-Elemente: per Drag frei in JEDEN Container (Karte, Spalte, Rasterzelle)
+const EINZEL_ELEMENTE = [
+  { type: 'el-ueberschrift', label: 'Überschrift', fa: 'heading' },
+  { type: 'el-text', label: 'Text', fa: 'font' },
+  { type: 'el-bild', label: 'Bild', fa: 'image' },
+  { type: 'el-button', label: 'Button', fa: 'hand-pointer' },
+  { type: 'el-abstand', label: 'Abstand', fa: 'arrows-up-down' },
+  { type: 'el-code', label: 'Eigener Code', fa: 'code' },
+]
 import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
 import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer } from '@/lib/projekte'
@@ -310,16 +320,9 @@ export default function EditorPage() {
     let sy = 0
     try { sy = iframe.contentWindow?.scrollY || 0 } catch { sy = 0 }
     iframe.onload = () => { try { iframe.contentWindow?.scrollTo(0, sy) } catch {} }
-    if (vorschau) {
-      // Vorschau-Modus: die Seite exakt so wie live – mit Animationen,
-      // ohne jegliche Baukasten-Elemente und ohne Editor-Skript.
-      const live = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: false })
-      iframe.srcdoc = injectPattern(live)
-      return
-    }
     const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true })
     iframe.srcdoc = injectEditor(injectPattern(html))
-  }, [renderKey, activePage, palette, font, fontHeadline, pagePattern, vorschau])
+  }, [renderKey, activePage, palette, font, fontHeadline, pagePattern])
 
   function applyPattern(pat) {
     setPagePattern(pat.id)
@@ -419,6 +422,7 @@ export default function EditorPage() {
       .wg-teiler{ position:fixed; z-index:2147480001; width:12px; margin-left:-6px; cursor:col-resize; pointer-events:auto; display:flex; align-items:center; justify-content:center; }
       .wg-teiler::before{ content:''; width:4px; height:44px; border-radius:4px; background:${PINK}; border:1px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.3); }
       #wg-tip{ position:fixed; z-index:2147480002; background:#0f172a; color:#fff; font:700 11px/1 sans-serif; padding:5px 8px; border-radius:6px; pointer-events:none; display:none; }
+      .wg-drop-ziel{ outline:3px dashed #16a34a !important; outline-offset:-3px; background:rgba(22,163,74,.1) !important; }
     </style>`
 
     const js = `<script>(function(){
@@ -576,6 +580,13 @@ export default function EditorPage() {
         // 1) Direkt ein bearbeitbares Element getroffen? → Text-Bearbeitung
         var direkt=e.target.closest(BEARBEITBAR);
         if(direkt){ e.stopPropagation();e.preventDefault(); textAuswahl(direkt); return; }
+        // 1b) Laufband-Kopie getroffen? → das Original mit gleichem Pfad wählen
+        //     (Laufbänder zeigen jeden Eintrag doppelt für die Endlos-Schleife)
+        var kopie=e.target.closest('[data-kopie]');
+        if(kopie){
+          var orig=(kopie.closest('[data-block]')||document).querySelector('[data-edit="'+kopie.getAttribute('data-kopie')+'"]');
+          if(orig){ e.stopPropagation();e.preventDefault(); textAuswahl(orig); return; }
+        }
         // 2) Nach oben laufen. Kleine Rahmen mit genau EINEM Text (z. B. ein
         //    Button) zählen weiter als Text-Klick; erst der erste echte
         //    Container/die Sektion wird pink gewählt (Elementor-Auswahl).
@@ -631,12 +642,16 @@ export default function EditorPage() {
         }
       },false);
 
-      // Speichern beim Verlassen
+      // Speichern beim Verlassen. Laufband-Kopien desselben Pfads werden
+      // sofort mitgezogen, damit die Schleife nicht zweierlei Text zeigt.
       document.addEventListener('blur',function(e){
         var el=e.target;
         if(el&&el.hasAttribute&&el.hasAttribute('data-edit')&&el.isContentEditable){
           el.contentEditable=false;
-          parent.postMessage({t:'edit',key:el.getAttribute('data-edit'),val:el.innerHTML,block:bIdx(el)},'*');
+          var key=el.getAttribute('data-edit');
+          var blk=el.closest('[data-block]')||document;
+          blk.querySelectorAll('[data-kopie="'+key+'"]').forEach(function(kp){kp.innerHTML=el.innerHTML;});
+          parent.postMessage({t:'edit',key:key,val:el.innerHTML,block:bIdx(el)},'*');
         }
       },true);
       document.addEventListener('keydown',function(e){
@@ -750,9 +765,40 @@ export default function EditorPage() {
         if(target){ target.parentNode.insertBefore(wgPlace, target); }
         else { var last=bs[bs.length-1]; if(last)last.parentNode.insertBefore(wgPlace, last.nextSibling); window.__wgDropIndex=bs.length; }
       }
-      document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){} wgPlaceAt(e.clientY); });
-      document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); var idx=window.__wgDropIndex||0; wgRemovePlace(); parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:idx},'*'); });
-      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd')wgRemovePlace(); if(dd.cmd==='setParallax'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.block]; if(el){ if(dd.on){el.setAttribute('data-parallax',dd.speed);}else{el.removeAttribute('data-parallax');el.style.backgroundPositionY='';} if(typeof window.wgRunParallax==='function')window.wgRunParallax(); } } if(dd.cmd==='gotoBlock'){ var bs2=document.querySelectorAll('[data-block]'); var el2=bs2[dd.index]; if(el2){ el2.scrollIntoView({behavior:'smooth',block:'start'}); el2.style.transition='outline 0.2s'; el2.style.outline='3px solid ${primary}'; setTimeout(function(){el2.style.outline='';},900); } } });
+      // Ziehen über einen Container (Karte, Rasterzelle, Spalte) → dort
+      // einfügen. Sonst wie bisher zwischen den Sektionen.
+      var dropZiel=null;
+      function dropZielSetzen(el){
+        if(dropZiel===el)return;
+        if(dropZiel)dropZiel.classList.remove('wg-drop-ziel');
+        dropZiel=el;
+        if(dropZiel)dropZiel.classList.add('wg-drop-ziel');
+      }
+      function containerUnterPunkt(x,y){
+        var el=document.elementFromPoint(x,y);
+        while(el&&el!==document.body&&el!==document.documentElement){
+          if(istChromeEl(el)){el=el.parentElement;continue;}
+          if(el.hasAttribute&&el.hasAttribute('data-block'))return null; // Sektion selbst = zwischen Sektionen
+          if(istContainer(el))return el;
+          el=el.parentElement;
+        }
+        return null;
+      }
+      document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){}
+        var z=containerUnterPunkt(e.clientX,e.clientY);
+        if(z){ wgRemovePlace(); dropZielSetzen(z); }
+        else { dropZielSetzen(null); wgPlaceAt(e.clientY); }
+      });
+      document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault();
+        if(dropZiel){
+          var pf=kindPfad(dropZiel);
+          var bi=bIdx(dropZiel);
+          dropZielSetzen(null); wgRemovePlace();
+          if(pf!=null&&bi>=0){ parent.postMessage({t:'dropInContainer', blockType:parent.__wgDrag, block:bi, pfad:pf},'*'); return; }
+        }
+        var idx=window.__wgDropIndex||0; wgRemovePlace(); parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:idx},'*');
+      });
+      window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd'){wgRemovePlace();dropZielSetzen(null);} if(dd.cmd==='setParallax'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.block]; if(el){ if(dd.on){el.setAttribute('data-parallax',dd.speed);}else{el.removeAttribute('data-parallax');el.style.backgroundPositionY='';} if(typeof window.wgRunParallax==='function')window.wgRunParallax(); } } if(dd.cmd==='gotoBlock'){ var bs2=document.querySelectorAll('[data-block]'); var el2=bs2[dd.index]; if(el2){ el2.scrollIntoView({behavior:'smooth',block:'start'}); el2.style.transition='outline 0.2s'; el2.style.outline='3px solid ${primary}'; setTimeout(function(){el2.style.outline='';},900); } } });
 
       // ═══════════════════════════════════════════════════════════════
       // SEKTIONEN & CONTAINER – Elementor-artige Auswahl
@@ -784,6 +830,7 @@ export default function EditorPage() {
         if(tag==='style'||tag==='script'||tag==='i'||tag==='br'||tag==='img'||tag==='iframe')return false;
         if(el.hasAttribute('data-edit')||el.hasAttribute('data-img')||el.hasAttribute('data-icon')||el.hasAttribute('data-stars'))return false;
         if(el.closest('[data-edit]'))return false;
+        if(el.hasAttribute('data-einbau'))return true;   // frei eingefügtes Element
         var kl=(typeof el.className==='string')?el.className:'';
         if(/(^|\\s)wg-(wrap|karte|split|bildbox)(\\s|$)/.test(kl))return true;
         var cs=getComputedStyle(el);
@@ -812,6 +859,8 @@ export default function EditorPage() {
       }
       // Gehört diese Karte zu content[feld][index]? (alle Pfade gleicher Anfang)
       function bindung(el){
+        // Frei eingefügte Elemente hängen an der Liste content._einbau
+        if(el.hasAttribute&&el.hasAttribute('data-einbau'))return {feld:'_einbau',index:parseInt(el.getAttribute('data-einbau'),10)};
         var els=el.querySelectorAll('[data-edit],[data-img],[data-icon],[data-stars]');
         if(!els.length)return null;
         var feld=null,ix=null;
@@ -826,6 +875,10 @@ export default function EditorPage() {
       }
       function contLabel(el){
         var kl=(typeof el.className==='string')?el.className:'';
+        if(el.hasAttribute&&el.hasAttribute('data-einbau')){
+          var artN={bild:'Bild',ueberschrift:'Überschrift',text:'Text',button:'Button',abstand:'Abstand',html:'Eigener Code'};
+          return 'Eingefügt: '+(artN[el.getAttribute('data-einbau-art')]||'Element');
+        }
         var b=bindung(el); if(b)return 'Karte '+(b.index+1);
         if(/wg-wrap/.test(kl))return 'Innen-Bereich';
         if(/wg-karte/.test(kl))return 'Karte';
@@ -1162,6 +1215,7 @@ export default function EditorPage() {
       if (d.t === 'del') delBlock(d.block)
       if (d.t === 'dup') dupBlock(d.block)
       if (d.t === 'dropBlock') addBlockAt(d.index, d.blockType)
+      if (d.t === 'dropInContainer') widgetEinfuegen(d.block, d.pfad, d.blockType)
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
@@ -1216,6 +1270,33 @@ export default function EditorPage() {
     applyPages(next, true, false)
     if (fields._name !== undefined) sendeAnVorschau({ cmd: 'contName', block: blockIdx, name: fields._name })
   }
+  // Element frei in einen Container einfügen (per Drag & Drop).
+  // Einzel-Elemente werden echte Bearbeitungs-Elemente; ganze Bausteine
+  // landen als eingebetteter freier HTML-Inhalt (ohne fremde Anker, die
+  // sonst in den Inhalt des Gast-Bausteins schreiben würden).
+  function widgetEinfuegen(blockIdx, pfad, blockType) {
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b || pfad == null) return
+    let w
+    if (blockType === 'el-bild') w = { ziel: pfad, art: 'bild', bild: '' }
+    else if (blockType === 'el-ueberschrift') w = { ziel: pfad, art: 'ueberschrift', text: 'Neue Überschrift' }
+    else if (blockType === 'el-text') w = { ziel: pfad, art: 'text', text: 'Neuer Text. Anklicken und schreiben.' }
+    else if (blockType === 'el-button') w = { ziel: pfad, art: 'button', text: 'Mehr erfahren', href: '#' }
+    else if (blockType === 'el-abstand') w = { ziel: pfad, art: 'abstand', hoehe: 32 }
+    else if (blockType === 'el-code') w = { ziel: pfad, art: 'html', html: '' }
+    else {
+      const vid = getVariants(blockType)[0]?.id
+      if (!vid) return
+      let h = ''
+      try { h = renderBlock(blockType, vid, buildDefaultContent(blockType)) } catch { return }
+      h = h.replace(/\s(data-edit|data-img|data-icon|data-stars|data-kopie|data-block|data-variant|data-bi)="[^"]*"/g, '')
+      w = { ziel: pfad, art: 'html', html: h }
+    }
+    arr[blockIdx] = { ...b, content: { ...(b.content || {}), _einbau: [...(b.content?._einbau || []), w] } }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, true)
+  }
+
   // Karten klonen / löschen / verschieben – ändert die LISTE im Inhalt,
   // damit nichts auseinanderlaufen kann.
   function doArrayOp(blockIdx, feld, index, op) {
@@ -1288,7 +1369,10 @@ export default function EditorPage() {
     if (istPfad(key)) {
       block.content = pfadSetzen(content, key, val)
       arr[blockIdx] = block; next[activePage] = arr
-      applyPages(next, true, !!neuAufbau); return
+      // Bilder mit Pfadschlüssel (images.0, members.2.img) brauchen den
+      // Neuaufbau genauso wie Panel-Übernahmen – sonst erscheint das
+      // hochgeladene Bild erst irgendwann später.
+      applyPages(next, true, !!neuAufbau || isImage); return
     }
 
     // Alles andere ist ein einfaches Feld auf oberster Ebene.
@@ -1519,6 +1603,24 @@ export default function EditorPage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
             {tab === 'blocks' && (
               <>
+                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 6 }}>Elemente – frei platzierbar</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 6 }}>
+                  {EINZEL_ELEMENTE.map(el => (
+                    <div key={el.type} draggable
+                      onDragStart={e => { window.__wgDrag = el.type; e.dataTransfer.effectAllowed = 'copy'; try { e.dataTransfer.setData('text/plain', el.type) } catch {} }}
+                      onDragEnd={() => { window.__wgDrag = null; iframeRef.current?.contentWindow?.postMessage({ cmd: 'wgDragEnd' }, '*') }}
+                      onClick={() => { if (contSel && contSel.pfad) widgetEinfuegen(contSel.block, contSel.pfad, el.type) }}
+                      title={contSel?.pfad ? 'Klick: in die pinke Auswahl einfügen' : 'In eine Karte/Spalte in der Vorschau ziehen'}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 4px 8px', border: '1px dashed #cbd5e1', borderRadius: 9, cursor: 'grab', background: '#fafbff', textAlign: 'center' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.background = '#f0fdf4' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#fafbff' }}>
+                      <i className={`fa-solid fa-${el.fa}`} style={{ fontSize: 15, color: '#16a34a' }} />
+                      <span style={{ fontSize: 9.5, fontWeight: 700, color: '#334155', lineHeight: 1.15 }}>{el.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 9.5, color: '#94a3b8', lineHeight: 1.45, padding: '0 4px', marginBottom: 12 }}>In eine Karte, Spalte oder Rasterzelle ziehen – das Ziel leuchtet grün. Auch ganze Bausteine aus der Bibliothek unten lassen sich so IN einen Bereich ziehen.</div>
+
                 <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 6 }}>Block-Bibliothek</div>
                 {BLOCK_CATEGORIES.map(cat => {
                   const items = ADDABLE_BLOCKS.filter(b => b.cat === cat && (!b.nurBranche || b.nurBranche.includes(formDataRef.current?.branche)))
@@ -1616,6 +1718,7 @@ export default function EditorPage() {
               onBreite={(m, w) => breiteAendern(contSel.block, m, w)}
               onFeld={(f) => contFeld(contSel.block, f)}
               onArrayOp={(op) => contSel.bind && doArrayOp(contSel.block, contSel.bind.feld, contSel.bind.index, op)}
+              onWert={(k, v) => updateContent(contSel.block, k, v, false, true)}
               onClose={() => { sendCmd('deselect'); setContSel(null) }}
               onStilOeffnen={() => { const t = pages[activePage]?.[contSel.block]?.type; setContSel(null); setSelected({ isSection: true, block: contSel.block, secName: BLOCK_REGISTRY[t]?.label || 'Bereich' }) }}
               onEltern={() => { const p = String(contSel.pfad || '').split('.').slice(0, -1).join('.'); sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad ? p : '' }) }}
@@ -1683,6 +1786,15 @@ export default function EditorPage() {
           )}
         </div>
       </div>
+
+      {/* VOLLBILD-VORSCHAU: Seite wie live, responsiv testbar */}
+      {vorschau && (
+        <VorschauVollbild
+          html={injectPattern(renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: false }))}
+          seiten={pageList} aktiveSeite={activePage} onSeite={setActivePage}
+          onSchliessen={() => setVorschau(false)}
+        />
+      )}
 
       {/* BLOCK PICKER (Element hinzufügen mit Vorschau) */}
       {blockPicker && (
@@ -1886,6 +1998,56 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
+// ── Vollbild-Vorschau: die Seite wie live, mit Responsive-Test ──
+// Desktop/Tablet/Mobil als Voreinstellung, zusätzlich frei ziehbare Breite
+// über Griffe an beiden Seiten – zum Testen jedes Zwischenformats.
+function VorschauVollbild({ html, seiten, aktiveSeite, onSeite, onSchliessen }) {
+  const [breite, setBreite] = useState(0)          // 0 = volle Breite
+  const [zieht, setZieht] = useState(false)
+  const rahmenRef = useRef(null)
+  const GERAETE = [['desktop', 'Desktop', 0], ['tablet-screen-button', 'Tablet', 768], ['mobile-screen', 'Mobil', 390]]
+  const ziehen = (e, seite) => {
+    e.preventDefault()
+    setZieht(true)
+    const startX = e.clientX
+    const max = (rahmenRef.current?.clientWidth || window.innerWidth) - 24
+    const start = breite === 0 ? max : breite
+    const move = (ev) => {
+      const d = (ev.clientX - startX) * (seite === 'rechts' ? 2 : -2)  // beidseitig symmetrisch
+      setBreite(Math.max(300, Math.min(max, Math.round(start + d))))
+    }
+    const up = () => { setZieht(false); document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+  }
+  const griffStil = { width: 14, cursor: 'col-resize', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#94a3b8' }
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', flexShrink: 0 }}>
+        <span style={{ color: '#fff', fontWeight: 800, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 8 }}><i className="fa-solid fa-eye" style={{ color: '#16a34a' }} />Vorschau</span>
+        {seiten.length > 1 && (
+          <select value={aktiveSeite} onChange={e => onSeite(e.target.value)} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, padding: '5px 9px', fontSize: 12, fontFamily: 'inherit' }}>
+            {seiten.map(pg => <option key={pg} value={pg} style={{ color: '#111' }}>{pg}</option>)}
+          </select>
+        )}
+        <div style={{ flex: 1 }} />
+        {GERAETE.map(([ic, l, w]) => (
+          <button key={l} onClick={() => setBreite(w)} title={l} style={{ height: 32, padding: '0 12px', border: `1px solid ${breite === w ? '#16a34a' : 'rgba(255,255,255,0.18)'}`, borderRadius: 7, background: breite === w ? 'rgba(22,163,74,0.18)' : 'transparent', color: breite === w ? '#4ade80' : 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className={`fa-solid fa-${ic}`} />{l}</button>
+        ))}
+        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11.5, fontWeight: 700, minWidth: 76, textAlign: 'center' }}>{breite === 0 ? 'volle Breite' : breite + ' px'}</span>
+        <button onClick={onSchliessen} style={{ height: 32, padding: '0 14px', border: 'none', borderRadius: 7, background: '#16a34a', color: '#fff', cursor: 'pointer', fontSize: 12.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 7 }}><i className="fa-solid fa-pen" />Zurück zum Bearbeiten</button>
+      </div>
+      <div ref={rahmenRef} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'stretch', padding: '0 12px 12px', overflow: 'hidden' }}>
+        <div onMouseDown={e => ziehen(e, 'links')} title="Breite ziehen" style={griffStil}><i className="fa-solid fa-grip-lines-vertical" /></div>
+        <div style={{ width: breite === 0 ? '100%' : breite, maxWidth: '100%', transition: zieht ? 'none' : 'width .2s', background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 10px 60px rgba(0,0,0,0.5)' }}>
+          <iframe title="Vorschau" srcDoc={html} style={{ width: '100%', height: '100%', border: 'none', display: 'block', pointerEvents: zieht ? 'none' : 'auto' }} />
+        </div>
+        <div onMouseDown={e => ziehen(e, 'rechts')} title="Breite ziehen" style={griffStil}><i className="fa-solid fa-grip-lines-vertical" /></div>
+      </div>
+    </div>
+  )
+}
+
 // ── Abstände wie bei Elementor: 4 Felder (oben/rechts/unten/links) + Kette + Einheit ──
 function AbstandGruppe({ titel, praefix, werte, onAendern, primary }) {
   const SEITEN = [['Top', 'OBEN'], ['Right', 'RECHTS'], ['Bottom', 'UNTEN'], ['Left', 'LINKS']]
@@ -1927,7 +2089,10 @@ function AbstandGruppe({ titel, praefix, werte, onAendern, primary }) {
 }
 
 // ── Panel für gewählte Sektion / Container (pinke Elementor-Auswahl) ──
-function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern }) {
+function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern, onWert }) {
+  const einbau = contSel.bind?.feld === '_einbau' ? (content?._einbau || [])[contSel.bind.index] : null
+  const [codeText, setCodeText] = useState(einbau?.art === 'html' ? (einbau.html || '') : '')
+  useEffect(() => { setCodeText(einbau?.art === 'html' ? (einbau.html || '') : '') }, [contSel.block, contSel.pfad]) // eslint-disable-line
   const istSek = contSel.kind === 'sektion'
   const eintrag = (content?._layout || {})[contSel.pfad ?? ''] || {}
   const werte = { ...(contSel.stil || {}), ...eintrag }
@@ -1968,6 +2133,32 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
             ))}
           </div>
           <div style={{ fontSize: 9.5, color: '#be185d', marginTop: 6, lineHeight: 1.4 }}>Klonen/Löschen ändert die Inhalts-Liste – die anderen Karten bleiben unangetastet.</div>
+        </div>
+      )}
+
+      {einbau?.art === 'html' && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Eigener HTML-Code</div>
+          <textarea value={codeText} onChange={e => setCodeText(e.target.value)} rows={7} spellCheck={false}
+            style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 8, padding: 9, fontSize: 11.5, fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+          <button onClick={() => onWert(`_einbau.${contSel.bind.index}.html`, codeText)} style={{ width: '100%', marginTop: 6, border: 'none', background: primary, color: '#fff', padding: '8px 0', borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernehmen</button>
+        </div>
+      )}
+      {einbau?.art === 'abstand' && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Höhe des Abstands</div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input type="number" defaultValue={einbau.hoehe || 32} key={'ab' + contSel.pfad} onBlur={e => onWert(`_einbau.${contSel.bind.index}.hoehe`, parseInt(e.target.value) || 32)} onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+              style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>px</span>
+          </div>
+        </div>
+      )}
+      {einbau?.art === 'button' && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Button-Ziel (Link)</div>
+          <input defaultValue={einbau.href || '#'} key={'bh' + contSel.pfad} onBlur={e => onWert(`_einbau.${contSel.bind.index}.href`, e.target.value.trim() || '#')} onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+            placeholder="kontakt.html oder https://…" style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }} />
         </div>
       )}
 

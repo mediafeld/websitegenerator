@@ -150,6 +150,56 @@ function mitIndexAttr(html, c, index) {
   })
 }
 
+// ── Eingebaute Elemente (frei in Container gezogen) ────────────────────────
+// content._einbau = [ { ziel:'0.2.1', art:'bild'|'ueberschrift'|'text'|'button'|'abstand'|'html', … } ]
+// ziel ist der Kindpfad INNERHALB der Sektion. Ein kleines Skript hängt die
+// Elemente dort an – im Editor UND auf der fertigen Seite identisch, deshalb
+// verschieben sie keine nth-child-Zählungen (immer ans Ende des Containers).
+const eEsc = (s) => String(s ?? '')
+const eBlock = /<\s*(h[1-6]|p|div|ul|ol|li|table|blockquote|section|figure|pre|hr)\b/i
+const eEd = (pfad, wert, tag) => {
+  const s = eEsc(wert)
+  const t = eBlock.test(s) ? 'div' : (tag || 'span')
+  return `<${t} data-edit="${pfad}" style="outline:none;${t === 'div' ? 'display:block;' : ''}">${s}</${t}>`
+}
+
+export function einbauWidgetHtml(w, wi) {
+  const art = w?.art || 'text'
+  const wrap = (innen, extra = '') => `<div class="wg-einbau" data-einbau="${wi}" data-einbau-art="${art}" style="margin:10px 0;${extra}">${innen}</div>`
+  if (art === 'bild') {
+    if (w.bild) return wrap(`<img data-img="_einbau.${wi}.bild" src="${eEsc(w.bild)}" alt="" style="width:100%;border-radius:12px;display:block;cursor:pointer;">`)
+    return wrap(`<div data-img="_einbau.${wi}.bild" style="width:100%;min-height:130px;border:2px dashed rgba(15,23,42,.25);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#94a3b8;cursor:pointer;padding:18px;"><i class="fa-solid fa-image" style="font-size:22px;"></i><span style="font-size:13px;font-weight:600;">Bild einfügen</span></div>`)
+  }
+  if (art === 'ueberschrift') return wrap(`<h3 style="font-size:clamp(19px,2.4vw,26px);font-weight:800;letter-spacing:-.02em;color:inherit;">${eEd(`_einbau.${wi}.text`, w.text || 'Neue Überschrift')}</h3>`)
+  if (art === 'button') return wrap(`<a href="${eEsc(w.href || '#')}" class="wg-btn" onclick="return false;">${eEd(`_einbau.${wi}.text`, w.text || 'Mehr erfahren')}</a>`)
+  if (art === 'abstand') return wrap('', `height:${parseInt(w.hoehe, 10) || 32}px;margin:0;`)
+  if (art === 'html') return wrap(w.html || '<div style="padding:16px;border:2px dashed rgba(15,23,42,.2);border-radius:10px;color:#94a3b8;font-size:13px;">Eigener Code – über das Panel bearbeiten</div>')
+  return wrap(`<div style="font-size:15px;line-height:1.65;">${eEd(`_einbau.${wi}.text`, w.text || 'Neuer Text. Anklicken und schreiben.')}</div>`)
+}
+
+const EINBAU_JS = `<script>
+(function(){
+  function kind(el,pfad){ if(pfad===''||pfad==null)return el; var n=el,t=String(pfad).split('.'); for(var i=0;i<t.length&&n;i++){ n=n.children[parseInt(t[i],10)]; } return n||null; }
+  document.querySelectorAll('script[type="application/json"][data-einbau-json]').forEach(function(sc){
+    var sec=document.querySelector('[data-bi="'+sc.getAttribute('data-einbau-json')+'"]'); if(!sec)return;
+    var list=[]; try{ list=JSON.parse(sc.textContent) }catch(e){}
+    list.forEach(function(w){ var z=kind(sec,w.ziel); if(z)z.insertAdjacentHTML('beforeend',w.html); });
+  });
+})();
+</script>`
+
+function einbauDaten(blocks) {
+  const teile = []
+  ;(blocks || []).forEach((b, i) => {
+    const liste = Array.isArray(b.content?._einbau) ? b.content._einbau : []
+    if (!liste.length) return
+    const eintraege = liste.map((w, wi) => ({ ziel: String(w.ziel ?? ''), html: einbauWidgetHtml(w, wi) }))
+    teile.push(`<script type="application/json" data-einbau-json="${i}">${JSON.stringify(eintraege).replace(/<\/script/gi, '<\\/script')}</script>`)
+  })
+  if (!teile.length) return ''
+  return teile.join('\n') + '\n' + EINBAU_JS
+}
+
 // ── Freie Bearbeitung für JEDEN Baustein ───────────────────────────────────
 // Jeder Block kann zusätzlich mitbringen:
 //   content.customHTML → ersetzt den Baustein komplett durch eigenen Code
@@ -240,6 +290,7 @@ ${layoutDaten}
 </head>
 <body>
 ${blocksHtml}
+${einbauDaten(blocks)}
 ${PARALLAX_JS}
 ${forEditor ? '' : GENERATOR_REVEAL_JS}
 ${forEditor ? '' : ANIM_INIT}

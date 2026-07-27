@@ -320,7 +320,7 @@ neu('h-laufband', 'Mit Laufband', {
   punkte: ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden'],
 }, (c) => {
   const zeile = (bearbeitbar) => c.punkte.map((p, i) =>
-    `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : esc(p)}</span>`
+    `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : `<span data-kopie="punkte.${i}">${esc(p)}</span>`}</span>`
   ).join('')
   return `
 <section data-block="hero-full" data-variant="h-laufband" class="${zone(c)}" style="position:relative;overflow:hidden;${flaeche(c)}">

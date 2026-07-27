@@ -667,7 +667,7 @@ export const VIDEO = {
         ? `<iframe src="${esc(c.videoUrl)}" style="width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>`
         : `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.7);gap:12px;">
              <i class="fa-solid fa-play" style="font-size:40px;color:var(--accent);"></i>
-             <span style="font-size:14px;">Video-Link im Editor einfügen</span>
+             <span style="font-size:14px;" data-hinweis>Video-Link im Editor einfügen</span>
            </div>`}
     </div>
   </div>
@@ -696,7 +696,7 @@ export const BANNER = {
       id: 'banner-laufband', name: 'Laufband',
       render: (c) => {
         const punkte = misch(c.punkte, ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden', 'Persönliche Beratung'])
-        const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : esc(p)}</span>`
+        const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : `<span data-kopie="punkte.${i}">${esc(p)}</span>`}</span>`
         const reihe = punkte.map((p, i) => zeile(p, i, true)).join('')
         const reiheKopie = punkte.map((p, i) => zeile(p, i, false)).join('')
         return `
@@ -744,7 +744,7 @@ export const KONTAKT_PLUS = {
           .map(([ic, label, feld, wert], i) => `<div class="wg-karte" style="display:flex;align-items:center;gap:15px;padding:18px 20px;">
             <div style="width:42px;height:42px;border-radius:11px;background:var(--p100);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;"><i class="fa-solid fa-${ic}"></i></div>
             <div style="min-width:0;">
-              <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;">${label}</div>
+              <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;">${ed('lbl_' + feld, c['lbl_' + feld] || label)}</div>
               <div style="font-size:15px;font-weight:600;color:#0f172a;">${ed(feld, wert)}</div>
             </div>
           </div>`).join('')}

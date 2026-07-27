@@ -156,7 +156,7 @@ export const STEPBOX = {
       ${items.map((it, i) => `<div class="wg-reveal" style="text-align:center;position:relative;transition-delay:${i * 90}ms;">
         ${i < items.length - 1 ? `<div class="wg-hide-mob" style="position:absolute;top:32px;left:calc(50% + 42px);right:calc(-50% + 42px);height:2px;background:repeating-linear-gradient(90deg,var(--p200) 0 7px,transparent 7px 14px);"></div>` : ''}
         <div style="width:64px;height:64px;border-radius:50%;background:var(--p50);border:2px solid var(--p200);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;position:relative;z-index:1;">${icon(`items.${i}.icon`, it.icon)}</div>
-        <div style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);margin-bottom:7px;">SCHRITT ${i + 1}</div>
+        <div style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);margin-bottom:7px;">${ed(`items.${i}.schritt`, it.schritt || ('Schritt ' + (i + 1)))}</div>
         <h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed(`items.${i}.title`, it.title)}</h3>
         <div style="font-size:14px;color:#64748b;line-height:1.65;max-width:250px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</div>
       </div>`).join('')}
@@ -606,7 +606,7 @@ export const TEXTBOX = {
 <section data-block="textbox" data-variant="tbox-frei" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   ${c.css ? `<style>${c.css}</style>` : ''}
   <div class="wg-wrap" style="max-width:${esc(c.breite || '860px')};">
-    <div class="wg-reveal wg-freitext" data-html="inhalt">
+    <div class="wg-reveal wg-freitext" data-html="inhalt" data-edit="html" style="outline:none;">
       ${c.html || `<h2 class="wg-t2">Freier Textblock</h2>
       <span class="wg-strichlinie"></span>
       <p class="wg-lead">Diesen Bereich kannst du im Editor komplett frei gestalten – mit dem Text-Editor oder direkt mit eigenem HTML, CSS und JavaScript.</p>`}
@@ -621,7 +621,7 @@ export const TEXTBOX = {
 <section data-block="textbox" data-variant="tbox-karte" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   ${c.css ? `<style>${c.css}</style>` : ''}
   <div class="wg-wrap" style="max-width:${esc(c.breite || '900px')};">
-    <div class="wg-reveal wg-karte wg-freitext" data-html="inhalt" style="padding:clamp(26px,4vw,46px);">
+    <div class="wg-reveal wg-karte wg-freitext" data-html="inhalt" data-edit="html" style="padding:clamp(26px,4vw,46px);outline:none;">
       ${c.html || `<h2 class="wg-t3">Eigener Inhalt</h2><p class="wg-lead" style="font-size:15.5px;">Hier kannst du alles einfügen – Text, Tabellen, eingebettete Inhalte.</p>`}
     </div>
   </div>
@@ -720,11 +720,11 @@ export const KARTE = {
         <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Besuchen Sie uns')}</h2>
         <span class="wg-strichlinie"></span>
         <div class="wg-karte" style="padding:20px 22px;margin-bottom:16px;">
-          <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:5px;">Adresse</div>
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:5px;">${txt('lblAdresse', c.lblAdresse, 'Adresse')}</div>
           <div style="font-size:16px;font-weight:600;color:#0f172a;">${txt('adresse', c.adresse, 'Musterstraße 1, 10115 Berlin')}</div>
         </div>
         <a href="https://www.openstreetmap.org/search?query=${encodeURIComponent(c.adresse || 'Musterstraße 1, 10115 Berlin')}" target="_blank" rel="noreferrer" class="wg-btn">
-          <i class="fa-solid fa-diamond-turn-right"></i>Route planen
+          <i class="fa-solid fa-diamond-turn-right"></i>${txt('ctaRoute', c.ctaRoute, 'Route planen')}
         </a>
       </div>
       <div class="wg-reveal re" style="border-radius:20px;overflow:hidden;box-shadow:0 20px 46px rgba(15,23,42,.14);transition-delay:.1s;">
@@ -750,8 +750,8 @@ function osmIframe(c, hoehe = 400) {
   }
   return `<div data-osm-platzhalter style="width:100%;height:${hoehe}px;background:var(--p100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--p700);text-align:center;padding:24px;">
     <i class="fa-solid fa-map-location-dot" style="font-size:34px;"></i>
-    <div style="font-size:15px;font-weight:700;">${adresse}</div>
-    <div style="font-size:13px;opacity:.75;max-width:340px;">Im Editor die Adresse eintragen – die Karte wird dann automatisch angezeigt.</div>
+    <div style="font-size:15px;font-weight:700;" data-hinweis>${adresse}</div>
+    <div style="font-size:13px;opacity:.75;max-width:340px;" data-hinweis>Im Editor die Adresse eintragen – die Karte wird dann automatisch angezeigt.</div>
   </div>`
 }
 
@@ -1006,7 +1006,7 @@ export const SITEPARTS = {
         : `<span style="font-size:20px;font-weight:800;letter-spacing:-.03em;color:var(--p700);">${ed('firmenname', c.firmenname || 'Ihr Unternehmen')}</span>`}
     </a>
     <div class="nav-desktop" style="display:flex;align-items:center;gap:4px;">
-      ${links.map(l => `<a href="${esc(l.href)}" style="font-size:14.5px;font-weight:600;color:#475569;text-decoration:none;padding:9px 15px;border-radius:99px;">${esc(l.label)}</a>`).join('')}
+      ${links.map((l, i) => `<a href="${esc(l.href)}" style="font-size:14.5px;font-weight:600;color:#475569;text-decoration:none;padding:9px 15px;border-radius:99px;">${ed(`navLinks.${i}.label`, l.label)}</a>`).join('')}
       <a href="kontakt.html" class="wg-btn" style="padding:12px 24px;font-size:14.5px;margin-left:10px;">${txt('cta', c.cta, 'Anfragen')}</a>
     </div>
     <button class="nav-burger" style="display:none;background:none;border:none;font-size:22px;color:var(--p700);cursor:pointer;"><i class="fa-solid fa-bars"></i></button>
@@ -1039,7 +1039,7 @@ export const SITEPARTS = {
       </div>`).join('')}
     </div>
     <div style="border-top:1px solid rgba(255,255,255,.12);padding:22px 0;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.5);">
-      <span>© ${new Date().getFullYear()} ${esc(c.firmenname || 'Ihr Unternehmen')}</span>
+      <span>© ${new Date().getFullYear()} ${ed('rechteText', c.rechteText || 'Ihr Unternehmen')}</span>
       <span>${txt('telefon', c.telefon, '+49 30 1234567')} · ${txt('email', c.email, 'info@beispiel.de')}</span>
     </div>
   </div>
@@ -1052,10 +1052,10 @@ export const SITEPARTS = {
 <section data-block="siteparts" data-variant="fehler-404" class="wg-dunkelzone" style="min-height:80vh;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(160deg,var(--p900),#0d1b2a 70%);position:relative;overflow:hidden;">
   <div class="wg-mesh"><span class="wg-blob wg-blob-a"></span><span class="wg-blob wg-blob-b"></span></div>
   <div class="wg-wrap" style="position:relative;z-index:1;max-width:640px;">
-    <div style="font-size:clamp(80px,16vw,180px);font-weight:200;color:#fff;line-height:1;letter-spacing:-.05em;">404</div>
+    <div style="font-size:clamp(80px,16vw,180px);font-weight:200;color:#fff;line-height:1;letter-spacing:-.05em;">${ed('code', c.code || '404')}</div>
     <h1 class="wg-t3" style="color:#fff;margin:10px 0 12px;">${txt('title', c.title, 'Diese Seite gibt es nicht mehr')}</h1>
     <div class="wg-lead" style="color:rgba(255,255,255,.7);margin-bottom:30px;">${txt('text', c.text, 'Vielleicht wurde sie verschoben. Zurück zur Startseite geht es hier.', 'span')}</div>
-    <a href="index.html" class="wg-btn"><i class="fa-solid fa-arrow-left"></i>Zur Startseite</a>
+    <a href="index.html" class="wg-btn"><i class="fa-solid fa-arrow-left"></i>${txt('cta', c.cta, 'Zur Startseite')}</a>
   </div>
 </section>`
     },
