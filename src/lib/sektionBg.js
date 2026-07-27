@@ -30,7 +30,10 @@ export function sektionBg(c = {}, fallback = '') {
     patternLayers(c.bgPattern, patCol).forEach(pp => { layers.push(pp.img); sizes.push(pp.size); repeats.push(pp.repeat); positions.push(pp.pos) })
   }
   // 2) Bild+Overlay ODER Verlauf ODER Farbe (sonst Standard aus fallback)
-  if (c.bgImg) {
+  // WICHTIG: Bei Parallax kommt das Bild NICHT in den Sektions-Hintergrund –
+  // es wird vom Renderer als eigene, überdimensionierte Ebene eingefügt
+  // (sonst verschiebt die Parallax-Bewegung auch Overlay/Verlauf → Banding).
+  if (c.bgImg && !c.bgParallax) {
     const overlay = c.bgOverlay || 'rgba(15,23,42,0.55)'
     const imgSize = c.bgSize === 'contain' ? 'contain' : 'cover'
     layers.push(`linear-gradient(${overlay},${overlay})`, `url('${esc(c.bgImg)}')`)

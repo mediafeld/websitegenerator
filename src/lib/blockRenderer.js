@@ -67,18 +67,31 @@ function buildCSSVars(palette) {
 // JS-Parallax (für Editor-Vorschau UND fertige Seite) – Geschwindigkeit über data-parallax
 const PARALLAX_JS = `<script>
 (function(){
-  function upd(){var els=document.querySelectorAll('[data-parallax]');var vh=window.innerHeight||800;for(var i=0;i<els.length;i++){var el=els[i];var sp=parseFloat(el.getAttribute('data-parallax'))||0;if(!sp){el.style.backgroundPositionY='';continue;}var r=el.getBoundingClientRect();var off=((r.top+r.height/2)-vh/2)*sp;var max=r.height*0.18;if(off>max)off=max;if(off<-max)off=-max;el.style.backgroundPositionY='calc(50% + '+off.toFixed(1)+'px)';}}
+  function upd(){var els=document.querySelectorAll('[data-parallax]');var vh=window.innerHeight||800;for(var i=0;i<els.length;i++){var el=els[i];var sp=parseFloat(el.getAttribute('data-parallax'))||0;var ebene=el.querySelector('[data-parallax-ebene]');if(!sp){if(ebene)ebene.style.transform='';else el.style.backgroundPositionY='';continue;}var r=el.getBoundingClientRect();var off=((r.top+r.height/2)-vh/2)*sp;var max=r.height*0.16;if(off>max)off=max;if(off<-max)off=-max;if(ebene){ebene.style.transform='translate3d(0,'+off.toFixed(1)+'px,0)';}else{el.style.backgroundPositionY='calc(50% + '+off.toFixed(1)+'px)';}}}
   window.wgRunParallax=upd;
   window.addEventListener('scroll',upd,{passive:true});window.addEventListener('resize',upd);
   document.addEventListener('DOMContentLoaded',upd);setTimeout(upd,120);upd();
 })();
 </script>`
 
-// Fügt das data-parallax-Attribut an Sektionen mit aktiviertem Parallax
+// Parallax: eigene, überdimensionierte Bild-Ebene HINTER dem Inhalt.
+// Die Ebene wird ans ENDE der Sektion gehängt (Kindpfade davor bleiben
+// stabil) und liegt dank z-index:-1 + isolation:isolate hinter allem –
+// nachfolgende Elemente decken sie beim Scrollen sauber ab.
 function applyParallaxAttr(html, c) {
   if (!c || !c.bgParallax || !c.bgImg) return html
   const sp = (typeof c.bgParallaxSpeed === 'number') ? c.bgParallaxSpeed : 0.3
-  return html.replace(/(<section\b)/i, `$1 data-parallax="${sp}"`)
+  const m = html.match(/<(section|footer|nav|header|div)\b/i)
+  if (!m) return html
+  const tag = m[1].toLowerCase()
+  let out = html.replace(new RegExp('(<' + tag + '\\b)', 'i'), `$1 data-parallax="${sp}"`)
+  const schliesst = out.lastIndexOf('</' + tag + '>')
+  if (schliesst < 0) return out
+  const ov = c.bgOverlay || 'rgba(15,23,42,0.55)'
+  const bild = String(c.bgImg).replace(/'/g, '%27')
+  const ebenen = `<div data-parallax-ebene aria-hidden="true" style="position:absolute;left:0;right:0;top:-18%;bottom:-18%;z-index:-1;background-image:url('${bild}');background-size:cover;background-position:center;will-change:transform;pointer-events:none;"></div>` +
+    `<div data-parallax-overlay aria-hidden="true" style="position:absolute;inset:0;z-index:-1;background:linear-gradient(${ov},${ov});pointer-events:none;"></div>`
+  return out.slice(0, schliesst) + ebenen + out.slice(schliesst)
 }
 
 // ── Vom Nutzer eingegebenes HTML soll auch wie HTML AUSSEHEN ───────────────
@@ -404,6 +417,7 @@ ${forEditor ? '' : ANIM_CDN}
   ${BILDLEER_CSS}
   ${NUTZER_HTML_CSS}
   ${FX_CSS}
+  [data-parallax]{position:relative;overflow:hidden;isolation:isolate;}
   ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' + GENERATOR_EDITOR_CSS : ''}
 </style>
 ${layoutCSS}

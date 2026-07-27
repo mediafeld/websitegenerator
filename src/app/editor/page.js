@@ -87,6 +87,63 @@ export default function EditorPage() {
   const [breiteRechts, setBreiteRechts] = useState(250)
   const [zieht, setZieht] = useState(null)          // 'links' | 'rechts' während des Ziehens
   const springeZuRef = useRef(null)                 // nach Neuaufbau zum neuen Element springen
+  const [medien, setMedien] = useState([])          // Medien-Bibliothek (Uploads + KI-Bilder)
+  const [medienModal, setMedienModal] = useState(null) // { ziel: {blockIdx,key} | null }
+  const medienGeladen = useRef(false)
+
+  // Bibliothek aus dem Zwischenspeicher laden + einmalig alle Bilder aus dem
+  // Projektinhalt einsammeln (damit auch alte Projekte eine volle Bibliothek haben)
+  useEffect(() => {
+    try { const m = JSON.parse(sessionStorage.getItem('wg24_medien') || '[]'); if (Array.isArray(m)) setMedien(m) } catch {}
+  }, [])
+  useEffect(() => {
+    if (medienGeladen.current || !Object.keys(pages).length) return
+    medienGeladen.current = true
+    const gefunden = []
+    const suche = (o) => {
+      if (!o) return
+      if (typeof o === 'string') { if (o.startsWith('data:image')) gefunden.push(o); return }
+      if (Array.isArray(o)) { o.forEach(suche); return }
+      if (typeof o === 'object') Object.values(o).forEach(suche)
+    }
+    Object.values(pages).forEach(bl => (bl || []).forEach(b => suche(b.content)))
+    if (gefunden.length) setMedien(alt2 => {
+      const neu2 = [...alt2]
+      gefunden.forEach(src => { if (!neu2.some(m => m.src === src)) neu2.push({ src, art: 'upload', name: 'Aus dem Projekt', t: Date.now() }) })
+      const gek = neu2.slice(0, 30)
+      try { sessionStorage.setItem('wg24_medien', JSON.stringify(gek)) } catch {}
+      return gek
+    })
+  }, [pages])
+
+  function medienHinzufuegen(src, art, name) {
+    if (!src || !String(src).startsWith('data:image')) return
+    setMedien(alt2 => {
+      if (alt2.some(m => m.src === src)) return alt2
+      const neu2 = [{ src, art, name: name || (art === 'ki' ? 'KI-Bild' : 'Upload'), t: Date.now() }, ...alt2].slice(0, 30)
+      try { sessionStorage.setItem('wg24_medien', JSON.stringify(neu2)) } catch {}
+      return neu2
+    })
+  }
+  function medienLoeschen(src) {
+    setMedien(alt2 => {
+      const neu2 = alt2.filter(m => m.src !== src)
+      try { sessionStorage.setItem('wg24_medien', JSON.stringify(neu2)) } catch {}
+      return neu2
+    })
+  }
+  // Bild aus der Bibliothek ins Ziel einsetzen (ersetzt vorhandenes Bild)
+  function medienEinsetzen(src) {
+    const ziel = medienModal?.ziel
+    if (!ziel) { setMedienModal(null); return }
+    if (ziel.key === '__sectionBg') {
+      setSectionBg(ziel.blockIdx, { img: src })
+    } else {
+      updateContent(ziel.blockIdx, ziel.key, src, true)
+      springeZuRef.current = { art: 'img', block: ziel.blockIdx, key: ziel.key }
+    }
+    setMedienModal(null)
+  }
 
   // Seitenleisten an den Griffen ziehen → Mitte bekommt variabel Platz.
   // Während des Ziehens fängt das iframe keine Mausereignisse ab.
@@ -353,8 +410,14 @@ export default function EditorPage() {
     next[activePage] = arr; applyPages(next, true, false)
   }
 
-  // Parallax live im Vorschaufenster setzen + speichern
+  // Parallax setzen: Ein/Aus braucht den Neuaufbau (die Bild-Ebene muss
+  // rein/raus), reine Geschwindigkeits-Änderung läuft live über das Attribut.
   function applySectionParallax(blockIdx, on, speed) {
+    const vorher = !!pages[activePage]?.[blockIdx]?.content?.bgParallax
+    if (vorher !== !!on) {
+      setSectionField(blockIdx, { bgParallax: on, bgParallaxSpeed: speed })
+      return
+    }
     iframeRef.current?.contentWindow?.postMessage({ cmd: 'setParallax', block: blockIdx, on, speed }, '*')
     setSectionFieldLive(blockIdx, { bgParallax: on, bgParallaxSpeed: speed })
   }
@@ -1531,6 +1594,7 @@ export default function EditorPage() {
       } else {
         updateContent(imgTarget.blockIdx, imgTarget.key, compressedSrc, true)
       }
+      medienHinzufuegen(compressedSrc, 'upload', file.name)
       setImgTarget(null)
     })
     e.target.value = ''
@@ -1594,6 +1658,7 @@ export default function EditorPage() {
     }
     if (!target) return
     updateContent(target.blockIdx, target.key, imgData, true)
+    medienHinzufuegen(imgData, 'ki', 'KI-Bild')
     springeZuRef.current = { art: 'img', block: target.blockIdx, key: target.key }
     setAiPanel(false)
     const newUsed = imagesUsed + 1
@@ -1822,7 +1887,7 @@ export default function EditorPage() {
               onEltern={() => { const p = String(contSel.pfad || '').split('.').slice(0, -1).join('.'); sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad ? p : '' }) }}
             />
           ) : selected ? (
-            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onFx={selected.pfad != null ? (cfg) => fxAendern(selected.block, selected.pfad, cfg) : null} fxWerte={(pages[activePage]?.[selected.block]?.content?._fx || {})[selected.pfad]} onTextChange={(v) => { textLive(selected.block, selected.key, v); setSelected(sx => sx ? { ...sx, text: v } : sx) }} onLink={selected.linkPfad != null ? (href) => linkAendern(selected.block, selected.linkPfad, href) : null} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onFx={selected.pfad != null ? (cfg) => fxAendern(selected.block, selected.pfad, cfg) : null} fxWerte={(pages[activePage]?.[selected.block]?.content?._fx || {})[selected.pfad]} onMedien={selected.isImg ? () => setMedienModal({ ziel: { blockIdx: selected.block, key: selected.key } }) : null} onMedienBg={selected.isSection ? () => setMedienModal({ ziel: { blockIdx: selected.block, key: '__sectionBg' } }) : null} onTextChange={(v) => { textLive(selected.block, selected.key, v); setSelected(sx => sx ? { ...sx, text: v } : sx) }} onLink={selected.linkPfad != null ? (href) => linkAendern(selected.block, selected.linkPfad, href) : null} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -1892,6 +1957,37 @@ export default function EditorPage() {
           seiten={pageList} aktiveSeite={activePage} onSeite={setActivePage}
           onSchliessen={() => setVorschau(false)}
         />
+      )}
+
+      {/* MEDIEN-BIBLIOTHEK: alle Uploads + KI-Bilder – einfügen/ersetzen/löschen */}
+      {medienModal && (
+        <Modal onClose={() => setMedienModal(null)} title="Medien-Bibliothek" sub={medienModal.ziel ? 'Klick auf ein Bild setzt es in das gewählte Bildfeld ein.' : 'Alle Bilder dieses Projekts.'}>
+          {medien.length === 0 ? (
+            <div style={{ padding: 30, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+              <i className="fa-solid fa-photo-film" style={{ fontSize: 30, marginBottom: 10, display: 'block' }} />
+              Noch keine Bilder – lade eins hoch oder generiere ein KI-Bild, dann erscheint es hier.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 12 }}>
+              {medien.map((m, i) => (
+                <div key={i} style={{ border: '1px solid #e5e5e5', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+                  <div onClick={() => medienEinsetzen(m.src)} title={medienModal.ziel ? 'Einsetzen' : m.name} style={{ height: 100, background: `center/cover url(${m.src})`, cursor: medienModal.ziel ? 'pointer' : 'default', position: 'relative' }}>
+                    <span style={{ position: 'absolute', top: 5, left: 5, background: m.art === 'ki' ? '#7c3aed' : '#0f172a', color: '#fff', fontSize: 8.5, fontWeight: 800, padding: '2px 6px', borderRadius: 99 }}>{m.art === 'ki' ? 'KI' : 'UPLOAD'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 8px' }}>
+                    <span style={{ flex: 1, fontSize: 10, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                    {medienModal.ziel && <button onClick={() => medienEinsetzen(m.src)} title="Einsetzen" style={{ border: 'none', background: primary, color: '#fff', width: 24, height: 22, borderRadius: 5, cursor: 'pointer', fontSize: 10 }}><i className="fa-solid fa-check" /></button>}
+                    <button onClick={() => medienLoeschen(m.src)} title="Aus der Bibliothek entfernen" style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', width: 24, height: 22, borderRadius: 5, cursor: 'pointer', fontSize: 10 }}><i className="fa-solid fa-trash-can" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <button onClick={() => { if (medienModal.ziel) { setImgTarget(medienModal.ziel.key === '__sectionBg' ? { blockIdx: medienModal.ziel.blockIdx, key: '__sectionBg' } : medienModal.ziel); fileRef.current?.click() } setMedienModal(null) }} style={{ flex: 1, border: '1px dashed #cbd5e1', background: '#fafbff', borderRadius: 8, padding: '10px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#475569' }}><i className="fa-solid fa-arrow-up-from-bracket" style={{ marginRight: 6 }} />Neues Bild hochladen</button>
+          </div>
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 8, lineHeight: 1.4 }}>Entfernen löscht nur aus der Bibliothek – bereits eingesetzte Bilder auf der Website bleiben erhalten.</div>
+        </Modal>
       )}
 
       {/* BLOCK PICKER (Element hinzufügen mit Vorschau) */}
@@ -2547,7 +2643,7 @@ function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, on
   )
 }
 
-function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onLink, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout, onFx, fxWerte }) {
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onLink, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout, onFx, fxWerte, onMedien, onMedienBg }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
   const pp = palette?.primary || {}
   const ac = palette?.accent?.base || primary
@@ -2671,6 +2767,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
           <Section title="Hintergrundbild">
             {sectionContent?.bgImg && <img src={sectionContent.bgImg} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
             <button onClick={onSectionImageUpload} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6, fontFamily: 'inherit' }}><i className="fa-solid fa-image" style={{ marginRight: 6 }} />Bild hochladen</button>
+            {onMedienBg && <button onClick={onMedienBg} style={{ width: '100%', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6, fontFamily: 'inherit' }}><i className="fa-solid fa-photo-film" style={{ marginRight: 6 }} />Bibliothek</button>}
             <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6 }}><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />KI-Bild generieren</button>
             {sectionContent?.bgImg && <button onClick={() => onSectionField({ bgImg: '' })} style={{ width: '100%', background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}><i className="fa-solid fa-trash" style={{ marginRight: 6 }} />Foto entfernen</button>}
           </Section>
@@ -2766,6 +2863,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
       ) : selected.isImg ? (
         <Section title="Bild">
           <button onClick={onImageClick} style={{ width: '100%', background: primary, color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}><i className="fa-solid fa-arrow-up-from-bracket" style={{ marginRight: 6 }} />Bild hochladen</button>
+          {onMedien && <button onClick={onMedien} style={{ width: '100%', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}><i className="fa-solid fa-photo-film" style={{ marginRight: 6 }} />Bibliothek</button>}
           <button onClick={onAIImage} style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />KI-Bild generieren</button>
           <div style={{ fontSize: 11, color: imgRest > 0 ? '#16a34a' : '#f59e0b', fontWeight: 700, textAlign: 'center', marginTop: 8 }}>{imgRest} von {imageQuota} KI-Bildern frei</div>
         </Section>
