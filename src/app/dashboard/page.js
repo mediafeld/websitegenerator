@@ -6,7 +6,8 @@ import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
 import { MIETE } from '@/lib/preise'
 import { starteCheckout } from '@/lib/checkout'
-import { aktuellerNutzer, profilLuecken } from '@/lib/projekte'
+import { aktuellerNutzer, profilLuecken, projektLaden, lokalenStandUebernehmen } from '@/lib/projekte'
+import { websiteAlsZip } from '@/lib/exportZip'
 
 const STATUS = {
   entwurf: { text: 'Entwurf', farbe: '#92400E', bg: '#FFFBEB', rand: '#FDE68A' },
@@ -35,9 +36,15 @@ function DashboardInnen() {
   const [aktivId, setAktivId] = useState(null)        // gewähltes Produkt (Website)
   const [switcherOffen, setSwitcherOffen] = useState(false)
   const [umbenennen, setUmbenennen] = useState(null)  // {id, name} während des Umbenennens
+  const [reOffen, setReOffen] = useState(null)        // Projekt-ID, deren Rechnungsdaten offen sind
+  const [reWerte, setReWerte] = useState({})          // Formularwerte der re_*-Felder
+  const [reStatus, setReStatus] = useState('')        // '', 'laedt', 'speichert', 'ok'
 
   const laden = useCallback(async () => {
     if (!supabaseBereit) return
+    // Falls im Browser noch ein nicht zugeordneter Zwischenstand liegt
+    // (gebaut vor der Registrierung): jetzt still ans Konto heften.
+    await lokalenStandUebernehmen()
     const { data, error } = await supabase.from('projekte')
       .select('id,name,firma,branche,status,domain,geaendert_am,zahlungsart,paket_id')
       .order('geaendert_am', { ascending: false })
@@ -72,6 +79,29 @@ function DashboardInnen() {
     if (error) setFehler(fehlerText(error))
     else setProjekte(ps => ps.map(p => p.id === id ? { ...p, name: name.trim() } : p))
     setUmbenennen(null)
+  }
+
+  // Rechnungsdaten je Website: eigene Firmierung/Anschrift, die auf der
+  // Stripe-Rechnung dieser Website steht (statt der Konto-Stammdaten).
+  async function reOeffnen(id) {
+    if (reOffen === id) { setReOffen(null); return }
+    setReOffen(id); setReStatus('laedt'); setReWerte({})
+    const { data } = await supabase.from('projekte')
+      .select('re_firma,re_vorname,re_nachname,re_strasse,re_plz,re_ort,re_ust_id,re_handelsregister')
+      .eq('id', id).maybeSingle()
+    setReWerte(data || {})
+    setReStatus('')
+  }
+
+  async function reSpeichern(id) {
+    setReStatus('speichert')
+    const sauber = {}
+    for (const k of ['re_firma', 're_vorname', 're_nachname', 're_strasse', 're_plz', 're_ort', 're_ust_id', 're_handelsregister']) {
+      sauber[k] = (reWerte[k] || '').trim() || null
+    }
+    const { error } = await supabase.from('projekte').update(sauber).eq('id', id)
+    if (error) { setFehler(fehlerText(error)); setReStatus('') }
+    else { setReStatus('ok'); setTimeout(() => setReStatus(''), 2200) }
   }
 
   async function loeschen(id, name) {
@@ -199,10 +229,63 @@ function DashboardInnen() {
                         <button className="btnfest" onClick={() => router.push(`/editor?projekt=${p.id}`)} style={{ padding: '10px 17px', fontSize: 13 }}>
                           <i className="fa-solid fa-pen" style={{ marginRight: 7 }} aria-hidden="true" />Bearbeiten
                         </button>
+                        {p.zahlungsart === 'kaufen' && p.status === 'online' && (
+                          <button className="btnblau" onClick={async () => {
+                            const voll = await projektLaden(p.id)
+                            if (!voll) { alert('Projekt konnte nicht geladen werden.'); return }
+                            const r = await websiteAlsZip(voll)
+                            if (r?.error) alert(r.error)
+                          }} style={{ padding: '10px 17px', fontSize: 13, background: '#16a34a' }}>
+                            <i className="fa-solid fa-file-zipper" style={{ marginRight: 7 }} aria-hidden="true" />ZIP herunterladen
+                          </button>
+                        )}
+                        <button onClick={() => reOeffnen(p.id)} title="Rechnungsdaten für diese Website"
+                          style={{ background: reOffen === p.id ? D.blauZart : D.hellKarte, color: D.hellText, border: `1px solid ${D.hellLinie}`, borderRadius: 9, padding: '10px 13px', cursor: 'pointer', fontSize: 13 }}>
+                          <i className="fa-solid fa-file-invoice" aria-hidden="true" />
+                        </button>
                         <button onClick={() => loeschen(p.id, p.name)} title="Löschen" style={{ background: D.hellKarte, color: '#DC2626', border: '1px solid #FECACA', borderRadius: 9, padding: '10px 13px', cursor: 'pointer' }}>
                           <i className="fa-solid fa-trash" aria-hidden="true" />
                         </button>
                       </div>
+
+                      {reOffen === p.id && (
+                        <div style={{ background: D.hellGrund, borderRadius: 11, padding: '16px 18px' }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 3 }}>
+                            <i className="fa-solid fa-file-invoice" style={{ color: D.magenta, marginRight: 8 }} aria-hidden="true" />
+                            Rechnungsdaten für diese Website
+                          </div>
+                          <p style={{ fontSize: 12, color: D.hellGrau, marginBottom: 13, lineHeight: 1.6 }}>
+                            Optional: eigene Firmierung und Anschrift, die auf der Rechnung <strong>dieser</strong> Website
+                            steht — praktisch, wenn du mehrere Firmen oder Kunden über ein Konto abwickelst.
+                            Leer gelassen gelten deine Konto-Stammdaten.
+                          </p>
+                          {reStatus === 'laedt' ? (
+                            <div style={{ fontSize: 13, color: D.hellGrau }}><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 7 }} aria-hidden="true" />Lade …</div>
+                          ) : (
+                            <>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                                {[
+                                  ['re_firma', 'Firma', '2fr'], ['re_vorname', 'Vorname'], ['re_nachname', 'Nachname'],
+                                  ['re_strasse', 'Straße & Hausnummer'], ['re_plz', 'PLZ'], ['re_ort', 'Ort'],
+                                  ['re_ust_id', 'USt-IdNr. (optional)'], ['re_handelsregister', 'Handelsregister (optional)'],
+                                ].map(([k, label]) => (
+                                  <label key={k} style={{ display: 'block' }}>
+                                    <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: D.hellGrau, marginBottom: 4 }}>{label}</span>
+                                    <input value={reWerte[k] || ''} onChange={e => setReWerte(w => ({ ...w, [k]: e.target.value }))}
+                                      style={{ width: '100%', boxSizing: 'border-box', border: `1.5px solid ${D.hellLinie}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', outline: 'none', background: '#fff' }} />
+                                  </label>
+                                ))}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 13 }}>
+                                <button className="btnfest" disabled={reStatus === 'speichert'} onClick={() => reSpeichern(p.id)} style={{ padding: '10px 18px', fontSize: 13 }}>
+                                  {reStatus === 'speichert' ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 7 }} aria-hidden="true" />Speichert …</> : 'Rechnungsdaten speichern'}
+                                </button>
+                                {reStatus === 'ok' && <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}><i className="fa-solid fa-circle-check" style={{ marginRight: 6 }} aria-hidden="true" />Gespeichert</span>}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
 
                       {paketWahl === p.id && luecken?.length > 0 && (
                         <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 11, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>

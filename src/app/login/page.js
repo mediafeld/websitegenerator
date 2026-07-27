@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
+import { lokalenStandUebernehmen } from '@/lib/projekte'
 import { D, CI, BASIS_CSS, TELEFON, TELEFON_LINK, EMAIL } from '@/components/Kopf'
 
 export default function LoginSeite() {
@@ -34,7 +35,9 @@ export default function LoginSeite() {
       if (modus === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: passwort })
         if (error) throw error
-        router.replace(ziel())
+        // Vor dem Weiterleiten: lokal gebauten Zwischenstand ans Konto heften
+        const uebernommen = await lokalenStandUebernehmen()
+        router.replace(uebernommen ? `/editor?projekt=${uebernommen}` : ziel())
       } else if (modus === 'registrieren') {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password: passwort,

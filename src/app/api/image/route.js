@@ -1,8 +1,20 @@
 // KI-Bildgenerierung über OpenAI DALL-E 3 + WebP-Umwandlung
 
+import { nutzerAusToken, supabaseAdmin } from '@/lib/supabaseServer'
+
+// Nutzung serverseitig festhalten (Tabelle "nutzung", siehe migration_v26.sql).
+// Scheitert still, wenn Migration/Schlüssel fehlen – Generierung läuft weiter.
+async function nutzungFesthalten(accessToken, art) {
+  try {
+    const nutzer = await nutzerAusToken(accessToken)
+    const db = supabaseAdmin()
+    await db.from('nutzung').insert({ user_id: nutzer?.id || null, art, menge: 1 })
+  } catch (e) { console.log('[nutzung] übersprungen:', e?.message) }
+}
+
 export async function POST(request) {
   try {
-    const { prompt, size } = await request.json()
+    const { prompt, size, accessToken } = await request.json()
     if (!prompt) return Response.json({ error: 'Kein Prompt angegeben' }, { status: 400 })
 
     const apiKey = process.env.OPENAI_API_KEY
@@ -62,7 +74,8 @@ export async function POST(request) {
         .webp({ quality: 82 })
         .toBuffer()
       const webpB64 = webpBuffer.toString('base64')
-      return Response.json({ image: `data:image/webp;base64,${webpB64}`, format: 'webp' })
+      await nutzungFesthalten(accessToken, 'ki-bild')
+    return Response.json({ image: `data:image/webp;base64,${webpB64}`, format: 'webp' })
     } catch (sharpErr) {
       // Falls sharp nicht verfügbar: PNG zurückgeben
       console.error('WebP conversion failed, returning PNG:', sharpErr)

@@ -756,7 +756,20 @@ function osmIframe(c, hoehe = 400) {
   if (!isNaN(lat) && !isNaN(lon)) {
     const d = 0.006
     const bbox = `${(lon - d).toFixed(5)},${(lat - d / 2).toFixed(5)},${(lon + d).toFixed(5)},${(lat + d / 2).toFixed(5)}`
-    return `<iframe data-osm title="Karte" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}" style="width:100%;height:${hoehe}px;border:0;display:block;${kartenFilter(c)}" loading="lazy"></iframe>`
+    const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`
+    // Zwei-Klick-Loesung (DSGVO): Die Karte laedt erst nach Klick des Besuchers –
+    // vorher fliessen KEINE Daten an OpenStreetMap. Im Editor laedt sie sofort
+    // (KARTE_JS im Seiten-Laeufer). Der Wrapper ersetzt das iframe 1:1,
+    // damit sich die Kindpfade der Sektion nicht verschieben.
+    return `<div data-karte-wrap style="position:relative;width:100%;height:${hoehe}px;overflow:hidden;">
+      <iframe data-osm data-karte-src="${src}" title="Karte" style="width:100%;height:100%;border:0;display:block;${kartenFilter(c)}" loading="lazy"></iframe>
+      <div data-karte-consent style="position:absolute;inset:0;background:var(--p50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;cursor:pointer;">
+        <i class="fa-solid fa-map-location-dot" style="font-size:32px;color:var(--p600);"></i>
+        <div style="font-size:15px;font-weight:800;color:var(--p700);">Karte anzeigen</div>
+        <div style="font-size:12px;color:#64748b;max-width:340px;line-height:1.5;">Beim Laden der Karte werden Daten an OpenStreetMap (openstreetmap.org) uebertragen.</div>
+        <span style="background:var(--p600);color:#fff;border-radius:99px;padding:9px 20px;font-size:13px;font-weight:700;">Einverstanden &amp; Karte laden</span>
+      </div>
+    </div>`
   }
   return `<div data-osm-platzhalter style="width:100%;height:${hoehe}px;${kartenFilter(c)}background:var(--p100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--p700);text-align:center;padding:24px;">
     <i class="fa-solid fa-map-location-dot" style="font-size:34px;"></i>
@@ -1117,6 +1130,21 @@ export const ZUSATZ2_DEFAULTS = {
   oeffnung: { tag: 'Öffnungszeiten', title: 'Wann Sie uns erreichen' },
   karte: { tag: 'Anfahrt', title: 'So finden Sie uns', adresse: 'Musterstraße 1, 10115 Berlin' },
   'faq-plus': { tag: 'FAQ', title: 'Häufige Fragen' },
-  slider: { tag: 'Kundenstimmen', title: 'Was Kunden sagen' },
+  slider: {
+    tag: 'Kundenstimmen', title: 'Was Kunden sagen',
+    // Listen ausdrücklich als Standard – so funktionieren Klonen/Löschen/
+    // Verschieben der Folien im pinken Panel auch ohne vorherige Bearbeitung.
+    items: [
+      { text: 'Schnell, sauber und wirklich freundlich. Jederzeit wieder.', name: 'M. Schneider', rolle: 'Privatkundin' },
+      { text: 'Termin gehalten, Preis gehalten, Ergebnis top.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
+      { text: 'Endlich ein Betrieb, der zurückruft. Sehr angenehm.', name: 'K. Ahmadi', rolle: 'Gewerbekunde' },
+      { text: 'Wir sind seit drei Jahren Kunde und rundum zufrieden.', name: 'S. Peters', rolle: 'Büroleitung' },
+    ],
+    folien: [
+      { tag: 'Willkommen', headline: 'Große Bühne für Ihr Angebot', text: 'Jede Folie erzählt eine eigene Geschichte – Bild, Botschaft, Knopf.', cta: 'Mehr erfahren' },
+      { tag: 'Leistungen', headline: 'Was wir für Sie tun', text: 'Von der ersten Idee bis zum fertigen Ergebnis – alles aus einer Hand.', cta: 'Leistungen ansehen' },
+      { tag: 'Kontakt', headline: 'Lernen wir uns kennen', text: 'Erzählen Sie uns von Ihrem Vorhaben – wir melden uns noch heute.', cta: 'Kontakt aufnehmen' },
+    ],
+  },
   siteparts: { firmenname: 'Ihr Unternehmen', telefon: '+49 30 1234567', email: 'info@beispiel.de' },
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabaseServer'
+import { sendeMail, sendeAdminMail, mailRahmen } from '@/lib/mail'
+import { holeMailVorlage } from '@/lib/mailVorlagen'
 
 // Stripe braucht den rohen, unveränderten Request-Body zur Signaturprüfung —
 // deshalb hier kein automatisches JSON-Parsing.
@@ -57,6 +59,38 @@ export async function POST(req) {
 
         if (error) console.error('[webhook] FEHLER beim Update von projekte:', JSON.stringify(error))
         else console.log('[webhook] projekte erfolgreich aktualisiert:', JSON.stringify(data))
+
+        // Einmalkäufe erzeugen KEIN invoice.paid — hier direkt als Zahlung
+        // erfassen, damit Admin-Buchungen und Kundenhistorie vollständig sind.
+        // Benachrichtigungen: an dich (Admin) und an den Kunden
+        const kundeEmail = s.customer_details?.email || null
+        const betragText = ((s.amount_total || 0) / 100).toFixed(2).replace('.', ',') + ' €'
+        sendeAdminMail(
+          modus === 'kaufen' ? `KAUF eingegangen: ${betragText}` : `Neues MIET-Abo: ${betragText}/Monat`,
+          `<p>Paket: <b>${paket_id || '–'}</b><br>Kunde: ${kundeEmail || user_id || '–'}<br>Projekt: ${projekt_id}<br>Domain: ${domain || '–'}</p>`
+        ).catch(() => {})
+        if (kundeEmail) {
+          // Texte kommen aus den anpassbaren Vorlagen (Admin → E-Mails)
+          holeMailVorlage(modus === 'kaufen' ? 'kauf' : 'miete', {
+            betrag: betragText,
+            domain: domain ? ` für <b>${domain}</b>` : '',
+            link: 'https://websitegenerator24.de/dashboard',
+          }).then(v => sendeMail({ an: kundeEmail, betreff: v.betreff, html: mailRahmen(v.titel || 'Danke für deine Bestellung!', v.inhalt) })).catch(() => {})
+        }
+
+        if (modus === 'kaufen') {
+          const { error: kErr } = await db.from('rechnungen').insert({
+            stripe_invoice_id: s.id,
+            user_id: user_id || null,
+            projekt_id,
+            betrag: (s.amount_total || 0) / 100,
+            waehrung: s.currency || 'eur',
+            status: 'bezahlt',
+            rechnung_url: null,
+            pdf_url: null,
+          })
+          if (kErr) console.error('[webhook] FEHLER beim Erfassen des Einmalkaufs:', JSON.stringify(kErr))
+        }
         break
       }
 
@@ -92,6 +126,12 @@ export async function POST(req) {
           const { error } = await db.from('projekte').update({ status: 'zahlung_fehlgeschlagen' }).eq('id', projekt.id)
           if (error) console.error('[webhook] FEHLER bei invoice.payment_failed Update:', JSON.stringify(error))
         }
+        sendeAdminMail('ZAHLUNG FEHLGESCHLAGEN', `<p>Rechnung ${inv.id}<br>Kunde: ${inv.customer_email || inv.customer || '–'}<br>Betrag: ${((inv.amount_due || 0) / 100).toFixed(2)} €</p>`).catch(() => {})
+        if (inv.customer_email) {
+          holeMailVorlage('fehlzahlung', {
+            zahlung_knopf: inv.hosted_invoice_url ? `<p><a href="${inv.hosted_invoice_url}" style="display:inline-block;background:#1d4ed8;color:#fff;padding:12px 22px;border-radius:9px;text-decoration:none;font-weight:bold;">Zahlung jetzt abschließen</a></p>` : '',
+          }).then(v => sendeMail({ an: inv.customer_email, betreff: v.betreff, html: mailRahmen(v.titel || 'Deine Zahlung hat nicht geklappt', v.inhalt) })).catch(() => {})
+        }
         break
       }
 
@@ -103,6 +143,7 @@ export async function POST(req) {
           const { error } = await db.from('projekte').update({ status: 'gekuendigt' }).eq('id', projekt.id)
           if (error) console.error('[webhook] FEHLER bei subscription.deleted Update:', JSON.stringify(error))
         }
+        sendeAdminMail('ABO GEKÜNDIGT', `<p>Abo ${sub.id}<br>Projekt: ${projekt?.id || '–'}</p>`).catch(() => {})
         break
       }
 

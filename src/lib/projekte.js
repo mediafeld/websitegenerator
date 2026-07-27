@@ -110,3 +110,71 @@ export function projektIdAusUrl() {
 // Server-Routen sie echt importieren können. Hier nur weitergereicht, damit
 // bestehender Client-Code unverändert weiterläuft.
 export { PROFIL_PFLICHTFELDER, profilLuecken } from '@/lib/profil'
+
+
+// ── Lokalen Zwischenstand dem Konto zuordnen ────────────────────────────────
+// Wer erst baut und sich DANACH registriert/einloggt, hätte seinen Stand
+// sonst nur im Browser-Zwischenspeicher – und sieht im Konto nichts.
+// Diese Funktion hängt den lokalen Stand als Entwurf ans Konto.
+export async function lokalenStandUebernehmen() {
+  if (typeof window === 'undefined') return null
+  const user = await aktuellerNutzer()
+  if (!user) return null
+  try {
+    const pages = JSON.parse(sessionStorage.getItem('wg24_pages') || 'null')
+    if (!pages || !Object.keys(pages).length) return null
+    const form = JSON.parse(sessionStorage.getItem('wg24_formData') || 'null') || {}
+    const palette = JSON.parse(sessionStorage.getItem('wg24_palette') || 'null')
+    const font = sessionStorage.getItem('wg24_font') || null
+    const id = await projektAnlegenOderAktualisieren({
+      name: form.firma || 'Meine Website',
+      firma: form.firma || null,
+      branche: form.branche || null,
+      form_data: form,
+      pages, palette, font,
+    })
+    return id || null
+  } catch { return null }
+}
+
+// ── Versionsverlauf (Tabelle projekt_versionen, siehe migration_v27.sql) ────
+// Beim Arbeiten wird höchstens alle 10 Minuten ein Sicherungsstand abgelegt,
+// es bleiben die letzten 20 Stände je Projekt. Wiederherstellen im Editor.
+const versionZuletzt = {}
+
+export async function versionAblegen(projektId, daten, anlass = 'speichern', mindestAbstandMin = 10) {
+  try {
+    if (!projektId) return false
+    const user = await aktuellerNutzer()
+    if (!user) return false
+    const jetzt = Date.now()
+    if (mindestAbstandMin > 0 && versionZuletzt[projektId] && jetzt - versionZuletzt[projektId] < mindestAbstandMin * 60000) return false
+    versionZuletzt[projektId] = jetzt
+    const { error } = await supabase.from('projekt_versionen').insert({
+      projekt_id: projektId, user_id: user.id,
+      pages: daten.pages || null, palette: daten.palette || null,
+      font: daten.font || null, form_data: daten.form_data || null, anlass,
+    })
+    if (error) { console.warn('Version übersprungen:', error.message); return false }
+    // Aufräumen: nur die letzten 20 Stände behalten
+    const { data } = await supabase.from('projekt_versionen')
+      .select('id').eq('projekt_id', projektId).order('erstellt_am', { ascending: false })
+    const alt = (data || []).slice(20).map(v => v.id)
+    if (alt.length) await supabase.from('projekt_versionen').delete().in('id', alt)
+    return true
+  } catch (e) { console.warn('Version übersprungen:', e?.message); return false }
+}
+
+export async function versionenListe(projektId) {
+  if (!projektId) return []
+  const { data, error } = await supabase.from('projekt_versionen')
+    .select('id,anlass,erstellt_am').eq('projekt_id', projektId)
+    .order('erstellt_am', { ascending: false }).limit(30)
+  if (error) return []
+  return data || []
+}
+
+export async function versionLaden(id) {
+  const { data } = await supabase.from('projekt_versionen').select('*').eq('id', id).maybeSingle()
+  return data || null
+}

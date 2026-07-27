@@ -11,7 +11,7 @@ export const LAYOUTS = [
     desc: 'Heller Auftakt, großes Bild neben starker Typografie. Wirkt hochwertig und aufgeräumt – wie ein gut gemachtes Magazin.',
     wire: ['hero', 'split', 'cards3', 'quotes', 'cta', 'contact'],
     blocks: [
-      { type: 'hero-full', variant: 'hero-editorial' },
+      { type: 'hero-full', variant: 'h-bild-rechts' },
       { type: 'media', variant: 'media-links' },
       { type: 'features', variant: 'feat-karten' },
       { type: 'text', variant: 'text-zitat' },
@@ -27,7 +27,7 @@ export const LAYOUTS = [
     desc: 'Dunkler Hero mit bewegten Farbflächen, kräftige Kontraste, viel Wirkung. Für alle, die auffallen wollen.',
     wire: ['hero', 'stats', 'cards3', 'split', 'quotes', 'cta', 'contact'],
     blocks: [
-      { type: 'hero-full', variant: 'hero-duo' },
+      { type: 'hero-full', variant: 'h-geist' },
       { type: 'banner', variant: 'banner-laufband' },
       { type: 'features', variant: 'feat-dunkel' },
       { type: 'media', variant: 'media-rechts' },
@@ -43,7 +43,7 @@ export const LAYOUTS = [
     desc: 'Vollflächiges Foto im Hero, große Galerie, wenig Text. Perfekt für Gastronomie, Beauty, Immobilien und Handwerk mit schönen Referenzen.',
     wire: ['hero', 'split', 'gallery', 'cards3', 'cta', 'contact'],
     blocks: [
-      { type: 'hero-full', variant: 'hero-foto' },
+      { type: 'hero-full', variant: 'h-foto-unten' },
       { type: 'media', variant: 'media-gross' },
       { type: 'galerie', variant: 'gal-masonry' },
       { type: 'features', variant: 'feat-split-bild' },
@@ -58,7 +58,7 @@ export const LAYOUTS = [
     desc: 'Zeigt in klaren Schritten, wie die Zusammenarbeit abläuft. Nimmt Unsicherheit und führt zur Anfrage – ideal für erklärungsbedürftige Leistungen.',
     wire: ['hero', 'cards3', 'split', 'stats', 'faq', 'cta', 'contact'],
     blocks: [
-      { type: 'hero-full', variant: 'hero-akzent' },
+      { type: 'hero-full', variant: 'h-farbhaelfte' },
       { type: 'features', variant: 'feat-liste-gross' },
       { type: 'media', variant: 'media-zickzack' },
       { type: 'text', variant: 'text-highlights' },
@@ -74,7 +74,7 @@ export const LAYOUTS = [
     desc: 'Wenige, große Abschnitte ohne Ablenkung. Schnell erfasst, schnell zur Anfrage – gut für Onepager.',
     wire: ['hero', 'cards3', 'cta', 'contact'],
     blocks: [
-      { type: 'hero-full', variant: 'hero-minimal' },
+      { type: 'hero-full', variant: 'h-minimal' },
       { type: 'text', variant: 'text-zentriert' },
       { type: 'features', variant: 'feat-karten' },
       { type: 'cta-plus', variant: 'ctap-band' },
@@ -88,7 +88,7 @@ export const LAYOUTS = [
     desc: 'Team, Zahlen und Kundenstimmen stehen im Vordergrund. Für Kanzlei, Praxis, Beratung und alle, bei denen Vertrauen entscheidet.',
     wire: ['hero', 'split', 'team', 'stats', 'quotes', 'contact'],
     blocks: [
-      { type: 'hero-full', variant: 'hero-magazin' },
+      { type: 'hero-full', variant: 'h-magazin' },
       { type: 'media', variant: 'media-overlap' },
       { type: 'team', variant: 'team-cards' },
       { type: 'text', variant: 'text-highlights' },

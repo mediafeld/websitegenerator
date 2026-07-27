@@ -510,8 +510,20 @@ function WizardInnen() {
               </Panel>
 
               <Panel>
-                <SectionTitle sub={fd.zahlungsart === 'mieten' ? 'Im Mietpaket ist eine Domain enthalten – hier prüfen und sichern.' : 'Wird für Impressum, Kontakt und die Veröffentlichung verwendet.'}>Wunsch-Domain</SectionTitle>
-                <DomainCheck fd={fd} primary={primary} upd={upd} setzeDomain={setzeDomain} setOffen={setOffen} />
+                {fd.zahlungsart === 'mieten' ? (
+                  <>
+                    <SectionTitle sub="Im Mietpaket ist eine Domain enthalten – hier prüfen und sichern.">Wunsch-Domain</SectionTitle>
+                    <DomainCheck fd={fd} primary={primary} upd={upd} setzeDomain={setzeDomain} setOffen={setOffen} />
+                  </>
+                ) : (
+                  <>
+                    <SectionTitle sub="Beim Kauf lädst du die fertige Website als ZIP herunter und nutzt deine eigene Domain bei deinem Hoster – eine Domain-Buchung gibt es hier deshalb nicht.">Deine Domain</SectionTitle>
+                    <div style={{ border: '1px dashed #cbd5e1', background: '#f8fafc', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: '#475569', lineHeight: 1.6 }}>
+                      <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: primary }} />
+                      Du möchtest Domain, Hosting &amp; SSL von uns? Dann wähle in Schritt 1 <b>„Website mieten"</b> – dort ist die Wunsch-Domain inklusive.
+                    </div>
+                  </>
+                )}
               </Panel>
 
               <Panel>

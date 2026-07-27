@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { LAYOUTS, BRANCHEN_LAYOUT, getLayout } from '@/lib/layouts'
+import { renderPage } from '@/lib/blockRenderer'
+import { heroStandard } from '@/lib/heroes'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { Brotkrumen } from '@/components/Brotkrumen'
@@ -84,10 +86,14 @@ export default function DesignAuswahlPage() {
             return (
               <div key={l.id} onClick={() => setLayout(l.id)} style={{ border: `3px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 16, overflow: 'hidden', cursor: 'pointer', background: '#fff', transition: 'all 0.2s', transform: active ? 'translateY(-3px)' : 'none', boxShadow: active ? `0 12px 28px ${primary}22` : '0 2px 8px rgba(0,0,0,0.04)', position: 'relative' }}>
                 {reco && <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 2, fontSize: 9, fontWeight: 700, background: '#22c55e', color: '#fff', padding: '3px 8px', borderRadius: 99 }}>EMPFOHLEN</div>}
-                {/* Wireframe-Vorschau */}
-                <div style={{ background: '#f1f5f9', padding: 14, minHeight: 180 }}>
+                {/* Echte Hero-Vorschau in deinen Farben */}
+                <div style={{ height: 150, overflow: 'hidden', background: '#fff', borderBottom: '1px solid #eef2f6', position: 'relative' }}>
+                  <iframe title={`Vorschau ${l.name}`} srcDoc={renderPage({ blocks: [{ type: l.blocks[0].type, variant: l.blocks[0].variant, content: heroStandard(l.blocks[0].variant) }], palette, font: 'Inter Tight', forEditor: true })}
+                    style={{ width: '300%', height: '450%', transform: 'scale(0.3333)', transformOrigin: 'top left', border: 'none', pointerEvents: 'none' }} />
+                </div>
+                {/* Wireframe: Aufbau der ganzen Seite */}
+                <div style={{ background: '#f1f5f9', padding: 12 }}>
                   <div style={{ background: '#fff', borderRadius: 6, padding: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                    {/* Mini-Nav */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
                       <div style={{ width: 24, height: 5, background: p[700], borderRadius: 2 }} />
                       <div style={{ display: 'flex', gap: 3 }}>{[0,1,2].map(i => <div key={i} style={{ width: 10, height: 3, background: p[300], borderRadius: 2 }} />)}</div>

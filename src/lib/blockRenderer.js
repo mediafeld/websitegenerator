@@ -9,6 +9,12 @@ const ANIM_CDN = `
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.6.2/countUp.umd.js"></script>`
 
+// Gleiche Bibliotheken als lokale Dateien (Kauf-ZIP legt sie in assets/ ab)
+const ANIM_LOKAL = `
+<link rel="stylesheet" href="assets/aos.css">
+<script src="assets/aos.js"></script>
+<script src="assets/countup.js"></script>`
+
 const ANIM_INIT = `
 <script>
   // Scroll-Reveal
@@ -34,15 +40,26 @@ const ANIM_INIT = `
   document.querySelectorAll('details').forEach(d=>{
     d.addEventListener('toggle',()=>{var s=d.querySelector('.faq-ic i')||d.querySelector('summary span:last-child i');if(s)s.className=d.open?'fa-solid fa-minus':'fa-solid fa-plus';});
   });
-  // Kontaktformular
+  // Kontaktformular – Ziel je nach Paket:
+  //   Kauf-ZIP: mail.php auf dem eigenen Hosting (window.__wgFormular fehlt oder art:'php')
+  //   Miete:    unser Server (art:'server' mit projekt+basis) – Kunde muss nichts einrichten
   document.querySelectorAll('[data-contact-form]').forEach(f=>{
+    // Unsichtbares Honigtopf-Feld gegen Spam-Bots
+    if(!f.querySelector('[name=firma_hp]')){var hp=document.createElement('input');hp.type='text';hp.name='firma_hp';hp.tabIndex=-1;hp.autocomplete='off';hp.setAttribute('aria-hidden','true');hp.style.cssText='position:absolute;left:-9999px;height:0;width:0;opacity:0;';f.appendChild(hp);}
     f.addEventListener('submit',function(e){
-      e.preventDefault();var btn=this.querySelector('button[type=submit]');var orig=btn.textContent;
+      e.preventDefault();var btn=this.querySelector('button[type=submit]');var orig=btn.textContent;var form=this;
       btn.textContent='Wird gesendet...';btn.disabled=true;
-      fetch('mail.php',{method:'POST',body:new FormData(this)})
-        .then(r=>r.json()).then(d=>{btn.textContent=(d.ok||d.success)?'✓ Gesendet!':'Fehler – bitte anrufen';if(d.ok||d.success)this.reset();})
-        .catch(()=>{btn.textContent='Fehler – bitte anrufen';})
-        .finally(()=>{setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},3000);});
+      var cfg=window.__wgFormular||{};var fd=new FormData(form);
+      var ziel='mail.php';
+      if(cfg.art==='server'&&cfg.basis){ziel=cfg.basis.replace(/\\/$/,'')+'/api/formular';fd.append('projekt',cfg.projekt||'');}
+      function fehler(){
+        var mail=cfg.email||'';
+        btn.textContent=mail?('Bitte direkt an '+mail+' schreiben'):'Fehler – bitte anrufen';
+      }
+      fetch(ziel,{method:'POST',body:fd})
+        .then(r=>r.json()).then(d=>{if(d.ok||d.success){btn.textContent='✓ Gesendet!';form.reset();}else{fehler();}})
+        .catch(fehler)
+        .finally(()=>{setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},4500);});
     });
   });
   // Mobile nav
@@ -99,6 +116,24 @@ function applyParallaxAttr(html, c) {
 // vererbten Stil des umgebenden Textes. Diese Regeln geben Block-Tags in
 // bearbeitbaren Feldern eine sichtbare Grundform – relativ (em), damit sie
 // zur jeweiligen Textgröße passen. Eigene style=""-Angaben gewinnen immer.
+// Zwei-Klick-Karte: veröffentlicht lädt OpenStreetMap erst nach Einwilligung,
+// im Editor sofort (dort arbeitet nur der Websitebesitzer selbst).
+const KARTE_JS = `<script>
+(function(){
+  function lade(w){
+    var f=w.querySelector('[data-karte-src]');
+    if(f&&!f.src)f.src=f.getAttribute('data-karte-src');
+    var c=w.querySelector('[data-karte-consent]');
+    if(c)c.style.display='none';
+  }
+  document.querySelectorAll('[data-karte-wrap]').forEach(function(w){
+    if(window.__wgEditor){lade(w);return;}
+    var c=w.querySelector('[data-karte-consent]');
+    if(c)c.addEventListener('click',function(){lade(w);});
+  });
+})();
+</script>`
+
 const NUTZER_HTML_CSS = `
 [data-edit] h1{font-size:2.4em;font-weight:800;line-height:1.15;margin:.25em 0;}
 [data-edit] h2{font-size:1.9em;font-weight:800;line-height:1.2;margin:.25em 0;}
@@ -257,7 +292,7 @@ const FX_JS = `<script>
     var m={}; try{ m=JSON.parse(sc.textContent) }catch(e){}
     Object.keys(m).forEach(function(p){ var el=kind(sec,p); if(el)registriere(el,m[p]); });
   });
-  var geplant=false;
+  var geplant=false,mx=0,my=0,hatMaus=false;
   function tick(){
     geplant=false;
     if(document.body.classList.contains('wg-stopp'))return;
@@ -271,12 +306,23 @@ const FX_JS = `<script>
       if(cfg.x)tr+=' translateX('+(-t*cfg.x*40).toFixed(1)+'px)';
       if(cfg.rot)tr+=' rotate('+(t*cfg.rot*4).toFixed(2)+'deg)';
       if(cfg.skal)tr+=' scale('+(1-Math.abs(t)*cfg.skal*0.04).toFixed(3)+')';
-      if(cfg.y||cfg.x||cfg.rot||cfg.skal)el.style.transform=tr.trim();
+      if(cfg.maus)tr+=' translate('+(-mx*cfg.maus*4).toFixed(1)+'px,'+(-my*cfg.maus*4).toFixed(1)+'px)';
+      if(cfg.y||cfg.x||cfg.rot||cfg.skal||cfg.maus)el.style.transform=tr.trim();
       if(cfg.fade)el.style.opacity=String(Math.max(0,1-Math.abs(t)*cfg.fade*0.12).toFixed(3));
       if(cfg.blur)el.style.filter='blur('+(Math.abs(t)*cfg.blur*0.7).toFixed(2)+'px)';
     }
   }
   function plane(){ if(geplant)return; geplant=true; requestAnimationFrame(tick); }
+  function mausAn(){
+    if(hatMaus)return; hatMaus=true;
+    // Maus-Parallax: Cursorabstand zur Bildschirmmitte (-1…1) bewegt das Element sanft mit.
+    window.addEventListener('mousemove',function(ev){
+      var vw=window.innerWidth||1200,vh2=window.innerHeight||800;
+      mx=(ev.clientX-vw/2)/(vw/2); my=(ev.clientY-vh2/2)/(vh2/2);
+      plane();
+    },{passive:true});
+  }
+  for(var mi=0;mi<eintraege.length;mi++){ if(eintraege[mi].cfg.maus){ mausAn(); break; } }
   window.addEventListener('scroll',plane,{passive:true});
   window.addEventListener('resize',plane);
   setInterval(plane,400);
@@ -290,7 +336,8 @@ const FX_JS = `<script>
     el.style.opacity='';el.style.filter='';
     el.style.transform=el.getAttribute('data-fx-basis')||'';
     if(el.style.position==='sticky'){el.style.position='';el.style.top='';}
-    if(cfg&&(cfg.y||cfg.x||cfg.rot||cfg.skal||cfg.fade||cfg.blur||cfg.fix||(cfg.hover&&cfg.hover!=='kein')))registriere(el,cfg);
+    if(cfg&&(cfg.y||cfg.x||cfg.rot||cfg.skal||cfg.fade||cfg.blur||cfg.fix||cfg.maus||(cfg.hover&&cfg.hover!=='kein')))registriere(el,cfg);
+    if(cfg&&cfg.maus)mausAn();
     plane();
   };
 })();
@@ -378,9 +425,29 @@ function mitEigenemCode(html, c, index) {
 }
 
 // Rendere eine komplette Seite aus Block-Array
-export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false }) {
+// assetsLokal: Schriften/Icons/Skripte liegen als Dateien neben der Seite
+//   (Kauf-ZIP – keine Google-/CDN-Aufrufe, wichtig für den Datenschutz).
+// seo: { titel, beschreibung, ogBild, favicon, url } für Meta-Angaben.
+// formular: { art:'php'|'server', projekt, basis, email } steuert das Kontaktformular-Ziel.
+export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false, assetsLokal = false, seo = null, formular = null }) {
   const fontParam = font.replace(/ /g, '+')
   const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@200;300;400;500;600;700;800;900` : ''
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
+  const seoTitel = seo?.titel || title
+  const kopfAssets = assetsLokal
+    ? `<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/fontawesome.css">`
+    : `<link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900${headlineParam}&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">`
+  const animKopf = forEditor ? '' : (assetsLokal ? ANIM_LOKAL : ANIM_CDN)
+  const seoMeta = [
+    seo?.beschreibung ? `<meta name="description" content="${esc(seo.beschreibung)}">` : '',
+    seoTitel ? `<meta property="og:title" content="${esc(seoTitel)}">` : '',
+    seo?.beschreibung ? `<meta property="og:description" content="${esc(seo.beschreibung)}">` : '',
+    seo?.ogBild ? `<meta property="og:image" content="${esc(seo.ogBild)}">` : '',
+    seo?.url ? `<link rel="canonical" href="${esc(seo.url)}">` : '',
+    seo?.favicon ? `<link rel="icon" href="${esc(seo.favicon)}">` : '',
+  ].filter(Boolean).join('\n')
   const blocksHtml = (blocks || [])
     .map((b, i) => mitIndexAttr(mitEigenemCode(applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content), b.content, i), b.content, i))
     .join('\n')
@@ -401,10 +468,10 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>${title}</title>
-<link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@300;400;500;600;700;800;900${headlineParam}&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-${forEditor ? '' : ANIM_CDN}
+<title>${seoTitel}</title>
+${seoMeta}
+${kopfAssets}
+${animKopf}
 <style>
   *{font-family:'${font}',sans-serif;box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
@@ -429,6 +496,8 @@ ${einbauDaten(blocks)}
 ${linkDaten(blocks)}
 ${fxDaten(blocks, forEditor)}
 ${PARALLAX_JS}
+${KARTE_JS}
+${!forEditor && formular ? `<script>window.__wgFormular=${JSON.stringify(formular).replace(/<\/script/gi, '<\\/script')};</script>` : ''}
 ${forEditor ? '' : GENERATOR_REVEAL_JS}
 ${forEditor ? '' : ANIM_INIT}
 </body>

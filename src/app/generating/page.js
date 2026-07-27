@@ -56,7 +56,8 @@ export default function GeneratingPage() {
   async function generate(formData, pal) {
     try {
       const { userImages, ...fdForApi } = formData
-      const res = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formData: fdForApi }) })
+      const tkSitzung = (await (await import('@/lib/supabaseClient')).supabase.auth.getSession())?.data?.session?.access_token || null
+      const res = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formData: fdForApi, accessToken: tkSitzung }) })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       const pagesWithImgs = injectUserImages(data.pages, userImages)
@@ -67,6 +68,9 @@ export default function GeneratingPage() {
         sessionStorage.setItem('wg24_pages', JSON.stringify(data.pages))
         alert('Die hochgeladenen Bilder sind zusammen zu groß für den Zwischenspeicher. Die Seite wird ohne sie erstellt – du kannst sie im Editor einzeln einfügen.')
       }
+      // Schrift-Paar aus der Antwort in die Formulardaten uebernehmen –
+      // der Editor liest fontHeadline aus form_data (Ueberschriften-Schrift!)
+      if (data.fontHeadline) fdForApi.fontHeadline = data.fontHeadline
       sessionStorage.setItem('wg24_formData', JSON.stringify(fdForApi))
       sessionStorage.setItem('wg24_palette', JSON.stringify(data.palette || pal))
       sessionStorage.setItem('wg24_font', data.font || 'Inter Tight')

@@ -15,7 +15,7 @@ const EINZEL_ELEMENTE = [
 ]
 import { generateCIPalette } from '@/lib/colorSystem'
 import { FONT_PAIRS } from '@/lib/fonts'
-import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer } from '@/lib/projekte'
+import { projektIdAusUrl, projektLaden, projektSpeichern, aktuellerNutzer, lokalenStandUebernehmen, versionAblegen, versionenListe, versionLaden } from '@/lib/projekte'
 import { supabase } from '@/lib/supabaseClient'
 import { starteCheckout } from '@/lib/checkout'
 import { WarenkorbKnopf } from '@/components/Warenkorb'
@@ -87,8 +87,56 @@ export default function EditorPage() {
   const [breiteRechts, setBreiteRechts] = useState(250)
   const [zieht, setZieht] = useState(null)          // 'links' | 'rechts' während des Ziehens
   const springeZuRef = useRef(null)                 // nach Neuaufbau zum neuen Element springen
+  const adminModusRef = useRef(false)               // Admin repariert ein Kundenprojekt
+
+  // Laden/Speichern: im Admin-Modus über die geschützte Admin-API
+  // (Service-Role), sonst ganz normal über das eigene Konto.
+  async function ladeProjektUniversal(id) {
+    if (adminModusRef.current) {
+      try { const r = await fetch(`/api/admin/projekt?id=${id}`); const j = await r.json(); return j.projekt || null } catch { return null }
+    }
+    return projektLaden(id)
+  }
+  async function speichereProjekt(id, felder) {
+    if (adminModusRef.current) {
+      try { const r = await fetch('/api/admin/projekt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, felder }) }); const j = await r.json(); return !j.error } catch { return false }
+    }
+    return projektSpeichern(id, felder)
+  }
   const [medien, setMedien] = useState([])          // Medien-Bibliothek (Uploads + KI-Bilder)
   const [medienModal, setMedienModal] = useState(null) // { ziel: {blockIdx,key} | null }
+  const [seoPanel, setSeoPanel] = useState(false)      // Google-&-Teilen-Einstellungen
+  const [verlaufModal, setVerlaufModal] = useState(false) // Versionsverlauf
+  const [meineVorlagen, setMeineVorlagen] = useState([])   // eigene Abschnitts-Vorlagen
+  useEffect(() => { try { setMeineVorlagen(JSON.parse(localStorage.getItem('wg24_abschnitte') || '[]')) } catch {} }, [])
+  const [verlauf, setVerlauf] = useState(null)         // null = lädt, [] = leer
+  async function verlaufOeffnen() {
+    setVerlaufModal(true); setVerlauf(null)
+    setVerlauf(await versionenListe(projektIdRef.current))
+  }
+  async function versionWiederherstellen(vid) {
+    const v = await versionLaden(vid)
+    if (!v?.pages) { alert('Dieser Stand konnte nicht geladen werden.'); return }
+    if (!confirm('Diesen Stand wiederherstellen? Dein aktueller Stand wird vorher automatisch gesichert.')) return
+    // aktuellen Stand sichern, dann zurückspringen
+    await versionAblegen(projektIdRef.current, { pages, palette, font, form_data: formDataRef.current }, 'vor-wiederherstellung', 0).catch(() => {})
+    if (v.palette) { setPalette(v.palette); setColor(v.palette.primary?.[500] || '#1d4ed8'); try { sessionStorage.setItem('wg24_palette', JSON.stringify(v.palette)) } catch {} }
+    if (v.font) { setFont(v.font); try { sessionStorage.setItem('wg24_font', v.font) } catch {} }
+    if (v.form_data) { formDataRef.current = v.form_data; try { sessionStorage.setItem('wg24_formData', JSON.stringify(v.form_data)) } catch {} }
+    setActivePage(Object.keys(v.pages)[0])
+    applyPages(v.pages, true, true)
+    setVerlaufModal(false)
+  }
+  const seoTimer = useRef(null)
+  // SEO-Angaben leben in form_data.seo – live speichern (Sitzung + Datenbank)
+  const seoSpeichern = useCallback((seo) => {
+    formDataRef.current = { ...(formDataRef.current || {}), seo }
+    try { sessionStorage.setItem('wg24_formData', JSON.stringify(formDataRef.current)) } catch {}
+    if (seoTimer.current) clearTimeout(seoTimer.current)
+    seoTimer.current = setTimeout(() => {
+      if (projektIdRef.current) speichereProjekt(projektIdRef.current, { form_data: formDataRef.current }).catch(() => {})
+    }, 900)
+  }, [])
   const medienGeladen = useRef(false)
 
   // Bibliothek aus dem Zwischenspeicher laden + einmalig alle Bilder aus dem
@@ -204,7 +252,7 @@ export default function EditorPage() {
   function domainWaehlen(d) {
     formDataRef.current = { ...(formDataRef.current || {}), domain: d }
     try { sessionStorage.setItem('wg24_formData', JSON.stringify(formDataRef.current)) } catch {}
-    if (projektIdRef.current) projektSpeichern(projektIdRef.current, { form_data: formDataRef.current }).catch(() => {})
+    if (projektIdRef.current) speichereProjekt(projektIdRef.current, { form_data: formDataRef.current }).catch(() => {})
     setDomainModal(false); setDomainDaten(null); setDomainWunsch('')
   }
   const [kontoMenu, setKontoMenu] = useState(false)
@@ -215,11 +263,12 @@ export default function EditorPage() {
   // ── Laden ──
   useEffect(() => {
     const id = projektIdAusUrl()
+    try { adminModusRef.current = new URLSearchParams(window.location.search).get('adminmodus') === '1' } catch {}
 
     // Fall A: Projekt aus der Datenbank laden
     if (id) {
       projektIdRef.current = id
-      projektLaden(id).then(p => {
+      ladeProjektUniversal(id).then(p => {
         if (!p) { router.push('/dashboard'); return }
         if (!p.pages) {
           // Projekt wurde angelegt, aber nie fertig generiert (z. B. abgebrochene Generierung).
@@ -281,6 +330,9 @@ export default function EditorPage() {
     initialRef.current = JSON.stringify(parsed)
     setHistory([JSON.stringify(parsed)])
     setHistIdx(0)
+    // Eingeloggt, aber Projekt hängt noch nicht am Konto? Still übernehmen –
+    // ab dann greift die automatische Speicherung in die Datenbank.
+    lokalenStandUebernehmen().then(pid => { if (pid && !projektIdRef.current) projektIdRef.current = pid })
   }, [])
 
   const blocks = pages[activePage] || []
@@ -323,13 +375,17 @@ export default function EditorPage() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     setSpeicherStatus('speichert')
     saveTimerRef.current = setTimeout(async () => {
-      const ok = await projektSpeichern(projektIdRef.current, {
+      const ok = await speichereProjekt(projektIdRef.current, {
         pages: newPages,
         palette,
         font,
       })
       setSpeicherStatus(ok ? 'gespeichert' : 'fehler')
       if (ok) setTimeout(() => setSpeicherStatus(''), 2500)
+      // Sicherungsstand für den Verlauf (höchstens alle 10 Minuten)
+      if (ok && !adminModusRef.current) {
+        versionAblegen(projektIdRef.current, { pages: newPages, palette, font, form_data: formDataRef.current }).catch(() => {})
+      }
     }, 2500)
   }
 
@@ -338,7 +394,7 @@ export default function EditorPage() {
     if (!projektIdRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     setSpeicherStatus('speichert')
-    const ok = await projektSpeichern(projektIdRef.current, { pages, palette, font })
+    const ok = await speichereProjekt(projektIdRef.current, { pages, palette, font })
     setSpeicherStatus(ok ? 'gespeichert' : 'fehler')
     if (ok) setTimeout(() => setSpeicherStatus(''), 2500)
   }
@@ -865,6 +921,39 @@ export default function EditorPage() {
         }
         var idx=window.__wgDropIndex||0; wgRemovePlace(); parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:idx},'*');
       });
+
+      // ── Frei eingefügte Elemente in einen ANDEREN Container verschieben ──
+      // Klick auf das Kreuz-Werkzeug startet den Modus: gültige Ziele leuchten
+      // beim Überfahren, Klick setzt das Element um, Esc bricht ab.
+      var einbauMove=null;
+      function einbauMoveStart(el){
+        einbauMove={block:bIdx(el),index:parseInt(el.getAttribute('data-einbau'),10),el:el};
+        contAbwaehlen(true);
+        document.body.style.cursor='crosshair';
+        tip.style.display='block';
+        tip.textContent='Ziel-Container anklicken – Esc bricht ab';
+      }
+      function einbauMoveEnde(){
+        einbauMove=null;
+        document.body.style.cursor='';
+        tip.style.display='none';
+        dropZielSetzen(null);
+      }
+      document.addEventListener('mousemove',function(e){
+        if(!einbauMove)return;
+        tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';
+        var z=containerUnterPunkt(e.clientX,e.clientY);
+        if(z&&(z===einbauMove.el||einbauMove.el.contains(z)))z=null;
+        dropZielSetzen(z);
+      });
+      document.addEventListener('click',function(e){
+        if(!einbauMove)return;
+        e.preventDefault();e.stopImmediatePropagation();
+        var mm=einbauMove,z=dropZiel;
+        einbauMoveEnde();
+        if(z){ parent.postMessage({t:'moveEinbau', vonBlock:mm.block, index:mm.index, zielBlock:bIdx(z), zielPfad:kindPfad(z)},'*'); }
+      },true);
+      document.addEventListener('keydown',function(e){ if(einbauMove&&e.key==='Escape')einbauMoveEnde(); });
       window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd'){wgRemovePlace();dropZielSetzen(null);} if(dd.cmd==='setParallax'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.block]; if(el){ if(dd.on){el.setAttribute('data-parallax',dd.speed);}else{el.removeAttribute('data-parallax');el.style.backgroundPositionY='';} if(typeof window.wgRunParallax==='function')window.wgRunParallax(); } } if(dd.cmd==='gotoBlock'){ var bs2=document.querySelectorAll('[data-block]'); var el2=bs2[dd.index]; if(el2){ el2.scrollIntoView({behavior:'smooth',block:'start'}); el2.style.transition='outline 0.2s'; el2.style.outline='3px solid ${primary}'; setTimeout(function(){el2.style.outline='';},900); } } });
 
       // ═══════════════════════════════════════════════════════════════
@@ -1008,6 +1097,9 @@ export default function EditorPage() {
             h+='<button data-w="dup" title="Karte klonen"><i class="fa-solid fa-clone"></i></button>';
             h+='<button data-w="del" title="Karte löschen"><i class="fa-solid fa-xmark"></i></button>';
           }
+          if(el.hasAttribute('data-einbau')){
+            h+='<button data-w="bewegen" title="In einen anderen Container verschieben: klicken, dann Ziel anklicken"><i class="fa-solid fa-up-down-left-right"></i></button>';
+          }
         }
         tools.innerHTML=h;
         tools.querySelectorAll('button').forEach(function(btn){
@@ -1017,6 +1109,10 @@ export default function EditorPage() {
               var p=selC.parentElement;
               while(p&&!istContainer(p)&&!p.hasAttribute('data-block'))p=p.parentElement;
               if(p)contWaehlen(p);
+              return;
+            }
+            if(w==='bewegen'){
+              einbauMoveStart(selC);
               return;
             }
             if(w==='verstecken'){
@@ -1326,6 +1422,7 @@ export default function EditorPage() {
       if (d.t === 'dup') dupBlock(d.block)
       if (d.t === 'dropBlock') addBlockAt(d.index, d.blockType)
       if (d.t === 'dropInContainer') widgetEinfuegen(d.block, d.pfad, d.blockType)
+      if (d.t === 'moveEinbau') moveEinbau(d.vonBlock, d.index, d.zielBlock, d.zielPfad)
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
@@ -1447,6 +1544,33 @@ export default function EditorPage() {
 
   // Karten klonen / löschen / verschieben – ändert die LISTE im Inhalt,
   // damit nichts auseinanderlaufen kann.
+  // Frei eingefügtes Element (content._einbau) in einen anderen Container
+  // oder eine andere Sektion umziehen – Inhalt bleibt 1:1 erhalten.
+  function moveEinbau(vonBlock, index, zielBlock, zielPfad) {
+    if (zielPfad == null) return
+    const arr = [...(pages[activePage] || [])]
+    const von = arr[vonBlock]; if (!von) return
+    const liste = [...(von.content?._einbau || [])]
+    const w = liste[index]; if (!w) return
+    liste.splice(index, 1)
+    let neuIndex
+    if (vonBlock === zielBlock) {
+      const neu = [...liste, { ...w, ziel: zielPfad }]
+      neuIndex = neu.length - 1
+      arr[vonBlock] = { ...von, content: { ...(von.content || {}), _einbau: neu } }
+    } else {
+      arr[vonBlock] = { ...von, content: { ...(von.content || {}), _einbau: liste } }
+      const ziel = arr[zielBlock]; if (!ziel) return
+      const zListe = [...(ziel.content?._einbau || []), { ...w, ziel: zielPfad }]
+      neuIndex = zListe.length - 1
+      arr[zielBlock] = { ...ziel, content: { ...(ziel.content || {}), _einbau: zListe } }
+    }
+    const next = { ...pages }; next[activePage] = arr
+    springeZuRef.current = { art: 'einbau', block: zielBlock, index: neuIndex }
+    applyPages(next, true, true)
+    setContSel(null)
+  }
+
   function doArrayOp(blockIdx, feld, index, op) {
     const arr = [...(pages[activePage] || [])]
     const b = arr[blockIdx]; if (!b) return
@@ -1574,6 +1698,34 @@ export default function EditorPage() {
     applyPages(next)
   }
 
+  // ── Abschnitts-Vorlagen einfügen / eigene speichern (localStorage) ──
+  function vorlageEinfuegen(bloecke) {
+    const next = { ...pages }; const arr = [...next[activePage]]
+    const at = Math.max(1, arr.length - 1)
+    const neu = bloecke.map(b => Array.isArray(b)
+      ? { type: b[0], variant: b[1], content: buildDefaultContent(b[0]) }
+      : { type: b.type, variant: b.variant, content: JSON.parse(JSON.stringify(b.content || {})) })
+    arr.splice(at, 0, ...neu)
+    next[activePage] = arr
+    springeZuRef.current = { art: 'block', index: at }
+    applyPages(next)
+  }
+  function abschnittAlsVorlage() {
+    const idx = contSel?.block ?? selected?.block
+    const b = idx != null ? blocks[idx] : null
+    if (!b || b.type === 'nav' || b.type === 'footer') { alert('Bitte zuerst einen Bereich in der Vorschau anklicken (pinke Auswahl).'); return }
+    const name = prompt('Name der Vorlage:', b.content?._name || BLOCK_REGISTRY[b.type]?.label || 'Mein Abschnitt')
+    if (!name?.trim()) return
+    const liste = [...meineVorlagen, { name: name.trim(), type: b.type, variant: b.variant, content: JSON.parse(JSON.stringify(b.content || {})) }]
+    try { localStorage.setItem('wg24_abschnitte', JSON.stringify(liste)); setMeineVorlagen(liste) }
+    catch { alert('Die Vorlage ist zu groß für den Browser-Speicher (viele Bilder?).') }
+  }
+  function vorlageLoeschen(i) {
+    const liste = meineVorlagen.filter((_, x) => x !== i)
+    setMeineVorlagen(liste)
+    try { localStorage.setItem('wg24_abschnitte', JSON.stringify(liste)) } catch {}
+  }
+
   function onFile(e) {
     const file = e.target.files?.[0]; if (!file || !imgTarget) return
     compressImage(file, (compressedSrc) => {
@@ -1631,7 +1783,7 @@ export default function EditorPage() {
   function updateColor(c) {
     setColor(c); const pal = generateCIPalette(c); setPalette(pal)
     sessionStorage.setItem('wg24_palette', JSON.stringify(pal))
-    if (projektIdRef.current) projektSpeichern(projektIdRef.current, { palette: pal })
+    if (projektIdRef.current) speichereProjekt(projektIdRef.current, { palette: pal })
   }
 
   function saveCustom(blockIdx, htmlCode) {
@@ -1693,8 +1845,13 @@ export default function EditorPage() {
       <div style={{ height: 50, borderBottom: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8, flexShrink: 0, background: '#fff' }}>
         {/* Logo/Login/Warenkorb liefert der echte Seiten-Header oben – hier nur
             das, was zum Projekt gehört: Firmenname + gebuchte Domain. */}
+        {adminModusRef.current && <span style={{ background: '#e03131', color: '#fff', fontSize: 10.5, fontWeight: 800, borderRadius: 99, padding: '4px 11px', letterSpacing: '.05em', whiteSpace: 'nowrap' }}><i className="fa-solid fa-shield-halved" style={{ marginRight: 5 }} />ADMIN-MODUS · Kundenprojekt</span>}
         <span style={{ fontWeight: 700, color: '#0f172a', maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocks.find(b => b.type === 'nav')?.content?.firmenname || 'Deine Website'}</span>
-        {formDataRef.current?.domain ? (
+        {formDataRef.current?.zahlungsart === 'kaufen' ? (
+          <span title="Beim Kauf nutzt du deine eigene Domain – die fertige Website kommt als ZIP." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#94a3b8', background: '#f8fafc', border: '1px solid #eef2f6', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
+            <i className="fa-solid fa-file-zipper" />Kauf: ZIP-Download
+          </span>
+        ) : formDataRef.current?.domain ? (
           <a href={`https://${String(formDataRef.current.domain).replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" title="Website ansehen" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '4px 11px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             <i className="fa-solid fa-globe" />{formDataRef.current.domain}
           </a>
@@ -1722,6 +1879,10 @@ export default function EditorPage() {
         </button>
         <button onClick={() => { const n = !vorschau; setVorschau(n); if (n) { setSelected(null); setContSel(null) } }} title={vorschau ? 'Zurück zum Bearbeiten' : 'Vorschau – Seite ohne Baukasten-Elemente ansehen'} style={{ height: 30, border: `1px solid ${vorschau ? '#16a34a' : '#e5e5e5'}`, borderRadius: 7, background: vorschau ? '#16a34a14' : '#fff', cursor: 'pointer', fontSize: 12, color: vorschau ? '#16a34a' : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className={`fa-solid fa-${vorschau ? 'pen' : 'eye'}`} />{vorschau ? 'Bearbeiten' : 'Vorschau'}</button>
         <button onClick={() => setNavOffen(o => !o)} title="Navigator – Struktur der Seite" style={{ height: 30, border: `1px solid ${navOffen ? PINK : '#e5e5e5'}`, borderRadius: 7, background: navOffen ? PINK + '14' : '#fff', cursor: 'pointer', fontSize: 12, color: navOffen ? PINK : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-layer-group" />Navigator</button>
+        <button onClick={() => setSeoPanel(true)} title="Google & Teilen: Titel, Beschreibung, Favicon" style={{ height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, color: '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-magnifying-glass" />SEO</button>
+        {projektIdRef.current && !adminModusRef.current && (
+          <button onClick={verlaufOeffnen} title="Verlauf – frühere Stände wiederherstellen" style={{ height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, color: '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-clock-rotate-left" />Verlauf</button>
+        )}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
         <button disabled={kauft} onClick={async () => {
@@ -1755,7 +1916,7 @@ export default function EditorPage() {
         {/* LEFT PANEL */}
         <div style={{ width: breiteLinks, borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#fff', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid #e5e5e5' }}>
-            {[['Blöcke', 'blocks'], ['Bereiche', 'sections'], ['Seiten', 'pages']].map(([l, id]) => (
+            {[['Blöcke', 'blocks'], ['Bereiche', 'sections'], ['Vorlagen', 'vorlagen'], ['Seiten', 'pages']].map(([l, id]) => (
               <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: '9px 0', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: 'none', border: 'none', borderBottom: `2px solid ${tab === id ? primary : 'transparent'}`, color: tab === id ? '#111' : '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</button>
             ))}
           </div>
@@ -1805,6 +1966,42 @@ export default function EditorPage() {
                   )
                 })}
                 <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Block: wähle aus mehreren Design-Vorlagen mit Live-Vorschau.</div>
+              </>
+            )}
+            {tab === 'vorlagen' && (
+              <>
+                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 6 }}>Fertige Abschnitts-Kombis</div>
+                {ABSCHNITT_VORLAGEN.map(v => (
+                  <div key={v.name} onClick={() => vorlageEinfuegen(v.bloecke)} style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #e5e5e5', borderRadius: 10, padding: '11px 12px', marginBottom: 7, cursor: 'pointer', background: '#fff' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.background = primary + '08' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.background = '#fff' }}>
+                    <i className={`fa-solid fa-${v.fa}`} style={{ fontSize: 16, color: primary, width: 20, textAlign: 'center' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>{v.name}</div>
+                      <div style={{ fontSize: 10, color: '#94a3b8' }}>{v.beschr}</div>
+                    </div>
+                    <i className="fa-solid fa-plus" style={{ fontSize: 11, color: '#94a3b8' }} />
+                  </div>
+                ))}
+                <div style={{ fontSize: 9.5, color: '#94a3b8', lineHeight: 1.45, padding: '0 4px', marginBottom: 16 }}>Klick fügt die ganze Strecke ans Seitenende ein – danach frei verschieb- und anpassbar.</div>
+
+                <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 6 }}>Meine Vorlagen</div>
+                <button onClick={abschnittAlsVorlage} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', borderRadius: 10, padding: '10px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#475569', marginBottom: 8 }}>
+                  <i className="fa-solid fa-floppy-disk" style={{ marginRight: 6 }} />Gewählten Bereich als Vorlage speichern
+                </button>
+                {meineVorlagen.length === 0 ? (
+                  <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.5, padding: '0 4px' }}>Noch keine eigenen Vorlagen. Bereich in der Vorschau anklicken, dann oben speichern – die Vorlage bleibt auf diesem Computer für alle deine Websites verfügbar.</div>
+                ) : meineVorlagen.map((v, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 12px', marginBottom: 7, background: '#fff' }}>
+                    <i className="fa-solid fa-bookmark" style={{ fontSize: 13, color: '#f59e0b' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
+                      <div style={{ fontSize: 10, color: '#94a3b8' }}>{BLOCK_REGISTRY[v.type]?.label || v.type}</div>
+                    </div>
+                    <button onClick={() => vorlageEinfuegen([v])} title="Einfügen" style={{ border: 'none', background: primary, color: '#fff', width: 26, height: 24, borderRadius: 6, cursor: 'pointer', fontSize: 11 }}><i className="fa-solid fa-plus" /></button>
+                    <button onClick={() => vorlageLoeschen(i)} title="Vorlage löschen" style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', width: 26, height: 24, borderRadius: 6, cursor: 'pointer', fontSize: 10 }}><i className="fa-solid fa-trash-can" /></button>
+                  </div>
+                ))}
               </>
             )}
             {tab === 'sections' && (
@@ -1908,7 +2105,7 @@ export default function EditorPage() {
           {/* Schrift live wechseln */}
           <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, marginBottom: 10 }}>
             <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Schrift</div>
-            <select value={font} onChange={e => { setFont(e.target.value); sessionStorage.setItem('wg24_font', e.target.value); if (projektIdRef.current) projektSpeichern(projektIdRef.current, { font: e.target.value }) }} style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>
+            <select value={font} onChange={e => { setFont(e.target.value); sessionStorage.setItem('wg24_font', e.target.value); if (projektIdRef.current) speichereProjekt(projektIdRef.current, { font: e.target.value }) }} style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>
               {FONT_PAIRS.map(p => <option key={p.id} value={p.body}>{p.label} ({p.headline})</option>)}
             </select>
           </div>
@@ -1988,6 +2185,51 @@ export default function EditorPage() {
           </div>
           <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 8, lineHeight: 1.4 }}>Entfernen löscht nur aus der Bibliothek – bereits eingesetzte Bilder auf der Website bleiben erhalten.</div>
         </Modal>
+      )}
+
+      {/* VERSIONSVERLAUF: frühere Stände ansehen & wiederherstellen */}
+      {verlaufModal && (
+        <Modal onClose={() => setVerlaufModal(false)} title="Verlauf" sub="Automatische Sicherungsstände deiner Website (höchstens alle 10 Minuten, die letzten 20 bleiben erhalten).">
+          {verlauf === null ? (
+            <div style={{ padding: 26, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 8 }} />Lade Verlauf …</div>
+          ) : verlauf.length === 0 ? (
+            <div style={{ padding: 26, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+              <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 28, marginBottom: 10, display: 'block' }} />
+              Noch keine Sicherungsstände – sie entstehen automatisch beim Arbeiten.
+              <div style={{ fontSize: 11, marginTop: 8 }}>Hinweis: Dafür muss die Datei migration_v27.sql in Supabase ausgeführt sein.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {verlauf.map((v, i) => {
+                const anlassText = { speichern: 'Automatische Sicherung', 'vor-wiederherstellung': 'Vor Wiederherstellung', 'admin-fix': 'Vor Support-Änderung' }[v.anlass] || v.anlass
+                return (
+                  <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #e5e5e5', borderRadius: 10, padding: '11px 14px', background: i === 0 ? '#f8fafc' : '#fff' }}>
+                    <i className={`fa-solid fa-${v.anlass === 'admin-fix' ? 'shield-halved' : 'floppy-disk'}`} style={{ color: '#94a3b8', fontSize: 14 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{new Date(v.erstellt_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{anlassText}{i === 0 ? ' · neuester Stand' : ''}</div>
+                    </div>
+                    <button onClick={() => versionWiederherstellen(v.id)} style={{ border: `1px solid ${primary}`, background: primary + '10', color: primary, borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                      <i className="fa-solid fa-rotate-left" style={{ marginRight: 6 }} />Wiederherstellen
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* SEO: Google & Teilen (Titel, Beschreibung, Favicon, Vorschaubild) */}
+      {seoPanel && (
+        <SeoModal
+          seiten={pageList}
+          startSeite={activePage}
+          formData={formDataRef.current || {}}
+          onSpeichern={seoSpeichern}
+          onClose={() => setSeoPanel(false)}
+          primary={primary}
+        />
       )}
 
       {/* BLOCK PICKER (Element hinzufügen mit Vorschau) */}
@@ -2192,6 +2434,109 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
+// ── SEO: Google & Teilen – Titel/Beschreibung je Seite, Favicon, OG-Bild ──
+function SeoModal({ seiten, startSeite, formData, onSpeichern, onClose, primary }) {
+  const [seo, setSeo] = useState(() => JSON.parse(JSON.stringify(formData.seo || { seiten: {}, global: {} })))
+  const [seite, setSeite] = useState(startSeite || seiten[0])
+  const favRef = useRef(null)
+  const ogRef = useRef(null)
+
+  function schreibe(next) { setSeo(next); onSpeichern(next) }
+  function feld(k, v) {
+    const next = { ...seo, seiten: { ...(seo.seiten || {}), [seite]: { ...((seo.seiten || {})[seite] || {}), [k]: v } } }
+    schreibe(next)
+  }
+  function global(k, v) {
+    schreibe({ ...seo, global: { ...(seo.global || {}), [k]: v } })
+  }
+  function vorschlag() {
+    const firma = formData.firmenname || 'Ihre Firma'
+    const ort = formData.stadt ? ` in ${formData.stadt}` : ''
+    const kw = formData.seoPrimaer ? `${formData.seoPrimaer} – ` : ''
+    const titel = seite === 'Startseite' ? `${kw}${firma}${ort}` : `${seite} – ${firma}${ort}`
+    const beschr = (formData.beschreibung || `${firma}${ort}: Jetzt informieren und Kontakt aufnehmen.`).slice(0, 158)
+    const next = { ...seo, seiten: { ...(seo.seiten || {}), [seite]: { titel: titel.slice(0, 60), beschreibung: beschr } } }
+    schreibe(next)
+  }
+  function bildLaden(datei, maxPx, ziel) {
+    if (!datei) return
+    const leser = new FileReader()
+    leser.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const f = Math.min(1, maxPx / Math.max(img.width, img.height))
+        const cv = document.createElement('canvas')
+        cv.width = Math.max(1, Math.round(img.width * f)); cv.height = Math.max(1, Math.round(img.height * f))
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height)
+        global(ziel, ziel === 'favicon' ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', 0.85))
+      }
+      img.src = leser.result
+    }
+    leser.readAsDataURL(datei)
+  }
+
+  const w = (seo.seiten || {})[seite] || {}
+  const g = seo.global || {}
+  const tLen = (w.titel || '').length, bLen = (w.beschreibung || '').length
+  const eingabe = { width: '100%', boxSizing: 'border-box', border: '1px solid #e5e5e5', borderRadius: 8, padding: '9px 11px', fontSize: 12.5, fontFamily: 'inherit', outline: 'none' }
+  const beschriftung = { fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, display: 'block' }
+
+  return (
+    <Modal onClose={onClose} title="Google & Teilen (SEO)" sub="So erscheint deine Website bei Google und beim Teilen über WhatsApp & Co. Änderungen werden automatisch gespeichert.">
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        {seiten.map(s => (
+          <button key={s} onClick={() => setSeite(s)} style={{ border: `1px solid ${s === seite ? primary : '#e5e5e5'}`, background: s === seite ? primary + '12' : '#fff', color: s === seite ? primary : '#475569', borderRadius: 99, padding: '6px 13px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>{s}</button>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <span style={beschriftung}>Seitentitel (Google-Überschrift) <span style={{ color: tLen > 60 ? '#dc2626' : '#94a3b8', textTransform: 'none', fontWeight: 600 }}>{tLen}/60</span></span>
+        <input value={w.titel || ''} onChange={e => feld('titel', e.target.value)} placeholder={`z. B. ${formData.firmenname || 'Ihre Firma'}${formData.stadt ? ' in ' + formData.stadt : ''}`} style={eingabe} />
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <span style={beschriftung}>Beschreibung (Google-Text) <span style={{ color: bLen > 160 ? '#dc2626' : '#94a3b8', textTransform: 'none', fontWeight: 600 }}>{bLen}/160</span></span>
+        <textarea value={w.beschreibung || ''} onChange={e => feld('beschreibung', e.target.value)} rows={3} placeholder="1–2 Sätze, die Lust machen zu klicken." style={{ ...eingabe, resize: 'vertical' }} />
+      </div>
+      <button onClick={vorschlag} style={{ border: '1px solid #e5e5e5', background: '#fafbff', borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', color: '#475569', marginBottom: 16 }}>
+        <i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />Vorschlag aus deinen Angaben einsetzen
+      </button>
+
+      {/* Google-Vorschau */}
+      <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: '13px 16px', marginBottom: 18, background: '#fff' }}>
+        <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 7 }}>Vorschau bei Google</div>
+        <div style={{ fontSize: 12, color: '#0f7a3d', marginBottom: 2 }}>{(formData.domain || 'www.ihre-domain.de') + (seite === 'Startseite' ? '' : ' › ' + seite.toLowerCase())}</div>
+        <div style={{ fontSize: 16.5, color: '#1a0dab', marginBottom: 3, lineHeight: 1.3 }}>{w.titel || `${formData.firmenname || 'Ihre Website'} – ${seite}`}</div>
+        <div style={{ fontSize: 12.5, color: '#4d5156', lineHeight: 1.5 }}>{(w.beschreibung || 'Ohne Beschreibung zeigt Google einen zufälligen Textausschnitt der Seite.').slice(0, 160)}</div>
+      </div>
+
+      {/* Global: Favicon + Teilen-Bild */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: 13 }}>
+          <span style={beschriftung}>Favicon (Browser-Tab-Symbol)</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {g.favicon ? <img src={g.favicon} alt="" style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid #e5e5e5' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, border: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1', fontSize: 13 }}><i className="fa-solid fa-globe" /></div>}
+            <button onClick={() => favRef.current?.click()} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 7, padding: '7px 11px', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#475569' }}>Hochladen</button>
+            {g.favicon && <button onClick={() => global('favicon', '')} style={{ border: '1px solid #fecaca', background: '#fff', borderRadius: 7, padding: '7px 9px', fontSize: 11, cursor: 'pointer', color: '#dc2626' }}><i className="fa-solid fa-trash-can" /></button>}
+          </div>
+          <input ref={favRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => bildLaden(e.target.files?.[0], 64, 'favicon')} />
+          <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 7, lineHeight: 1.4 }}>Quadratisches Bild, z. B. dein Logo – wird auf 64 px verkleinert.</div>
+        </div>
+        <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: 13 }}>
+          <span style={beschriftung}>Teilen-Vorschaubild (WhatsApp, Facebook …)</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {g.ogBild ? <img src={g.ogBild} alt="" style={{ width: 56, height: 32, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e5e5' }} /> : <div style={{ width: 56, height: 32, borderRadius: 6, border: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1', fontSize: 12 }}><i className="fa-solid fa-image" /></div>}
+            <button onClick={() => ogRef.current?.click()} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 7, padding: '7px 11px', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#475569' }}>Hochladen</button>
+            {g.ogBild && <button onClick={() => global('ogBild', '')} style={{ border: '1px solid #fecaca', background: '#fff', borderRadius: 7, padding: '7px 9px', fontSize: 11, cursor: 'pointer', color: '#dc2626' }}><i className="fa-solid fa-trash-can" /></button>}
+          </div>
+          <input ref={ogRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => bildLaden(e.target.files?.[0], 1200, 'ogBild')} />
+          <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 7, lineHeight: 1.4 }}>Querformat ca. 1200×630 px wirkt am besten.</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: '#16a34a', marginTop: 12, fontWeight: 600 }}><i className="fa-solid fa-bolt" style={{ marginRight: 5 }} />Alles wird automatisch gespeichert und landet in der fertigen Website (Meta-Angaben, sitemap.xml, robots.txt).</div>
+    </Modal>
+  )
+}
+
 // ── Vollbild-Vorschau: die Seite wie live, mit Responsive-Test ──
 // Desktop/Tablet/Mobil als Voreinstellung, zusätzlich frei ziehbare Breite
 // über Griffe an beiden Seiten – zum Testen jedes Zwischenformats.
@@ -2268,12 +2613,17 @@ function EffektePanel({ werte, onAendern, primary }) {
           <option value="neigen">Neigen (3D)</option>
         </select>
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+        <span style={{ fontSize: 10.5, color: '#475569', width: 104, flexShrink: 0 }}>Maus-Parallax</span>
+        <input type="range" min={0} max={10} step="1" value={w.maus || 0} onChange={e => setze('maus', parseInt(e.target.value) || 0)} style={{ flex: 1, accentColor: '#4f46e5', minWidth: 0 }} />
+        <span style={{ fontSize: 10, fontWeight: 700, color: w.maus ? '#4338ca' : '#cbd5e1', width: 20, textAlign: 'right' }}>{w.maus || 0}</span>
+      </div>
       <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 10.5, color: '#475569', cursor: 'pointer' }}>
         <input type="checkbox" checked={!!w.fix} onChange={e => setze('fix', e.target.checked)} style={{ accentColor: '#4f46e5' }} />
         Beim Scrollen fixieren (sticky)
       </label>
       {aktiv && <button onClick={() => onAendern({})} style={{ width: '100%', marginTop: 8, border: '1px solid #e5e5e5', background: '#fff', borderRadius: 6, padding: '6px 0', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', color: '#64748b' }}>Alle Effekte entfernen</button>}
-      <div style={{ fontSize: 9.5, color: '#6d7ba8', marginTop: 7, lineHeight: 1.4 }}>Wirkt live beim Scrollen – im Editor und auf der fertigen Seite.</div>
+      <div style={{ fontSize: 9.5, color: '#6d7ba8', marginTop: 7, lineHeight: 1.4 }}>Wirkt live beim Scrollen bzw. bei Mausbewegung – im Editor und auf der fertigen Seite.</div>
     </div>
   )
 }
@@ -2510,6 +2860,17 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
           <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Button-Ziel (Link)</div>
           <input defaultValue={einbau.href || '#'} key={'bh' + contSel.pfad} onBlur={e => onWert(`_einbau.${contSel.bind.index}.href`, e.target.value.trim() || '#')} onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
             placeholder="kontakt.html oder https://…" style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+      )}
+      {einbau?.art === 'baustein' && getVariants(einbau.typ).length > 1 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Layout-Variante des Bausteins</div>
+          <select value={einbau.variante || ''} key={'bv' + contSel.pfad}
+            onChange={e => onWert(`_einbau.${contSel.bind.index}.variante`, e.target.value)}
+            style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none', background: '#fff', cursor: 'pointer' }}>
+            {getVariants(einbau.typ).map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 5, lineHeight: 1.4 }}>Deine Inhalte bleiben erhalten – nur das Layout wechselt.</div>
         </div>
       )}
 
@@ -2967,7 +3328,8 @@ function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, for
     if (rest <= 0) { setError('Dein Bild-Kontingent ist aufgebraucht'); return }
     setLoading(true); setError(null); setPreview(null)
     try {
-      const res = await fetch('/api/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, size }) })
+      const tk = (await supabase.auth.getSession())?.data?.session?.access_token || null
+      const res = await fetch('/api/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, size, accessToken: tk }) })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setPreview(data.image)
@@ -3024,6 +3386,16 @@ function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, for
     </div>
   )
 }
+
+// ── Abschnitts-Vorlagen: fertige Kombinationen ganzer Bereiche ─────────────
+const ABSCHNITT_VORLAGEN = [
+  { name: 'Leistungs-Strecke', fa: 'briefcase', beschr: 'Leistungen · Bild+Text · Aufruf', bloecke: [['features', 'feat-karten'], ['media', 'media-rechts'], ['cta-plus', 'ctap-band']] },
+  { name: 'Vertrauens-Strecke', fa: 'handshake', beschr: 'Kundenstimmen · Zahlen', bloecke: [['stimmen', 'stimmen-gross'], ['text', 'text-highlights']] },
+  { name: 'Über-uns-Strecke', fa: 'users', beschr: 'Bild+Text · Team', bloecke: [['media', 'media-links'], ['team', 'team-cards']] },
+  { name: 'Galerie-Strecke', fa: 'images', beschr: 'Galerie · Aufruf', bloecke: [['galerie', 'gal-masonry'], ['cta-plus', 'ctap-karte']] },
+  { name: 'Fragen & Kontakt', fa: 'circle-question', beschr: 'FAQ · Kontakt', bloecke: [['faq', 'faq-accordion'], ['kontakt-plus', 'kontaktp-split']] },
+  { name: 'Ablauf-Strecke', fa: 'list-ol', beschr: 'Schritte · Aufruf', bloecke: [['stepbox', 'step-waagerecht'], ['cta-plus', 'ctap-mesh']] },
+]
 
 function buildDefaultContent(type) {
   // Die Standardinhalte stehen an EINER Stelle: lib/blocks.js (ALLE_DEFAULTS).

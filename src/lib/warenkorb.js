@@ -38,8 +38,10 @@ export function WarenkorbProvider({ children }) {
   // ohne das Panel aufzuklappen, damit die Wizard-Auswahl ruhig bleibt.
   const setzePaket = useCallback((paket) => {
     setArtikel(v => {
-      const ohnePaket = v.filter(a => !String(a.id).startsWith('paket-'))
-      return paket ? [{ menge: 1, ...paket }, ...ohnePaket] : ohnePaket
+      let rest = v.filter(a => !String(a.id).startsWith('paket-'))
+      // Kauf = ZIP-Download, ohne Hosting → eine Domain gehört da nicht rein.
+      if (paket && paket.art !== 'monatlich') rest = rest.filter(a => !String(a.id).startsWith('domain-'))
+      return paket ? [{ menge: 1, ...paket }, ...rest] : rest
     })
   }, [])
 

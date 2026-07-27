@@ -3,10 +3,22 @@ import { generateCIPalette } from '@/lib/colorSystem'
 import { getBranche, getBranchenFelder } from '@/lib/branchen'
 import { getStockImages } from '@/lib/stockImages'
 import { createMessage, extractText } from '@/lib/claudeModel'
+import { FONT_PAIRS } from '@/lib/fonts'
+
+import { nutzerAusToken, supabaseAdmin } from '@/lib/supabaseServer'
+
+async function nutzungFesthalten(accessToken, art) {
+  try {
+    const nutzer = await nutzerAusToken(accessToken)
+    const db = supabaseAdmin()
+    await db.from('nutzung').insert({ user_id: nutzer?.id || null, art, menge: 1 })
+  } catch (e) { console.log('[nutzung] übersprungen:', e?.message) }
+}
 
 export async function POST(request) {
   try {
-    const { formData } = await request.json()
+    const { formData, accessToken } = await request.json()
+    nutzungFesthalten(accessToken, 'ki-text').catch(() => {})
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const branche = getBranche(formData.branche)
     const brancheLabel = formData.branche === 'andere' && formData.brancheCustom ? formData.brancheCustom : branche.label
@@ -26,11 +38,32 @@ export async function POST(request) {
     const anrede = formData.anrede === 'du' ? 'Du-Form (locker, persoenlich)' : 'Sie-Form (professionell, hoeflich)'
     const ton = formData.tonCustom || formData.tonPreset || 'professionell'
 
+    // Adresse aus den einzelnen Wizard-Feldern zusammensetzen (frueher wurde
+    // ein nie existierendes formData.adresse gelesen -> Platzhalter-Adresse!)
+    const adresse = formData.adresse || [
+      formData.strasse,
+      [formData.plz, formData.stadt].filter(Boolean).join(' '),
+      formData.land && formData.land !== 'Deutschland' ? formData.land : null,
+    ].filter(Boolean).join(', ')
+
+    // Schrift-Paar aus dem Wizard uebernehmen (frueher immer 'Inter Tight')
+    const fontPaar = FONT_PAIRS.find(p => p.id === formData.fontPair) || null
+    const font = formData.font || fontPaar?.body || 'Inter Tight'
+    const fontHeadline = formData.fontHeadline || fontPaar?.headline || font
+
+    // Echte Zahlen fuer Statistiken vorbereiten
+    const jahr = new Date().getFullYear()
+    const gegruendetJahr = parseInt(String(formData.gegruendet || '').replace(/\D/g, '').slice(0, 4), 10)
+    const jahreAktiv = gegruendetJahr && gegruendetJahr > 1800 && gegruendetJahr <= jahr ? jahr - gegruendetJahr : null
+
+    const geschaeftsmodell = { b2c: 'Privatkunden (B2C)', b2b: 'Geschaeftskunden (B2B)', beides: 'Privat- und Geschaeftskunden' }[formData.geschaeftsmodell] || formData.geschaeftsmodell || ''
+    const einzugsgebiet = { lokal: 'lokal (Stadt und Umgebung)', regional: 'regional', national: 'deutschlandweit', international: 'international' }[formData.einzugsgebiet] || formData.einzugsgebiet || ''
+
     // Stil-Variante → bevorzugte Block-Varianten
     const stilMap = {
-      'dark-elite': { hero: 'hero-gradient', services: 'services-cards', about: 'about-stats', header: 'header-gradient' },
-      'clean-pro': { hero: 'hero-split', services: 'services-icons', about: 'about-split', header: 'header-light' },
-      'bold-center': { hero: 'hero-center', services: 'services-list', about: 'about-stats', header: 'header-gradient' },
+      'dark-elite': { hero: 'h-geist', services: 'services-cards', about: 'about-stats', header: 'header-gradient' },
+      'clean-pro': { hero: 'h-bild-rechts', services: 'services-icons', about: 'about-split', header: 'header-light' },
+      'bold-center': { hero: 'h-mitte', services: 'services-list', about: 'about-stats', header: 'header-gradient' },
     }
     const stil = stilMap[formData.stilVariante] || stilMap['dark-elite']
 
@@ -50,40 +83,60 @@ export async function POST(request) {
 UNTERNEHMEN
 Firma: ${formData.firmenname || 'Muster GmbH'}
 Branche: ${brancheLabel}
-Gegruendet: ${formData.gegruendet || 'k.A.'} | Mitarbeiter: ${formData.mitarbeiter || 'k.A.'}
+Gegruendet: ${formData.gegruendet || 'k.A.'}${jahreAktiv ? ` (das sind ${jahreAktiv} Jahre Erfahrung - Stand ${jahr})` : ''} | Mitarbeiter: ${formData.mitarbeiter || 'k.A.'}
 Beschreibung: ${formData.beschreibung || 'Professionelle Dienstleistungen'}
 Leistungen: ${formData.leistungen || 'k.A.'}
 USPs: ${formData.usps || 'k.A.'}
+${formData.geschichte ? `Geschichte & Meilensteine (MUSS auf der Ueber-uns-Seite bzw. im Ueber-uns-Bereich erzaehlt werden, schoen umformuliert): ${formData.geschichte}` : ''}
 Auszeichnungen: ${formData.auszeichnungen || 'k.A.'}
 Referenzen: ${formData.referenzen || 'k.A.'}
+${formData.website ? `Bisherige Website: ${formData.website}` : ''}
+${geschaeftsmodell ? `Kundenkreis: ${geschaeftsmodell}` : ''}
+${formData.interaktion && formData.interaktion !== 'gemischt' ? `Kundenkontakt: ${formData.interaktion}` : ''}
+${einzugsgebiet ? `Einzugsgebiet: ${einzugsgebiet}${formData.staedte ? ` - wichtige Orte: ${formData.staedte} (diese Orte NATUERLICH in Texte einbauen, gut fuer lokale Auffindbarkeit)` : ''}` : ''}
 
 KONTAKT
-Telefon: ${formData.telefon || '+49 30 1234567'}
-E-Mail: ${formData.email || 'info@beispiel.de'}
-Adresse: ${formData.adresse || 'Musterstr. 1, 10115 Berlin'}
-Oeffnungszeiten: ${formData.oeffnung || 'Mo-Fr: 9-18 Uhr'}
+Telefon: ${formData.telefon || 'k.A.'}
+E-Mail: ${formData.email || 'k.A.'}
+Adresse: ${adresse || 'k.A.'}
+Oeffnungszeiten: ${formData.oeffnung || 'k.A.'}
+WICHTIG: Verwende NUR diese echten Kontaktdaten. NIEMALS Adressen, Telefonnummern oder E-Mails erfinden - fehlende Angaben einfach weglassen.
 
 BRANCHEN-DETAILS (${brancheLabel})
 ${detailText || 'Keine besonderen Angaben'}
 
 TON and STIL
-Anrede: ${anrede}
+Anrede: ${anrede} - KONSEQUENT in JEDEM Textfeld, auch in Buttons, FAQ-Antworten und Kundenstimmen.
 Tonalitaet: ${ton}
+${formData.satzlaenge && formData.satzlaenge !== 'gemischt' ? `Satzlaenge: bevorzugt ${formData.satzlaenge === 'kurz' ? 'kurze, knackige Saetze' : 'ausfuehrlichere, fliessende Saetze'}` : ''}
+${formData.tiefe && formData.tiefe !== 'ausgewogen' ? `Inhaltstiefe: ${formData.tiefe === 'einfach' ? 'einfach und laienverstaendlich, keine Fachbegriffe' : 'fachlich fundiert, Fachbegriffe erlaubt'}` : ''}
 CTA-Stil: ${formData.ctaStil || 'direkt'}
 ${formData.verboten ? `VERBOTENE Woerter (NIEMALS verwenden): ${formData.verboten}` : ''}
 
-ZIELGRUPPE
+ZIELGRUPPE (Texte gezielt auf diese Menschen zuschneiden)
 ${formData.altersgruppe ? `Alter: ${formData.altersgruppe}` : ''}
-${formData.schmerzpunkte ? `Probleme: ${formData.schmerzpunkte}` : ''}
-${formData.ziele ? `Ziele: ${formData.ziele}` : ''}
+${formData.geschlecht && formData.geschlecht !== 'Alle' ? `Ueberwiegend: ${formData.geschlecht}` : ''}
+${formData.bildung ? `Bildungsniveau: ${formData.bildung}` : ''}
+${formData.einkommen ? `Einkommen: ${formData.einkommen}` : ''}
+${formData.entscheidung && formData.entscheidung !== 'gemischt' ? `Kaufentscheidung: ${formData.entscheidung === 'rational' ? 'eher rational (Fakten, Zahlen, Nutzen betonen)' : 'eher emotional (Gefuehl, Vertrauen, Geschichten betonen)'}` : ''}
+${formData.schmerzpunkte ? `Probleme der Zielgruppe (Texte muessen diese aufgreifen und loesen): ${formData.schmerzpunkte}` : ''}
+${formData.ziele ? `Ziele der Zielgruppe: ${formData.ziele}` : ''}
 
 MARKE
 ${formData.markenwerte ? `Werte: ${formData.markenwerte}` : ''}
-${formData.vertrauen ? `Vertrauenssignale: ${formData.vertrauen}` : ''}
+${formData.vertrauen ? `Vertrauenssignale (prominent einbauen): ${formData.vertrauen}` : ''}
+${formData.abgrenzung ? `Abgrenzung vom Wettbewerb (diesen Unterschied klar herausstellen): ${formData.abgrenzung}` : ''}
+
+ECHTE ZAHLEN (fuer stats/highlights/Zahlen-Elemente):
+${jahreAktiv ? `- ${jahreAktiv}+ Jahre Erfahrung (aus Gruendungsjahr ${gegruendetJahr})` : ''}
+${formData.mitarbeiter ? `- ${formData.mitarbeiter} Mitarbeiter` : ''}
+${formData.auszeichnungen ? `- Auszeichnungen: ${formData.auszeichnungen}` : ''}
+${formData.referenzen ? `- Referenzen: ${formData.referenzen}` : ''}
+REGEL: Statistiken NUR aus diesen echten Angaben ableiten. NIEMALS Zahlen erfinden (kein "500+ Kunden", wenn nichts dazu bekannt ist!). Wenn zu wenige echte Zahlen da sind, stattdessen qualitative Aussagen verwenden ("Meisterbetrieb", "Festpreisgarantie", "100% Handarbeit" nur falls belegt) oder das Zahlen-Element kuerzer halten.
 
 SEO
-${formData.seoPrimaer ? `Primaer-Keyword (in H1 + erste Absaetze): ${formData.seoPrimaer}` : ''}
-${formData.seoSekundaer ? `Sekundaer-Keywords: ${formData.seoSekundaer}` : ''}
+${formData.seoPrimaer ? `Primaer-Keyword (in Startseiten-H1 + erste Absaetze + mindestens eine Zwischenueberschrift): ${formData.seoPrimaer}` : ''}
+${formData.seoSekundaer ? `Sekundaer-Keywords (natuerlich ueber Unterseiten-Ueberschriften und Texte verteilen, KEIN Keyword-Stopfen): ${formData.seoSekundaer}` : ''}
 
 SEITEN: ${seiten.join(', ')}
 
@@ -105,7 +158,12 @@ PREMIUM (schoen, animiert - diese ZUERST waehlen):
 - banner (banner-info, banner-laufband) -> {"text","icon"} | laufband: {"punkte":["...","..."]}
 - video (video-breit) -> {"tag","title","videoUrl"}
 - trenner (trenner-linie, trenner-akzent, trenner-luft) -> {}
-HERO (NUR Startseite): hero-full (hero-foto, hero-editorial, hero-akzent, hero-magazin, hero-duo, hero-minimal, hero-mesh, hero-gradient, hero-center, hero-bild)
+HERO (NUR Startseite): hero-full mit diesen Varianten:
+  h-mitte (zentriert, mit Foto-Hintergrund), h-bild-rechts (Text links, Bild rechts), h-bild-links,
+  h-foto-unten (Vollbild-Foto), h-wort (riesiges Wort), h-wort-split, h-magazin, h-panel (Werte-Karten),
+  h-liste (Haekchenliste), h-bewertung, h-formular (Anfrage-Formular), h-farbhaelfte, h-geist (dunkel, dramatisch),
+  h-minimal, h-collage, h-karten-drei, h-mitte-bild
+  -> content: {"tag","headline","subline","cta1","cta2","stats":[...]}
 KLASSISCH (nur wenn kein Premium-Baustein passt):
 - header-slim (header-gradient, header-light) Unterseiten
 - services (services-cards, services-list, services-icons)
@@ -136,19 +194,21 @@ REGELN:
    - "Portfolio": galerie + stimmen
    WICHTIG: Jede Seite MUSS andere Bloecke haben - niemals zwei identische Seiten! Variiere auch die Varianten.
 3. Halte dich strikt an die vorgegebene Startseiten-Struktur
-4. ALLE Texte: echt, ${anrede}, Ton "${ton}", branchenspezifisch
+4. ALLE Texte: echt, KONSEQUENT in der ${anrede}, Ton "${ton}", branchenspezifisch
 5. Nutze die Branchen-Details fuer konkrete Inhalte
 6. ${formData.seoPrimaer ? `Baue "${formData.seoPrimaer}" in die Startseiten-H1 ein` : 'Waehle sinnvolle Ueberschriften'}
+7. ${formData.geschichte ? 'Die GESCHICHTE des Unternehmens (siehe oben) MUSS vorkommen - auf der Ueber-uns-Seite ausfuehrlich, sonst im Ueber-uns-Bereich der Startseite.' : 'Erzaehle im Ueber-uns-Bereich etwas Konkretes aus den Angaben, keine Floskeln.'}
+8. Zahlen-Elemente (stats/highlights) NUR mit den ECHTEN ZAHLEN von oben fuellen.
 
 Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
 {
   "Startseite": { "blocks": [
-    {"type":"hero-full","variant":"hero-gradient","content":{"tag":"...","headline":"...","subline":"...","cta1":"...","cta2":"...","stats":[{"num":"15+","label":"Jahre"},{"num":"500+","label":"Kunden"},{"num":"100%","label":"Zufrieden"}]}},
+    {"type":"hero-full","variant":"h-mitte","content":{"tag":"...","headline":"...","subline":"...","cta1":"...","cta2":"...","stats":[{"num":"ECHTE ZAHL laut Angaben","label":"..."},{"num":"...","label":"..."},{"num":"...","label":"..."}]}},
     {"type":"services","variant":"services-cards","content":{"tag":"...","title":"...","subtitle":"...","items":[{"icon":"bolt","title":"...","text":"..."},{"icon":"bullseye","title":"...","text":"..."},{"icon":"handshake","title":"...","text":"..."}]}},
     {"type":"about","variant":"about-stats","content":{"tag":"Ueber uns","title":"...","text1":"...","text2":"...","stats":[{"num":"...","label":"..."},{"num":"...","label":"..."},{"num":"...","label":"..."},{"num":"...","label":"..."}]}},
     {"type":"testimonials","variant":"testi-cards","content":{"title":"...","items":[{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."},{"quote":"...","name":"...","role":"..."}]}},
     {"type":"cta","variant":"cta-gradient","content":{"title":"...","subtitle":"...","cta1":"...","telefon":"${formData.telefon || ''}"}},
-    {"type":"contact","variant":"contact-split","content":{"tag":"Kontakt","title":"...","subtitle":"...","adresse":"${formData.adresse || ''}","telefon":"${formData.telefon || ''}","email":"${formData.email || ''}","oeffnung":"${formData.oeffnung || ''}"}}
+    {"type":"contact","variant":"contact-split","content":{"tag":"Kontakt","title":"...","subtitle":"...","adresse":"${adresse || ''}","telefon":"${formData.telefon || ''}","email":"${formData.email || ''}","oeffnung":"${formData.oeffnung || ''}"}}
   ]}
   ${seiten.filter(s => s !== 'Startseite').map(s => `,"${s}":{"blocks":[...]}`).join('')}
 }`
@@ -179,16 +239,16 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
       }
     }
 
-    const globalContent = {
-      firmenname: formData.firmenname || 'Muster GmbH',
-      telefon: formData.telefon || '+49 30 1234567',
-      email: formData.email || 'info@beispiel.de',
-      adresse: formData.adresse || 'Musterstr. 1, 10115 Berlin',
-      beschreibung: formData.beschreibung || '',
-      oeffnung: formData.oeffnung || 'Mo-Fr: 9-18 Uhr',
-      navLinks,
-      logo: formData.logo || null,
-    }
+    // NUR echte Angaben uebernehmen – fehlt etwas, greifen die neutralen
+    // Baustein-Standards statt einer erfundenen Berliner Platzhalter-Adresse.
+    const globalContent = { navLinks }
+    if (formData.firmenname) globalContent.firmenname = formData.firmenname
+    if (formData.telefon) globalContent.telefon = formData.telefon
+    if (formData.email) globalContent.email = formData.email
+    if (adresse) globalContent.adresse = adresse
+    if (formData.beschreibung) globalContent.beschreibung = formData.beschreibung
+    if (formData.oeffnung) globalContent.oeffnung = formData.oeffnung
+    if (formData.logo) globalContent.logo = formData.logo
 
     const pages = {}
     const stock = getStockImages(formData.branche)
@@ -202,7 +262,7 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
         // nur die dafuer gebauten Varianten einen Vollflaechen-Hintergrund,
         // helle/geteilte Heros behalten ihr eigenes Erscheinungsbild.
         if (b.type === 'hero-full') {
-          const dunkleVollflaeche = ['hero-foto', 'hero-gradient', 'hero-center'].includes(b.variant)
+          const dunkleVollflaeche = ['h-foto-unten', 'h-mitte', 'h-geist'].includes(b.variant)
           if (!c.heroImg) c.heroImg = stock.hero
           if (dunkleVollflaeche && !c.bgImg) { c.bgImg = stock.hero; c.bgOverlay = 'rgba(15,23,42,0.62)' }
         }
@@ -226,10 +286,16 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
             const fn = formData.firmenname || 'unser Team'
             const ort = formData.stadt || formData.ort || 'unserer Region'
             const tel = formData.telefon || 'telefonisch'
-            c.items = [
+            const du = formData.anrede === 'du'
+            c.items = du ? [
+              { q: 'Wie kann ich einen Termin vereinbaren?', a: `Am einfachsten erreichst du uns ${formData.telefon ? `unter ${tel}` : 'telefonisch'} oder über das Kontaktformular. Wir melden uns schnellstmöglich bei dir zurück.` },
+              { q: `Welche Leistungen bietet ${fn} an?`, a: 'Einen Überblick über unser komplettes Angebot findest du im Bereich Leistungen. Bei individuellen Fragen beraten wir dich gerne persönlich.' },
+              { q: 'Wo finde ich euch?', a: `Du findest uns in ${ort}${adresse ? ` (${adresse})` : ''}. Die genaue Anfahrt siehst du im Kontaktbereich.` },
+              { q: 'Was kostet ein Erstgespräch?', a: 'Ein erstes Kennenlernen ist unverbindlich. Die genauen Kosten richten sich nach deinem Anliegen – sprich uns einfach an.' },
+            ] : [
               { q: 'Wie kann ich einen Termin vereinbaren?', a: `Am einfachsten erreichen Sie uns ${formData.telefon ? `unter ${tel}` : 'telefonisch'} oder über das Kontaktformular. Wir melden uns schnellstmöglich bei Ihnen zurück.` },
               { q: `Welche Leistungen bietet ${fn} an?`, a: 'Einen Überblick über unser komplettes Angebot finden Sie im Bereich Leistungen. Bei individuellen Fragen beraten wir Sie gerne persönlich.' },
-              { q: 'Wo finde ich Sie?', a: `Sie finden uns in ${ort}${formData.adresse ? ` (${formData.adresse})` : ''}. Die genaue Anfahrt sehen Sie im Kontaktbereich.` },
+              { q: 'Wo finde ich Sie?', a: `Sie finden uns in ${ort}${adresse ? ` (${adresse})` : ''}. Die genaue Anfahrt sehen Sie im Kontaktbereich.` },
               { q: 'Was kostet ein Erstgespräch?', a: 'Ein erstes Kennenlernen ist unverbindlich. Die genauen Kosten richten sich nach Ihrem individuellen Anliegen – sprechen Sie uns einfach an.' },
             ]
           } else { c.items = valid }
@@ -244,7 +310,7 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
       ]
     })
 
-    return Response.json({ pages, palette, font: formData.font || 'Inter Tight' })
+    return Response.json({ pages, palette, font, fontHeadline })
   } catch (error) {
     console.error('Generate error:', error)
     return Response.json({ error: error.message }, { status: 500 })

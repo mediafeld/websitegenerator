@@ -17,6 +17,10 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Ungültiger Modus.' }, { status: 400 })
     }
     const liste = modus === 'mieten' ? MIETE : KAUF
+    // KAUF = fertige Website als ZIP-Download. Eine Domain gibt es NUR bei
+    // Miete (gehostet). Beim Kauf wird eine mitgeschickte Domain serverseitig
+    // verworfen – egal, was die Oberfläche behauptet.
+    const domainSauber = modus === 'kaufen' ? '' : (domain || '')
     const paket = liste.find(p => p.id === paketId)
     if (!paket) return NextResponse.json({ error: 'Unbekanntes Paket.' }, { status: 400 })
 
@@ -40,9 +44,46 @@ export async function POST(req) {
     const basis = process.env.NEXT_PUBLIC_SITE_URL || req.headers.get('origin') || 'https://websitegenerator24.de'
     const cent = Math.round(paket.preis * 100)
 
+    // Rechnungsdaten: je Website (re_*) falls gepflegt, sonst Konto-Profil.
+    let reDaten = null
+    if (projektId) {
+      const { data: pj } = await db.from('projekte').select('re_firma,re_vorname,re_nachname,re_strasse,re_plz,re_ort,re_ust_id').eq('id', projektId).maybeSingle()
+      if (pj && (pj.re_strasse || pj.re_firma)) reDaten = pj
+    }
+    const rechName = reDaten
+      ? (reDaten.re_firma || `${reDaten.re_vorname || ''} ${reDaten.re_nachname || ''}`.trim())
+      : (profil?.firma || `${profil?.vorname || ''} ${profil?.nachname || ''}`.trim())
+    const rechAdresse = reDaten
+      ? { line1: reDaten.re_strasse || undefined, postal_code: reDaten.re_plz || undefined, city: reDaten.re_ort || undefined, country: 'DE' }
+      : { line1: profil?.strasse || undefined, postal_code: profil?.plz || undefined, city: profil?.ort || undefined, country: 'DE' }
+
+    // FESTER Stripe-Kunde je Nutzer: so landet die Kundennummer (ab 1000)
+    // als eigenes Feld auf JEDER Stripe-Rechnung, und alle Zahlungen/
+    // Zahlungsmittel hängen an einem Kunden statt an Streu-Sessions.
+    let stripeKundeId = profil?.stripe_customer_id || null
+    const kundennummer = profil?.kundennummer != null ? String(profil.kundennummer) : null
+    const kundenFelder = {
+      name: rechName || undefined,
+      address: rechAdresse,
+      metadata: { user_id: nutzer.id, ...(kundennummer ? { kundennummer } : {}) },
+      ...(kundennummer ? { invoice_settings: { custom_fields: [{ name: 'Kundennummer', value: kundennummer }] } } : {}),
+    }
+    try {
+      if (stripeKundeId) {
+        await stripe.customers.update(stripeKundeId, kundenFelder)
+      } else {
+        const kunde = await stripe.customers.create({ email: nutzer.email, ...kundenFelder })
+        stripeKundeId = kunde.id
+        await db.from('profile').update({ stripe_customer_id: stripeKundeId }).eq('id', nutzer.id)
+      }
+    } catch (e) {
+      console.warn('[checkout] Stripe-Kunde konnte nicht angelegt/aktualisiert werden:', e?.message)
+      stripeKundeId = null
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: modus === 'mieten' ? 'subscription' : 'payment',
-      customer_email: nutzer.email,
+      ...(stripeKundeId ? { customer: stripeKundeId } : { customer_email: nutzer.email }),
       client_reference_id: projektId || undefined,
       line_items: [{
         quantity: 1,
@@ -61,11 +102,12 @@ export async function POST(req) {
         projekt_id: projektId || '',
         paket_id: paket.id,
         modus,
-        domain: domain || '',
+        domain: domainSauber,
       },
       subscription_data: modus === 'mieten' ? { metadata: { user_id: nutzer.id, projekt_id: projektId || '', paket_id: paket.id } } : undefined,
       allow_promotion_codes: true,
-      success_url: `${basis}/dashboard?bezahlt=1`,
+      ...(modus === 'kaufen' ? { invoice_creation: { enabled: true } } : {}),
+      success_url: `${basis}/danke?projekt=${projektId || ''}&modus=${modus}`,
       cancel_url: `${basis}/editor${projektId ? `?projekt=${projektId}` : ''}`,
     })
 
