@@ -834,8 +834,14 @@ const SLIDER_JS = `<script>
         var idx=Math.round(spur.scrollLeft/breite());
         punkte.forEach(function(p,i){p.style.opacity=i===idx?'1':'.35';p.style.width=i===idx?'26px':'8px'});
       },{passive:true});
-      if(s.hasAttribute('data-auto')){
+      // Automatik: NICHT im Editor (sonst faehrt der Inhalt unter dem
+      // Mauszeiger weg) und nie, solange die Maus ueber dem Slider steht.
+      if(s.hasAttribute('data-auto')&&!window.__wgEditor){
+        var halt=false;
+        s.addEventListener('mouseenter',function(){halt=true});
+        s.addEventListener('mouseleave',function(){halt=false});
         setInterval(function(){
+          if(halt)return;
           if(spur.scrollLeft+spur.clientWidth>=spur.scrollWidth-4)spur.scrollTo({left:0,behavior:'smooth'});
           else spur.scrollBy({left:breite(),behavior:'smooth'});
         },5200);

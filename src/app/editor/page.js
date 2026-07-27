@@ -71,6 +71,27 @@ export default function EditorPage() {
   const [contSel, setContSel] = useState(null)   // gewählte Sektion / Container (pinke Elementor-Auswahl)
   const [baum, setBaum] = useState([])           // Struktur der Seite für den Navigator
   const [navOffen, setNavOffen] = useState(false)
+  const [vorschau, setVorschau] = useState(false)   // Seite ohne Baukasten-Elemente ansehen
+  const [breiteLinks, setBreiteLinks] = useState(240)
+  const [breiteRechts, setBreiteRechts] = useState(250)
+  const [zieht, setZieht] = useState(null)          // 'links' | 'rechts' während des Ziehens
+
+  // Seitenleisten an den Griffen ziehen → Mitte bekommt variabel Platz.
+  // Während des Ziehens fängt das iframe keine Mausereignisse ab.
+  function panelZiehen(e, seite) {
+    e.preventDefault()
+    setZieht(seite)
+    const startX = e.clientX
+    const start = seite === 'links' ? breiteLinks : breiteRechts
+    const move = (ev) => {
+      const d = ev.clientX - startX
+      if (seite === 'links') setBreiteLinks(Math.max(56, Math.min(480, start + d)))
+      else setBreiteRechts(Math.max(56, Math.min(520, start - d)))
+    }
+    const up = () => { setZieht(null); document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+  }
   const [blockPicker, setBlockPicker] = useState(null)
   const formDataRef = useRef({})
   const [expandedBlock, setExpandedBlock] = useState(null) // welcher Block in der Liste aufgeklappt ist
@@ -288,10 +309,17 @@ export default function EditorPage() {
     // Scroll-Position merken, damit der Editor beim Neuaufbau nicht nach oben springt
     let sy = 0
     try { sy = iframe.contentWindow?.scrollY || 0 } catch { sy = 0 }
-    const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true })
     iframe.onload = () => { try { iframe.contentWindow?.scrollTo(0, sy) } catch {} }
+    if (vorschau) {
+      // Vorschau-Modus: die Seite exakt so wie live – mit Animationen,
+      // ohne jegliche Baukasten-Elemente und ohne Editor-Skript.
+      const live = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: false })
+      iframe.srcdoc = injectPattern(live)
+      return
+    }
+    const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true })
     iframe.srcdoc = injectEditor(injectPattern(html))
-  }, [renderKey, activePage, palette, font, fontHeadline, pagePattern])
+  }, [renderKey, activePage, palette, font, fontHeadline, pagePattern, vorschau])
 
   function applyPattern(pat) {
     setPagePattern(pat.id)
@@ -340,7 +368,10 @@ export default function EditorPage() {
   }
 
   function injectEditor(html) {
-    const css = `<style id="wg-ed">
+    // Muss VOR den Baustein-Skripten laufen: Slider-Automatik u. Ä. erkennen
+    // daran, dass sie im Editor stillhalten sollen.
+    const kopf = `<script>window.__wgEditor=1;</script>`
+    const css = `${kopf}<style id="wg-ed">
       * { scroll-behavior: auto !important; }
       /* Bewegung bleibt an – nur wenn "Bewegung anhalten" aktiv ist, wird
          alles eingefroren. Zusätzlich halten Laufbänder beim Drüberfahren
@@ -495,9 +526,32 @@ export default function EditorPage() {
         return start.closest(GESTALTBAR)||start;
       }
 
+      // Bearbeitbares Element, dessen Fläche den Punkt (mx,my) enthält –
+      // auch wenn eine Deko-Ebene darüber liegt und den Klick abfängt.
+      function editierbarAmPunkt(rahmen,mx,my){
+        if(typeof mx!=='number')return null;
+        var alle=rahmen.querySelectorAll(BEARBEITBAR);
+        var best=null,bestF=Infinity;
+        for(var i=0;i<alle.length;i++){
+          var r=alle[i].getBoundingClientRect();
+          if(!r.width||!r.height)continue;
+          if(mx<r.left||mx>r.right||my<r.top||my>r.bottom)continue;
+          var f=r.width*r.height;         // kleinstes getroffenes Element gewinnt
+          if(f<bestF){bestF=f;best=alle[i];}
+        }
+        return best;
+      }
+
       // Text/Bild/Icon anklicken → wie gehabt bearbeiten.
       function textAuswahl(ziel){
         contAbwaehlen(false);
+        // Akkordeons (FAQ): Klick auf die Frage klappt die Antwort auf,
+        // sonst wäre die Antwort im Editor nie erreichbar. Liegt das Ziel
+        // selbst in einem zugeklappten Bereich, wird er geöffnet.
+        var summ=ziel.closest('summary');
+        if(summ){var det=summ.closest('details');if(det&&!det.open)det.open=true;}
+        var det2=ziel.closest('details');
+        if(det2&&!det2.open)det2.open=true;
         selectEl(ziel);
         if(ziel.hasAttribute('data-edit')){
           ziel.contentEditable=true;
@@ -535,6 +589,12 @@ export default function EditorPage() {
         }
         if(einzel){ e.stopPropagation();e.preventDefault(); textAuswahl(einzel); return; }
         if(c&&c!==document.body&&c!==document.documentElement){
+          // Liegt unter dem Klickpunkt ein Text, der nur von einer Deko-Ebene
+          // (Verlauf, Overlay – z. B. im Slider) überdeckt wird? Dann ist der
+          // Text gemeint, nicht der Container. Gesucht wird in der GANZEN
+          // Sektion – auch absolut positionierte Texte (Geist-Wort) zählen.
+          var unterPunkt=editierbarAmPunkt(c.closest('[data-block]')||c,e.clientX,e.clientY);
+          if(unterPunkt){ e.stopPropagation();e.preventDefault(); textAuswahl(unterPunkt); return; }
           var innen=c.querySelectorAll(BEARBEITBAR);
           if(innen.length===1&&!c.hasAttribute('data-block')){
             e.stopPropagation();e.preventDefault(); textAuswahl(innen[0]); return;
@@ -564,7 +624,11 @@ export default function EditorPage() {
           c=c.parentElement;
         }
         if(einzel){ if(einzel!==sel)einzel.classList.add('wg-hover'); return; }
-        if(c&&c!==document.body&&c!==document.documentElement&&!c.hasAttribute('data-block')&&c!==selC)c.classList.add('wg-c-hov');
+        if(c&&c!==document.body&&c!==document.documentElement){
+          var up=editierbarAmPunkt(c.closest('[data-block]')||c,e.clientX,e.clientY);
+          if(up){ if(up!==sel)up.classList.add('wg-hover'); return; }
+          if(!c.hasAttribute('data-block')&&c!==selC)c.classList.add('wg-c-hov');
+        }
       },false);
 
       // Speichern beim Verlassen
@@ -1002,7 +1066,7 @@ export default function EditorPage() {
           if(k.hasAttribute('data-edit')||k.hasAttribute('data-img')||k.hasAttribute('data-icon')||k.hasAttribute('data-stars')){
             res.push({art:k.hasAttribute('data-img')?'bild':(k.hasAttribute('data-icon')?'icon':'text'),pfad:kindPfad(k),label:leafLabel(k)});
           } else if(istContainer(k)){
-            res.push({art:'container',pfad:kindPfad(k),label:contLabel(k),kinder:kinderVon(k,tiefe+1)});
+            res.push({art:'container',pfad:kindPfad(k),label:contLabel(k),bind:bindung(k),kinder:kinderVon(k,tiefe+1)});
           } else {
             var unter=kinderVon(k,tiefe);
             for(var j=0;j<unter.length;j++)res.push(unter[j]);
@@ -1053,7 +1117,7 @@ export default function EditorPage() {
           var sec3=secs[d.block];if(!sec3)return;
           var el3=vonPfad(sec3,d.pfad);if(!el3)return;
           el3.scrollIntoView({behavior:'smooth',block:'center'});
-          if(d.art==='text'&&el3.hasAttribute('data-edit'))textAuswahl(el3);
+          if(el3.hasAttribute('data-edit')||el3.hasAttribute('data-img')||el3.hasAttribute('data-icon')||el3.hasAttribute('data-stars'))textAuswahl(el3);
           else contWaehlen(el3);
         }
         if(d.cmd==='hovPfad'){
@@ -1233,9 +1297,11 @@ export default function EditorPage() {
     content[key] = val
 
     block.content = content; arr[blockIdx] = block; next[activePage] = arr
-    // Text-Edits: KEIN iframe-Neubau (kein Scroll-Sprung, Formatierung bleibt)
-    // Bilder: Neubau nötig damit Bild erscheint
-    applyPages(next, true, isImage)
+    // Text-Edits direkt in der Vorschau: KEIN iframe-Neubau (kein Scroll-Sprung).
+    // Bilder UND Panel-Übernahmen („neuAufbau") brauchen den Neubau – sonst
+    // sagt das Panel „Übernommen“, aber die Vorschau zeigt den alten Text.
+    // (Genau das war der Hero-Fehler: subline/headline sind einfache Felder.)
+    applyPages(next, true, isImage || !!neuAufbau)
   }
 
   function changeVariant(blockIdx, variantId) {
@@ -1411,6 +1477,7 @@ export default function EditorPage() {
           style={{ width: 30, height: 30, border: `1px solid ${bewegungStopp ? primary : '#e5e5e5'}`, borderRadius: 7, background: bewegungStopp ? primary + '14' : '#fff', cursor: 'pointer', fontSize: 13, color: bewegungStopp ? primary : '#475569' }}>
           <i className={`fa-solid fa-${bewegungStopp ? 'play' : 'pause'}`} />
         </button>
+        <button onClick={() => { const n = !vorschau; setVorschau(n); if (n) { setSelected(null); setContSel(null) } }} title={vorschau ? 'Zurück zum Bearbeiten' : 'Vorschau – Seite ohne Baukasten-Elemente ansehen'} style={{ height: 30, border: `1px solid ${vorschau ? '#16a34a' : '#e5e5e5'}`, borderRadius: 7, background: vorschau ? '#16a34a14' : '#fff', cursor: 'pointer', fontSize: 12, color: vorschau ? '#16a34a' : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className={`fa-solid fa-${vorschau ? 'pen' : 'eye'}`} />{vorschau ? 'Bearbeiten' : 'Vorschau'}</button>
         <button onClick={() => setNavOffen(o => !o)} title="Navigator – Struktur der Seite" style={{ height: 30, border: `1px solid ${navOffen ? PINK : '#e5e5e5'}`, borderRadius: 7, background: navOffen ? PINK + '14' : '#fff', cursor: 'pointer', fontSize: 12, color: navOffen ? PINK : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-layer-group" />Navigator</button>
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
@@ -1443,7 +1510,7 @@ export default function EditorPage() {
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* LEFT PANEL */}
-        <div style={{ width: 240, borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#fff' }}>
+        <div style={{ width: breiteLinks, borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#fff', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid #e5e5e5' }}>
             {[['Blöcke', 'blocks'], ['Bereiche', 'sections'], ['Seiten', 'pages']].map(([l, id]) => (
               <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: '9px 0', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: 'none', border: 'none', borderBottom: `2px solid ${tab === id ? primary : 'transparent'}`, color: tab === id ? '#111' : '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</button>
@@ -1485,8 +1552,8 @@ export default function EditorPage() {
                 {blocks.map((b, i) => {
                   if (b.type === 'nav' || b.type === 'footer') return null
                   const meta = ADDABLE_BLOCKS.find(a => a.type === b.type)
-                  const name = BLOCK_REGISTRY[b.type]?.label || b.type
-                  const active = selected?.isSection && selected.block === i
+                  const name = b.content?._name || BLOCK_REGISTRY[b.type]?.label || b.type
+                  const active = (selected?.isSection && selected.block === i) || contSel?.block === i || selected?.block === i
                   return (
                     <div key={i} onClick={() => { setSelected({ isSection: true, block: i, secName: name }); iframeRef.current?.contentWindow?.postMessage({ cmd: 'gotoBlock', index: i }, '*') }} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', border: `1px solid ${active ? primary : '#e5e5e5'}`, borderRadius: 8, marginBottom: 5, cursor: 'pointer', background: active ? primary + '12' : '#fff' }}>
                       <i className={`fa-solid fa-${meta?.fa || 'cube'}`} style={{ fontSize: 13, color: primary, width: 16, textAlign: 'center' }} />
@@ -1509,16 +1576,22 @@ export default function EditorPage() {
           </div>
         </div>
 
+        {/* Zieh-Griff links: Vorschau-Fläche variabel machen */}
+        <div onMouseDown={(e) => panelZiehen(e, 'links')} title="Ziehen: linke Leiste breiter/schmaler" style={{ width: 6, cursor: 'col-resize', flexShrink: 0, background: zieht === 'links' ? PINK : '#eef1f5', borderRight: '1px solid #e5e5e5', transition: 'background .12s' }}
+          onMouseEnter={e => { if (!zieht) e.currentTarget.style.background = PINK + '55' }} onMouseLeave={e => { if (!zieht) e.currentTarget.style.background = '#eef1f5' }} />
+
         {/* PREVIEW */}
-        <div style={{ flex: 1, background: '#e8e8e8', overflow: 'auto', display: 'flex', justifyContent: 'center', padding: 16, position: 'relative' }}>
+        <div style={{ flex: 1, background: '#e8e8e8', overflow: 'auto', display: 'flex', justifyContent: 'center', padding: 16, position: 'relative', minWidth: 320 }}>
           <div style={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '390px', maxWidth: '100%', transition: 'width 0.3s', position: 'relative', height: 'fit-content' }}>
             <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', overflow: 'hidden', borderRadius: 8 }}>
               <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontSize: 13, fontWeight: 700, color: 'rgba(0,0,0,0.04)', letterSpacing: '0.3em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>websitegenerator24.de · Vorschau</div>
             </div>
-            <iframe ref={iframeRef} style={{ width: '100%', minHeight: '85vh', border: 'none', borderRadius: 8, boxShadow: '0 4px 32px rgba(0,0,0,0.12)', display: 'block', background: '#fff' }} />
+            <iframe ref={iframeRef} style={{ width: '100%', minHeight: '85vh', border: 'none', borderRadius: 8, boxShadow: '0 4px 32px rgba(0,0,0,0.12)', display: 'block', background: '#fff', pointerEvents: zieht ? 'none' : 'auto' }} />
           </div>
           {navOffen && (
-            <Navigator baum={baum} primary={primary} aktiv={contSel?.block}
+            <Navigator baum={baum} primary={primary}
+              aktivBlock={contSel ? contSel.block : selected?.block}
+              aktivPfad={contSel ? (contSel.pfad ?? '') : selected?.pfad}
               onClose={() => setNavOffen(false)}
               onHover={(bi, pfad) => sendeAnVorschau({ cmd: 'hovPfad', block: bi, pfad })}
               onGehe={(bi, pfad, art) => sendeAnVorschau({ cmd: 'gehePfad', block: bi, pfad, art })}
@@ -1526,12 +1599,17 @@ export default function EditorPage() {
               onMove={(bi, dir) => moveBlock(bi, dir)}
               onDup={(bi) => dupBlock(bi)}
               onDel={(bi) => delBlock(bi)}
+              onArrayOp={(bi, bind, op) => doArrayOp(bi, bind.feld, bind.index, op)}
             />
           )}
         </div>
 
+        {/* Zieh-Griff rechts */}
+        <div onMouseDown={(e) => panelZiehen(e, 'rechts')} title="Ziehen: rechte Leiste breiter/schmaler" style={{ width: 6, cursor: 'col-resize', flexShrink: 0, background: zieht === 'rechts' ? PINK : '#eef1f5', borderLeft: '1px solid #e5e5e5', transition: 'background .12s' }}
+          onMouseEnter={e => { if (!zieht) e.currentTarget.style.background = PINK + '55' }} onMouseLeave={e => { if (!zieht) e.currentTarget.style.background = '#eef1f5' }} />
+
         {/* RIGHT PANEL */}
-        <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
+        <div style={{ width: breiteRechts, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {contSel ? (
             <LayoutPanel contSel={contSel} primary={primary} content={pages[activePage]?.[contSel.block]?.content}
               onLayout={(patch) => layoutAendern(contSel.block, contSel.pfad ?? '', patch)}
@@ -1937,21 +2015,39 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
 }
 
 // ── Navigator: Strukturbaum der Seite (wie Elementor) ──
-function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, onDup, onDel, aktiv }) {
+function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, onDup, onDel, onArrayOp, aktivBlock, aktivPfad }) {
   const [offen, setOffen] = useState({})
   const [editiert, setEditiert] = useState(null)
+  const aktivRef = useRef(null)
+  // Auswahl in der Vorschau → Sektion aufklappen und zur Zeile scrollen (wie Elementor)
+  useEffect(() => {
+    if (aktivBlock == null) return
+    setOffen(o => (o[aktivBlock] === false ? { ...o, [aktivBlock]: true } : o))
+    const t = setTimeout(() => { aktivRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, 60)
+    return () => clearTimeout(t)
+  }, [aktivBlock, aktivPfad])
   const ICONS = { container: 'square-full', text: 'font', bild: 'image', icon: 'star', sterne: 'star' }
-  const Zeile = ({ knoten, bi, tiefe }) => (
-    <div>
-      <div onMouseEnter={() => onHover(bi, knoten.pfad)} onMouseLeave={() => onHover(bi, null)} onClick={() => onGehe(bi, knoten.pfad, knoten.art)}
-        style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', paddingLeft: 8 + tiefe * 14, borderRadius: 6, cursor: 'pointer', fontSize: 11, color: '#475569' }}
-        onMouseOver={e => { e.currentTarget.style.background = '#fdf2f8' }} onMouseOut={e => { e.currentTarget.style.background = 'transparent' }}>
-        <i className={`fa-solid fa-${ICONS[knoten.art] || 'square-full'}`} style={{ fontSize: 9, color: '#e6007e', width: 12, textAlign: 'center' }} />
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{knoten.label}</span>
+  const Zeile = ({ knoten, bi, tiefe }) => {
+    const istAktiv = bi === aktivBlock && knoten.pfad != null && knoten.pfad === aktivPfad
+    return (
+      <div>
+        <div ref={istAktiv ? aktivRef : null} onMouseEnter={() => onHover(bi, knoten.pfad)} onMouseLeave={() => onHover(bi, null)} onClick={() => onGehe(bi, knoten.pfad, knoten.art)}
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', paddingLeft: 8 + tiefe * 14, borderRadius: 6, cursor: 'pointer', fontSize: 11, color: istAktiv ? '#9d174d' : '#475569', background: istAktiv ? '#fce7f3' : 'transparent', fontWeight: istAktiv ? 700 : 400 }}
+          onMouseOver={e => { if (!istAktiv) e.currentTarget.style.background = '#fdf2f8' }} onMouseOut={e => { e.currentTarget.style.background = istAktiv ? '#fce7f3' : 'transparent' }}>
+          <i className={`fa-solid fa-${ICONS[knoten.art] || 'square-full'}`} style={{ fontSize: 9, color: '#e6007e', width: 12, textAlign: 'center' }} />
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{knoten.label}</span>
+          {knoten.bind && (
+            <span style={{ display: 'flex', gap: 1 }} onClick={e => e.stopPropagation()}>
+              {[['hoch', 'arrow-up', 'Vor'], ['runter', 'arrow-down', 'Zurück'], ['dup', 'clone', 'Klonen'], ['del', 'xmark', 'Löschen']].map(([op, ic, t]) => (
+                <button key={op} title={t} onClick={() => onArrayOp(bi, knoten.bind, op)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: op === 'del' ? '#f87171' : '#c4899f', fontSize: 9, width: 15, height: 15, padding: 0 }}><i className={`fa-solid fa-${ic}`} /></button>
+              ))}
+            </span>
+          )}
+        </div>
+        {(knoten.kinder || []).map((k, i) => <Zeile key={i} knoten={k} bi={bi} tiefe={tiefe + 1} />)}
       </div>
-      {(knoten.kinder || []).map((k, i) => <Zeile key={i} knoten={k} bi={bi} tiefe={tiefe + 1} />)}
-    </div>
-  )
+    )
+  }
   return (
     <div style={{ position: 'absolute', top: 10, right: 10, bottom: 10, width: 250, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.18)', zIndex: 30, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
       <div style={{ padding: '10px 12px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1961,7 +2057,7 @@ function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, on
       <div style={{ flex: 1, overflowY: 'auto', padding: 6 }}>
         {baum.map((sek) => {
           const auf = offen[sek.bi] !== false
-          const istAktiv = aktiv === sek.bi
+          const istAktiv = aktivBlock === sek.bi && (aktivPfad === '' || aktivPfad == null)
           return (
             <div key={sek.bi} style={{ marginBottom: 2 }}>
               <div onMouseEnter={() => onHover(sek.bi, '')} onMouseLeave={() => onHover(sek.bi, null)}
