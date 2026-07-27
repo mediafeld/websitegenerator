@@ -24,6 +24,7 @@ import { KAUF, MIETE } from '@/lib/preise'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Brotkrumen } from '@/components/Brotkrumen'
 import { istPfad, pfadSetzen, listeAendern, layoutNachStruktur } from '@/lib/blockSchema'
+import { KARTEN_SKINS } from '@/lib/blocksPlus2'
 
 // Auswahlfarbe für Sektionen/Container (Elementor-artig: pink)
 const PINK = '#e6007e'
@@ -85,6 +86,7 @@ export default function EditorPage() {
   const [breiteLinks, setBreiteLinks] = useState(240)
   const [breiteRechts, setBreiteRechts] = useState(250)
   const [zieht, setZieht] = useState(null)          // 'links' | 'rechts' während des Ziehens
+  const springeZuRef = useRef(null)                 // nach Neuaufbau zum neuen Element springen
 
   // Seitenleisten an den Griffen ziehen → Mitte bekommt variabel Platz.
   // Während des Ziehens fängt das iframe keine Mausereignisse ab.
@@ -935,6 +937,7 @@ export default function EditorPage() {
         var tools=ov.querySelector('.wg-tools');var h='';
         if(!istSek){
           h+='<button data-w="eltern" title="Übergeordnetes Element wählen"><i class="fa-solid fa-turn-up"></i></button>';
+          h+='<button data-w="verstecken" title="Ausblenden (über den Navigator wieder einblendbar)"><i class="fa-solid fa-eye-slash"></i></button>';
           var b=bindung(el);
           if(b){
             h+='<button data-w="hoch" title="Nach vorn"><i class="fa-solid fa-arrow-left"></i></button>';
@@ -951,6 +954,14 @@ export default function EditorPage() {
               var p=selC.parentElement;
               while(p&&!istContainer(p)&&!p.hasAttribute('data-block'))p=p.parentElement;
               if(p)contWaehlen(p);
+              return;
+            }
+            if(w==='verstecken'){
+              var pfadV=kindPfad(selC),biV=bIdx(selC);
+              selC.style.setProperty('display','none','important');
+              parent.postMessage({t:'layout',block:biV,pfad:pfadV,stil:{display:'none'}},'*');
+              contAbwaehlen(true);
+              baumBauen();
               return;
             }
             var bb=bindung(selC);if(!bb)return;
@@ -1119,9 +1130,9 @@ export default function EditorPage() {
           var k=kids[i],tag=k.tagName.toLowerCase();
           if(tag==='style'||tag==='script')continue;
           if(k.hasAttribute('data-edit')||k.hasAttribute('data-img')||k.hasAttribute('data-icon')||k.hasAttribute('data-stars')){
-            res.push({art:k.hasAttribute('data-img')?'bild':(k.hasAttribute('data-icon')?'icon':'text'),pfad:kindPfad(k),label:leafLabel(k)});
+            res.push({art:k.hasAttribute('data-img')?'bild':(k.hasAttribute('data-icon')?'icon':'text'),pfad:kindPfad(k),label:leafLabel(k),versteckt:getComputedStyle(k).display==='none'});
           } else if(istContainer(k)){
-            res.push({art:'container',pfad:kindPfad(k),label:contLabel(k),bind:bindung(k),kinder:kinderVon(k,tiefe+1)});
+            res.push({art:'container',pfad:kindPfad(k),label:contLabel(k),bind:bindung(k),versteckt:getComputedStyle(k).display==='none',kinder:kinderVon(k,tiefe+1)});
           } else {
             var unter=kinderVon(k,tiefe);
             for(var j=0;j<unter.length;j++)res.push(unter[j]);
@@ -1155,6 +1166,7 @@ export default function EditorPage() {
             if(d.stil[p]===''||d.stil[p]==null)el.style.removeProperty(cssProp(p));
             else el.style.setProperty(cssProp(p),String(d.stil[p]),'important');
           });
+          if('display' in (d.stil||{}))baumBauen();
         }
         if(d.cmd==='breite'){
           var sec2=secs[d.block];if(!sec2)return;
@@ -1183,6 +1195,23 @@ export default function EditorPage() {
           if(el4&&el4!==selC)el4.classList.add('wg-c-hov');
         }
         if(d.cmd==='deselect'){contAbwaehlen(false);}
+        // Nach dem Einfügen: zum neuen Element springen und anwählen
+        if(d.cmd==='springe'){
+          if(d.art==='block'){
+            var sB=secs[d.index];
+            if(sB){ sB.scrollIntoView({behavior:'smooth',block:'start'}); contWaehlen(sB); }
+          } else if(d.art==='einbau'){
+            var sE=secs[d.block];
+            var wE=sE?sE.querySelector('[data-einbau="'+d.index+'"]'):null;
+            if(wE){ wE.scrollIntoView({behavior:'smooth',block:'center'}); contWaehlen(wE); }
+          } else if(d.art==='img'){
+            var sI=secs[d.block];
+            var iE=sI?sI.querySelector('[data-img="'+d.key+'"]'):null;
+            if(iE){ iE.scrollIntoView({behavior:'smooth',block:'center'}); textAuswahl(iE); }
+          }
+        }
+        // Motion Effects live anwenden
+        if(d.cmd==='fx'){ if(window.__wgFxLive)window.__wgFxLive(d.block,d.pfad,d.cfg); }
         // Live-Text aus dem Panel: direkt am Element, kein Neuaufbau nötig
         if(d.cmd==='setzeText'){
           var sT=secs[d.block];if(!sT)return;
@@ -1221,7 +1250,10 @@ export default function EditorPage() {
       if (d.t === 'layout') applyLayoutPatch(d.block, d.pfad, d.stil)
       if (d.t === 'arrayOp') doArrayOp(d.block, d.feld, d.index, d.op)
       if (d.t === 'baum') setBaum(d.baum || [])
-      if (d.t === 'bereit') { if (contSel) sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad }) }
+      if (d.t === 'bereit') {
+        if (springeZuRef.current) { sendeAnVorschau({ cmd: 'springe', ...springeZuRef.current }); springeZuRef.current = null }
+        else if (contSel) sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad })
+      }
       if (d.t === 'sectionStyle') saveSectionStyle(d.block, d.img, d.overlay, d.parallax)
       if (d.t === 'deselect') setSelected(null)
       if (d.t === 'style') { /* live im iframe, kein extra Speichern nötig */ }
@@ -1292,6 +1324,21 @@ export default function EditorPage() {
     sendeAnVorschau({ cmd: 'setzeText', block: blockIdx, key, val })
     updateContent(blockIdx, key, val, false, false)
   }
+  // Motion Effects: live in die Vorschau + in content._fx persistieren
+  function fxAendern(blockIdx, pfad, cfg) {
+    if (pfad == null) return
+    sendeAnVorschau({ cmd: 'fx', block: blockIdx, pfad, cfg })
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b) return
+    const fx = { ...(b.content?._fx || {}) }
+    const leer = !cfg || !Object.keys(cfg).some(k => cfg[k] && cfg[k] !== 'kein')
+    if (leer) delete fx[pfad]
+    else fx[pfad] = cfg
+    arr[blockIdx] = { ...b, content: { ...(b.content || {}), _fx: fx } }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, false)
+  }
+
   // Verlinkung (Button-/Link-Ziel): live setzen + in content._links persistieren;
   // die fertige Seite bekommt die Ziele über einen kleinen Läufer gebacken.
   function linkAendern(blockIdx, pfad, href) {
@@ -1328,8 +1375,10 @@ export default function EditorPage() {
       if (!vid) return
       w = { ziel: pfad, art: 'baustein', typ: blockType, variante: vid, inhalt: buildDefaultContent(blockType) }
     }
+    const neuIndex = (b.content?._einbau || []).length
     arr[blockIdx] = { ...b, content: { ...(b.content || {}), _einbau: [...(b.content?._einbau || []), w] } }
     const next = { ...pages }; next[activePage] = arr
+    springeZuRef.current = { art: 'einbau', block: blockIdx, index: neuIndex }
     applyPages(next, true, true)
   }
 
@@ -1445,7 +1494,9 @@ export default function EditorPage() {
     const variants = getVariants(type); if (!variants.length) return
     const next = { ...pages }; const arr = [...next[activePage]]
     arr.splice(arr.length - 1, 0, { type, variant: variantId || variants[0].id, content: buildDefaultContent(type) })
-    next[activePage] = arr; applyPages(next)
+    next[activePage] = arr
+    springeZuRef.current = { art: 'block', index: arr.length - 2 }
+    applyPages(next)
     setExpandedBlock(null)
   }
 
@@ -1455,7 +1506,9 @@ export default function EditorPage() {
     const next = { ...pages }; const arr = [...next[activePage]]
     const i = Math.max(1, Math.min(index, arr.length - 1))
     arr.splice(i, 0, { type, variant: variants[0].id, content: buildDefaultContent(type) })
-    next[activePage] = arr; applyPages(next)
+    next[activePage] = arr
+    springeZuRef.current = { art: 'block', index: i }
+    applyPages(next)
   }
 
   function onFile(e) {
@@ -1523,21 +1576,26 @@ export default function EditorPage() {
     next[activePage] = arr; applyPages(next); setCustomEditor(null)
   }
 
-  // Generiertes KI-Bild einsetzen
+  // Generiertes KI-Bild einsetzen.
+  // Ziel: zuletzt angeklickter Bildbereich – sonst das ERSTE echte Bild-Feld
+  // der Seite, direkt aus der Vorschau gelesen (früher wurde hier mit alten
+  // Schlüsseln geraten → Bild landete nirgends und „verschwand“).
   function handleGeneratedImage(imgData) {
-    // Setze in zuletzt angeklickten Bildbereich, sonst ersten img-Block der Seite
     let target = lastImgClick
     if (!target) {
-      // Finde ersten Block mit Bild-Feld
-      const arr = pages[activePage] || []
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].type === 'hero-full' || arr[i].type === 'about' || arr[i].type === 'gallery') {
-          target = { blockIdx: i, key: arr[i].type === 'gallery' ? 'img_0' : 'image' }
-          break
+      try {
+        const doc = iframeRef.current?.contentDocument
+        const el = doc?.querySelector('[data-block] [data-img]')
+        if (el) {
+          const secs = [...doc.querySelectorAll('[data-block]')]
+          target = { blockIdx: secs.indexOf(el.closest('[data-block]')), key: el.getAttribute('data-img') }
         }
-      }
+      } catch {}
     }
-    if (target) updateContent(target.blockIdx, target.key, imgData, true)
+    if (!target) return
+    updateContent(target.blockIdx, target.key, imgData, true)
+    springeZuRef.current = { art: 'img', block: target.blockIdx, key: target.key }
+    setAiPanel(false)
     const newUsed = imagesUsed + 1
     setImagesUsed(newUsed)
     sessionStorage.setItem('wg24_imagesUsed', String(newUsed))
@@ -1738,6 +1796,7 @@ export default function EditorPage() {
               onDup={(bi) => dupBlock(bi)}
               onDel={(bi) => delBlock(bi)}
               onArrayOp={(bi, bind, op) => doArrayOp(bi, bind.feld, bind.index, op)}
+              onZeigen={(bi, pfad, versteckt) => layoutAendern(bi, pfad, { display: versteckt ? '' : 'none' })}
             />
           )}
         </div>
@@ -1752,6 +1811,7 @@ export default function EditorPage() {
             <LayoutPanel contSel={contSel} primary={primary} content={pages[activePage]?.[contSel.block]?.content}
               blockTyp={pages[activePage]?.[contSel.block]?.type}
               onFelder={(f) => contFeld(contSel.block, f, true)}
+              onFx={(cfg) => fxAendern(contSel.block, contSel.pfad ?? '', cfg)}
               onLayout={(patch) => layoutAendern(contSel.block, contSel.pfad ?? '', patch)}
               onBreite={(m, w) => breiteAendern(contSel.block, m, w)}
               onFeld={(f) => contFeld(contSel.block, f)}
@@ -1762,7 +1822,7 @@ export default function EditorPage() {
               onEltern={() => { const p = String(contSel.pfad || '').split('.').slice(0, -1).join('.'); sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad ? p : '' }) }}
             />
           ) : selected ? (
-            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onTextChange={(v) => { textLive(selected.block, selected.key, v); setSelected(sx => sx ? { ...sx, text: v } : sx) }} onLink={selected.linkPfad != null ? (href) => linkAendern(selected.block, selected.linkPfad, href) : null} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onFx={selected.pfad != null ? (cfg) => fxAendern(selected.block, selected.pfad, cfg) : null} fxWerte={(pages[activePage]?.[selected.block]?.content?._fx || {})[selected.pfad]} onTextChange={(v) => { textLive(selected.block, selected.key, v); setSelected(sx => sx ? { ...sx, text: v } : sx) }} onLink={selected.linkPfad != null ? (href) => linkAendern(selected.block, selected.linkPfad, href) : null} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -2086,6 +2146,89 @@ function VorschauVollbild({ html, seiten, aktiveSeite, onSeite, onSchliessen }) 
   )
 }
 
+// ── Motion Effects (Elementor-artig): Scrollen, Drehen, Fixieren, Hover ──
+function EffektePanel({ werte, onAendern, primary }) {
+  const w = werte || {}
+  const setze = (k, v) => onAendern({ ...w, [k]: v })
+  const REGLER = [['y', 'Vertikal scrollen', -10, 10], ['x', 'Horizontal scrollen', -10, 10], ['rot', 'Rotieren', -10, 10], ['skal', 'Skalieren', 0, 10], ['fade', 'Transparenz', 0, 10], ['blur', 'Weichzeichnen', 0, 10]]
+  const aktiv = Object.keys(w).some(k => w[k] && w[k] !== 'kein')
+  return (
+    <div style={{ marginBottom: 14, padding: 10, border: `1px solid ${aktiv ? '#c7d2fe' : '#e5e5e5'}`, background: aktiv ? '#eef2ff' : '#fafbfc', borderRadius: 9 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 5 }} />Motion Effects</div>
+      {REGLER.map(([k, l, min, max]) => (
+        <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+          <span style={{ fontSize: 10.5, color: '#475569', width: 104, flexShrink: 0 }}>{l}</span>
+          <input type="range" min={min} max={max} step="1" value={w[k] || 0} onChange={e => setze(k, parseInt(e.target.value) || 0)} style={{ flex: 1, accentColor: '#4f46e5', minWidth: 0 }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: w[k] ? '#4338ca' : '#cbd5e1', width: 20, textAlign: 'right' }}>{w[k] || 0}</span>
+        </div>
+      ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+        <span style={{ fontSize: 10.5, color: '#475569', width: 104, flexShrink: 0 }}>Hover-Effekt</span>
+        <select value={w.hover || 'kein'} onChange={e => setze('hover', e.target.value)} style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'inherit' }}>
+          <option value="kein">Keiner</option>
+          <option value="zoom">Zoom</option>
+          <option value="anheben">Anheben</option>
+          <option value="leuchten">Leuchten</option>
+          <option value="neigen">Neigen (3D)</option>
+        </select>
+      </div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 10.5, color: '#475569', cursor: 'pointer' }}>
+        <input type="checkbox" checked={!!w.fix} onChange={e => setze('fix', e.target.checked)} style={{ accentColor: '#4f46e5' }} />
+        Beim Scrollen fixieren (sticky)
+      </label>
+      {aktiv && <button onClick={() => onAendern({})} style={{ width: '100%', marginTop: 8, border: '1px solid #e5e5e5', background: '#fff', borderRadius: 6, padding: '6px 0', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', color: '#64748b' }}>Alle Effekte entfernen</button>}
+      <div style={{ fontSize: 9.5, color: '#6d7ba8', marginTop: 7, lineHeight: 1.4 }}>Wirkt live beim Scrollen – im Editor und auf der fertigen Seite.</div>
+    </div>
+  )
+}
+
+// ── Bild-Darstellung wie bei Elementor: Größe, Position, Wiederholen ──
+function BildDarstellung({ tag, werte, onAendern, primary }) {
+  const istImg = tag === 'img'
+  const w = werte || {}
+  const [hoehe, setHoehe] = useState('')
+  const [einheit, setEinheit] = useState('px')
+  const groesseKey = istImg ? 'objectFit' : 'backgroundSize'
+  const posKey = istImg ? 'objectPosition' : 'backgroundPosition'
+  const POSITIONEN = ['center center', 'top left', 'top center', 'top right', 'center left', 'center right', 'bottom left', 'bottom center', 'bottom right']
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Bild-Darstellung</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+        {[['cover', 'Cover'], ['contain', 'Contain'], [istImg ? 'none' : 'auto', 'Original']].map(([v, l]) => (
+          <button key={l} onClick={() => onAendern({ [groesseKey]: v })} style={{ flex: 1, border: `1px solid ${w[groesseKey] === v ? primary : '#e5e5e5'}`, borderRadius: 6, background: w[groesseKey] === v ? primary + '12' : '#fff', padding: '7px 0', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', color: w[groesseKey] === v ? primary : '#475569' }}>{l}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 6 }}>
+        <span style={{ fontSize: 10.5, color: '#475569', width: 56, flexShrink: 0 }}>Höhe</span>
+        <input type="number" value={hoehe} placeholder="auto" onChange={e => { setHoehe(e.target.value); onAendern({ height: e.target.value === '' ? '' : `${parseFloat(e.target.value) || 0}${einheit}` }) }}
+          style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 6, padding: '6px 8px', fontSize: 11.5, fontFamily: 'inherit', outline: 'none', minWidth: 0 }} />
+        {['px', '%', 'vh'].map(u => (
+          <button key={u} onClick={() => { setEinheit(u); if (hoehe !== '') onAendern({ height: `${parseFloat(hoehe) || 0}${u}` }) }} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 9.5, fontWeight: 700, color: einheit === u ? primary : '#94a3b8', textDecoration: einheit === u ? 'underline' : 'none', padding: '0 2px' }}>{u.toUpperCase()}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: istImg ? 0 : 6 }}>
+        <span style={{ fontSize: 10.5, color: '#475569', width: 56, flexShrink: 0 }}>Position</span>
+        <select value={w[posKey] || 'center center'} onChange={e => onAendern({ [posKey]: e.target.value })} style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'inherit' }}>
+          {POSITIONEN.map(p => <option key={p} value={p}>{p.replace('center center', 'Mitte').replace('top', 'oben').replace('bottom', 'unten').replace('left', 'links').replace('right', 'rechts').replace('center', 'Mitte')}</option>)}
+        </select>
+      </div>
+      {!istImg && (
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          <span style={{ fontSize: 10.5, color: '#475569', width: 56, flexShrink: 0 }}>Wiederh.</span>
+          <select value={w.backgroundRepeat || 'no-repeat'} onChange={e => onAendern({ backgroundRepeat: e.target.value })} style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'inherit' }}>
+            <option value="no-repeat">Nicht wiederholen</option>
+            <option value="repeat">Wiederholen</option>
+            <option value="repeat-x">Nur waagerecht</option>
+            <option value="repeat-y">Nur senkrecht</option>
+          </select>
+        </div>
+      )}
+      <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 6, lineHeight: 1.4 }}>Höhe passt das Umfeld automatisch an. Gilt live und im Export.</div>
+    </div>
+  )
+}
+
 // ── Abstände wie bei Elementor: 4 Felder (oben/rechts/unten/links) + Kette + Einheit ──
 function AbstandGruppe({ titel, praefix, werte, onAendern, primary }) {
   const SEITEN = [['Top', 'OBEN'], ['Right', 'RECHTS'], ['Bottom', 'UNTEN'], ['Left', 'LINKS']]
@@ -2180,12 +2323,22 @@ function KartenSuche({ content, onFelder, primary }) {
           style={{ flex: 1, border: '1px solid #d1fae5', borderRadius: 6, padding: '6px 7px', fontSize: 10.5, fontFamily: 'monospace', outline: 'none', minWidth: 0 }} />
       </div>
       <div style={{ fontSize: 9.5, color: '#15803d', marginTop: 6, lineHeight: 1.4 }}>Treffer anklicken → Karte springt sofort auf den Ort. GPS-Felder für Feinjustierung. Daten: OpenStreetMap/Nominatim.</div>
+      <div style={{ fontSize: 10, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 6px' }}>Karten-Skin</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+        {KARTEN_SKINS.map(sk => (
+          <button key={sk.id} onClick={() => onFelder({ kartenSkin: sk.id })}
+            style={{ border: `2px solid ${(content?.kartenSkin || 'standard') === sk.id ? '#16a34a' : '#d1fae5'}`, borderRadius: 7, background: '#fff', cursor: 'pointer', padding: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: '100%', height: 22, borderRadius: 4, background: 'linear-gradient(120deg,#a7f3d0 0 30%,#e2e8f0 30% 55%,#bfdbfe 55% 100%)', filter: sk.filter || 'none' }} />
+            <span style={{ fontSize: 8.5, fontWeight: 700, color: '#334155' }}>{sk.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
 
 // ── Panel für gewählte Sektion / Container (pinke Elementor-Auswahl) ──
-function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern, onWert, blockTyp, onFelder }) {
+function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern, onWert, blockTyp, onFelder, onFx }) {
   const einbau = contSel.bind?.feld === '_einbau' ? (content?._einbau || [])[contSel.bind.index] : null
   const [codeText, setCodeText] = useState(einbau?.art === 'html' ? (einbau.html || '') : '')
   const codeTimer = useRef(null)
@@ -2267,6 +2420,15 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
       <AbstandGruppe titel="Außenabstand (Margin)" praefix="margin" werte={werte} onAendern={onLayout} primary={primary} />
       <AbstandGruppe titel="Innenabstand (Padding)" praefix="padding" werte={werte} onAendern={onLayout} primary={primary} />
 
+      {!istSek && (
+        <button onClick={() => { onLayout({ display: eintrag.display === 'none' ? '' : 'none' }); if (eintrag.display !== 'none') onClose() }}
+          style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: '7px 0', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', color: eintrag.display === 'none' ? '#f59e0b' : '#64748b', marginBottom: 12 }}>
+          <i className={`fa-solid fa-${eintrag.display === 'none' ? 'eye' : 'eye-slash'}`} style={{ marginRight: 6 }} />{eintrag.display === 'none' ? 'Wieder einblenden' : 'Element ausblenden'}
+        </button>
+      )}
+
+      {onFx && <EffektePanel werte={(content?._fx || {})[contSel.pfad ?? '']} onAendern={onFx} primary={primary} />}
+
       {istSek && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Inhaltsbreite</div>
@@ -2308,7 +2470,7 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
 }
 
 // ── Navigator: Strukturbaum der Seite (wie Elementor) ──
-function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, onDup, onDel, onArrayOp, aktivBlock, aktivPfad }) {
+function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, onDup, onDel, onArrayOp, onZeigen, aktivBlock, aktivPfad }) {
   const [offen, setOffen] = useState({})
   const [editiert, setEditiert] = useState(null)
   const aktivRef = useRef(null)
@@ -2327,8 +2489,14 @@ function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, on
         <div ref={istAktiv ? aktivRef : null} onMouseEnter={() => onHover(bi, knoten.pfad)} onMouseLeave={() => onHover(bi, null)} onClick={() => onGehe(bi, knoten.pfad, knoten.art)}
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', paddingLeft: 8 + tiefe * 14, borderRadius: 6, cursor: 'pointer', fontSize: 11, color: istAktiv ? '#9d174d' : '#475569', background: istAktiv ? '#fce7f3' : 'transparent', fontWeight: istAktiv ? 700 : 400 }}
           onMouseOver={e => { if (!istAktiv) e.currentTarget.style.background = '#fdf2f8' }} onMouseOut={e => { e.currentTarget.style.background = istAktiv ? '#fce7f3' : 'transparent' }}>
-          <i className={`fa-solid fa-${ICONS[knoten.art] || 'square-full'}`} style={{ fontSize: 9, color: '#e6007e', width: 12, textAlign: 'center' }} />
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{knoten.label}</span>
+          <i className={`fa-solid fa-${ICONS[knoten.art] || 'square-full'}`} style={{ fontSize: 9, color: knoten.versteckt ? '#cbd5e1' : '#e6007e', width: 12, textAlign: 'center' }} />
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: knoten.versteckt ? 0.45 : 1, textDecoration: knoten.versteckt ? 'line-through' : 'none' }}>{knoten.label}</span>
+          {knoten.pfad != null && (
+            <button title={knoten.versteckt ? 'Einblenden' : 'Ausblenden'} onClick={e => { e.stopPropagation(); onZeigen(bi, knoten.pfad, knoten.versteckt) }}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', color: knoten.versteckt ? '#f59e0b' : '#cbd5e1', fontSize: 9, width: 16, height: 16, padding: 0 }}>
+              <i className={`fa-solid fa-${knoten.versteckt ? 'eye' : 'eye-slash'}`} />
+            </button>
+          )}
           {knoten.bind && (
             <span style={{ display: 'flex', gap: 1 }} onClick={e => e.stopPropagation()}>
               {[['hoch', 'arrow-up', 'Vor'], ['runter', 'arrow-down', 'Zurück'], ['dup', 'clone', 'Klonen'], ['del', 'xmark', 'Löschen']].map(([op, ic, t]) => (
@@ -2379,7 +2547,7 @@ function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, on
   )
 }
 
-function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onLink, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout }) {
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onLink, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout, onFx, fxWerte }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
   const pp = palette?.primary || {}
   const ac = palette?.accent?.base || primary
@@ -2444,7 +2612,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
       {/* Element-Aktionen */}
       <div style={{ display: 'flex', gap: 5, marginBottom: 16 }}>
         <button onClick={() => sendCmd('dupEl')} title="Duplizieren" style={{ flex: 1, padding: '8px 0', border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#475569' }}><i className="fa-solid fa-clone" style={{ marginRight: 5 }} />Klonen</button>
-        <button onClick={() => sendCmd('delEl')} title="Löschen" style={{ flex: 1, padding: '8px 0', border: '1px solid #fecaca', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#dc2626' }}><i className="fa-solid fa-xmark" style={{ marginRight: 5 }} />Löschen</button>
+        <button onClick={() => { if (onLayout) { onLayout({ display: 'none' }); onClose() } else sendCmd('delEl') }} title="Ausblenden (über den Navigator wieder einblendbar)" style={{ flex: 1, padding: '8px 0', border: '1px solid #fecaca', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#dc2626' }}><i className="fa-solid fa-eye-slash" style={{ marginRight: 5 }} />Ausblenden</button>
       </div>
 
       {selected.isText && (
@@ -2455,6 +2623,12 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
             imLink={selected.linkPfad != null}
             onLive={v => onTextChange(v)}
           />
+        </Section>
+      )}
+
+      {selected.isImg && onLayout && (
+        <Section title="Bild">
+          <BildDarstellung tag={selected.tag} werte={selected.stil || {}} onAendern={onLayout} primary={primary} />
         </Section>
       )}
 
@@ -2642,6 +2816,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
               <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Erweitert – Abstände</div>
               <AbstandGruppe titel="Außenabstand (Margin)" praefix="margin" werte={selected.stil || {}} onAendern={onLayout} primary={primary} />
               <AbstandGruppe titel="Innenabstand (Padding)" praefix="padding" werte={selected.stil || {}} onAendern={onLayout} primary={primary} />
+              {onFx && <EffektePanel werte={fxWerte} onAendern={onFx} primary={primary} />}
             </div>
           )}
           <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}><i className="fa-solid fa-lightbulb" style={{ marginRight: 6 }} />Einfacher Klick auf den Text in der Vorschau – dann direkt tippen oder das Feld oben im Panel benutzen.</div>

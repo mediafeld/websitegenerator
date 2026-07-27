@@ -736,15 +736,29 @@ export const KARTE = {
 // OpenStreetMap-Einbettung: braucht KEINEN Schlüssel, setzt KEINE Cookies.
 // Ohne Koordinaten wird aus der Adresse ein Suchlink gebaut; mit lat/lon wird
 // die Karte punktgenau angezeigt (Editor kann beides setzen).
+// Karten-Skins: CSS-Filter auf der Karte – wirken im Editor UND im Export.
+export const KARTEN_SKINS = [
+  { id: 'standard', label: 'Standard', filter: '' },
+  { id: 'grau', label: 'Grau', filter: 'grayscale(1)' },
+  { id: 'schwarzweiss', label: 'Schwarz-Weiß', filter: 'grayscale(1) contrast(1.3)' },
+  { id: 'dunkel', label: 'Dunkel', filter: 'invert(0.92) hue-rotate(180deg) contrast(0.9) brightness(0.95)' },
+  { id: 'kontrast', label: 'Kontrast', filter: 'contrast(1.45) saturate(1.25)' },
+  { id: 'sepia', label: 'Sepia', filter: 'sepia(0.65) contrast(1.05)' },
+]
+function kartenFilter(c) {
+  const skin = KARTEN_SKINS.find(k => k.id === c.kartenSkin)
+  return skin && skin.filter ? `filter:${skin.filter};` : ''
+}
+
 function osmIframe(c, hoehe = 400) {
   const adresse = esc(c.adresse || 'Musterstraße 1, 10115 Berlin')
   const lat = parseFloat(c.lat), lon = parseFloat(c.lon)
   if (!isNaN(lat) && !isNaN(lon)) {
     const d = 0.006
     const bbox = `${(lon - d).toFixed(5)},${(lat - d / 2).toFixed(5)},${(lon + d).toFixed(5)},${(lat + d / 2).toFixed(5)}`
-    return `<iframe data-osm title="Karte" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}" style="width:100%;height:${hoehe}px;border:0;display:block;" loading="lazy"></iframe>`
+    return `<iframe data-osm title="Karte" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}" style="width:100%;height:${hoehe}px;border:0;display:block;${kartenFilter(c)}" loading="lazy"></iframe>`
   }
-  return `<div data-osm-platzhalter style="width:100%;height:${hoehe}px;background:var(--p100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--p700);text-align:center;padding:24px;">
+  return `<div data-osm-platzhalter style="width:100%;height:${hoehe}px;${kartenFilter(c)}background:var(--p100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--p700);text-align:center;padding:24px;">
     <i class="fa-solid fa-map-location-dot" style="font-size:34px;"></i>
     <div style="font-size:15px;font-weight:700;" data-hinweis>${adresse}</div>
     <div style="font-size:13px;opacity:.75;max-width:340px;" data-hinweis>Im Editor die Adresse eintragen – die Karte wird dann automatisch angezeigt.</div>

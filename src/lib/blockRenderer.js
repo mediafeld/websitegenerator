@@ -109,7 +109,7 @@ const NUTZER_HTML_CSS = `
 // selbst, "0.2" = 1. Kind → 3. Kind). Für die fertige Seite wird daraus pures
 // CSS über nth-child – funktioniert also auch im Download ohne Editor.
 // content._breite = { modus:'voll'|'boxed', wert:1160 } steuert die Innenbreite.
-const LAYOUT_PROPS = new Set(['marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','width','maxWidth','minWidth','minHeight','height','zIndex','gridTemplateColumns','flexBasis','textAlign','alignSelf','justifySelf','alignItems','justifyContent','gap','borderRadius','background','overflow'])
+const LAYOUT_PROPS = new Set(['marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','width','maxWidth','minWidth','minHeight','height','zIndex','gridTemplateColumns','flexBasis','textAlign','alignSelf','justifySelf','alignItems','justifyContent','gap','borderRadius','background','overflow','display','objectFit','objectPosition','backgroundSize','backgroundPosition','backgroundRepeat','opacity'])
 const cssName = (p) => p.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())
 
 export function layoutRegeln(c, index) {
@@ -209,6 +209,91 @@ function einbauDaten(blocks) {
   })
   if (!teile.length) return ''
   return teile.join('\n') + '\n' + EINBAU_JS
+}
+
+// ── Motion Effects (Elementor-artig) ───────────────────────────────────────
+// content._fx = { "<kindpfad>": { y, x, rot, skal, fade, blur, fix, hover } }
+// y/x/rot/skal/fade/blur: Stärke (−10…10 bzw. 0…10), fix: sticky,
+// hover: 'zoom' | 'anheben' | 'leuchten' | 'neigen'.
+// Ein Läufer-Skript rechnet die Scroll-Position in Transformationen um –
+// im Editor UND auf der fertigen Seite identisch.
+const FX_CSS = `
+.wg-fxh-zoom{transition:transform .35s ease;}
+.wg-fxh-zoom:hover{transform:scale(1.045) !important;}
+.wg-fxh-anheben{transition:transform .3s ease, box-shadow .3s ease;}
+.wg-fxh-anheben:hover{transform:translateY(-8px) !important;box-shadow:0 18px 42px rgba(0,0,0,.2) !important;}
+.wg-fxh-leuchten{transition:box-shadow .3s ease, filter .3s ease;}
+.wg-fxh-leuchten:hover{filter:brightness(1.07);box-shadow:0 0 0 3px var(--accent), 0 12px 36px rgba(0,0,0,.22) !important;}
+.wg-fxh-neigen{transition:transform .35s ease;}
+.wg-fxh-neigen:hover{transform:perspective(700px) rotateX(4deg) rotateY(-4deg) !important;}
+`
+
+const FX_JS = `<script>
+(function(){
+  if(window.__wgFxLive)return;
+  function kind(el,p){ if(p===''||p==null)return el; var n=el,t=String(p).split('.'); for(var i=0;i<t.length&&n;i++){ n=n.children[parseInt(t[i],10)]; } return n||null; }
+  var eintraege=[];
+  function registriere(el,cfg){
+    if(!el.hasAttribute('data-fx-basis'))el.setAttribute('data-fx-basis',el.style.transform||'');
+    if(cfg.hover&&cfg.hover!=='kein')el.classList.add('wg-fxh-'+cfg.hover);
+    if(cfg.fix){el.style.position='sticky';el.style.top='18px';if(!el.style.zIndex)el.style.zIndex='5';}
+    eintraege.push({el:el,cfg:cfg});
+  }
+  document.querySelectorAll('script[type="application/json"][data-fx-json]').forEach(function(sc){
+    var sec=document.querySelector('[data-bi="'+sc.getAttribute('data-fx-json')+'"]'); if(!sec)return;
+    var m={}; try{ m=JSON.parse(sc.textContent) }catch(e){}
+    Object.keys(m).forEach(function(p){ var el=kind(sec,p); if(el)registriere(el,m[p]); });
+  });
+  var geplant=false;
+  function tick(){
+    geplant=false;
+    if(document.body.classList.contains('wg-stopp'))return;
+    var vh=window.innerHeight||800;
+    for(var i=0;i<eintraege.length;i++){
+      var e=eintraege[i],cfg=e.cfg,el=e.el;
+      var r=el.getBoundingClientRect();
+      var t=((r.top+r.height/2)-vh/2)/vh; if(t>1)t=1; if(t<-1)t=-1;
+      var tr=el.getAttribute('data-fx-basis')||'';
+      if(cfg.y)tr+=' translateY('+(-t*cfg.y*40).toFixed(1)+'px)';
+      if(cfg.x)tr+=' translateX('+(-t*cfg.x*40).toFixed(1)+'px)';
+      if(cfg.rot)tr+=' rotate('+(t*cfg.rot*4).toFixed(2)+'deg)';
+      if(cfg.skal)tr+=' scale('+(1-Math.abs(t)*cfg.skal*0.04).toFixed(3)+')';
+      if(cfg.y||cfg.x||cfg.rot||cfg.skal)el.style.transform=tr.trim();
+      if(cfg.fade)el.style.opacity=String(Math.max(0,1-Math.abs(t)*cfg.fade*0.12).toFixed(3));
+      if(cfg.blur)el.style.filter='blur('+(Math.abs(t)*cfg.blur*0.7).toFixed(2)+'px)';
+    }
+  }
+  function plane(){ if(geplant)return; geplant=true; requestAnimationFrame(tick); }
+  window.addEventListener('scroll',plane,{passive:true});
+  window.addEventListener('resize',plane);
+  setInterval(plane,400);
+  plane();
+  // Editor: Effekte live ändern
+  window.__wgFxLive=function(bi,pfad,cfg){
+    var sec=document.querySelector('[data-bi="'+bi+'"]'); if(!sec)return;
+    var el=kind(sec,pfad); if(!el)return;
+    for(var i=0;i<eintraege.length;i++){ if(eintraege[i].el===el){ eintraege.splice(i,1); break; } }
+    el.className=String(el.className).replace(/\\bwg-fxh-[a-z]+\\b/g,'').trim();
+    el.style.opacity='';el.style.filter='';
+    el.style.transform=el.getAttribute('data-fx-basis')||'';
+    if(el.style.position==='sticky'){el.style.position='';el.style.top='';}
+    if(cfg&&(cfg.y||cfg.x||cfg.rot||cfg.skal||cfg.fade||cfg.blur||cfg.fix||(cfg.hover&&cfg.hover!=='kein')))registriere(el,cfg);
+    plane();
+  };
+})();
+</script>`
+
+function fxDaten(blocks, forEditor) {
+  const teile = []
+  ;(blocks || []).forEach((b, i) => {
+    const fx = b.content?._fx
+    if (!fx || typeof fx !== 'object' || !Object.keys(fx).length) return
+    teile.push(`<script type="application/json" data-fx-json="${i}">${JSON.stringify(fx).replace(/<\/script/gi, '<\\/script')}</script>`)
+  })
+  // Im Editor läuft der Läufer immer (für Live-Änderungen), veröffentlicht
+  // nur, wenn es tatsächlich Effekte gibt.
+  if (!teile.length && !forEditor) return ''
+  return teile.join('\n') + '\n' + FX_JS
 }
 
 // ── Link-Overrides ─────────────────────────────────────────────────────────
@@ -318,6 +403,7 @@ ${forEditor ? '' : ANIM_CDN}
   ${FREITEXT_CSS}
   ${BILDLEER_CSS}
   ${NUTZER_HTML_CSS}
+  ${FX_CSS}
   ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' + GENERATOR_EDITOR_CSS : ''}
 </style>
 ${layoutCSS}
@@ -327,6 +413,7 @@ ${layoutDaten}
 ${blocksHtml}
 ${einbauDaten(blocks)}
 ${linkDaten(blocks)}
+${fxDaten(blocks, forEditor)}
 ${PARALLAX_JS}
 ${forEditor ? '' : GENERATOR_REVEAL_JS}
 ${forEditor ? '' : ANIM_INIT}
