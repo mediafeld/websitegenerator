@@ -363,7 +363,7 @@ export const STATS = {
     render: (c) => `
 <section data-block="stats" data-variant="stats-bar" data-section="1" style="${sectionBgStyle(c,'background:linear-gradient(135deg,var(--p600),var(--p800));')}padding:60px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:32px;">
-    ${mischStd(c.items, [{num:'15+',label:'Jahre Erfahrung'},{num:'500+',label:'Zufriedene Kunden'},{num:'100%',label:'Termintreue'}]).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed(`items.${i}.num`, s.num)}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${ed(`items.${i}.label`, s.label)}</div></div>`).join('')}
+    ${mischStd(c.items, [{num:'0',label:'Ihre Kennzahl'},{num:'0',label:'Ihre Kennzahl'},{num:'0',label:'Ihre Kennzahl'}]).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed(`items.${i}.num`, s.num)}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${ed(`items.${i}.label`, s.label)}</div></div>`).join('')}
   </div>
 </section>`
   }]
@@ -777,7 +777,7 @@ export const BASIS_DEFAULTS = {
     items: [
       { icon: 'bolt', title: 'Schnelle Umsetzung', text: 'Kurze Wege, klare Absprachen und Termine, die auch halten.' },
       { icon: 'shield-halved', title: 'Geprüfte Qualität', text: 'Saubere Arbeit nach Norm – geprüft, dokumentiert und versichert.' },
-      { icon: 'handshake', title: 'Faire Preise', text: 'Festpreis vorab, keine Überraschungen auf der Rechnung.' },
+      { icon: 'handshake', title: 'Ihr Vorteil', text: 'Beschreiben Sie hier in einem Satz, was Kunden bei Ihnen erwartet.' },
     ],
   },
   steps: {
@@ -785,14 +785,14 @@ export const BASIS_DEFAULTS = {
     steps: [
       { title: 'Anfrage', text: 'Sie schildern uns kurz, worum es geht – per Telefon oder Formular.' },
       { title: 'Termin vor Ort', text: 'Wir schauen uns die Lage an und beraten Sie ehrlich.' },
-      { title: 'Angebot', text: 'Sie bekommen einen klaren Festpreis, schriftlich und verständlich.' },
+      { title: 'Angebot', text: 'Beschreiben Sie hier, wie dieser Schritt bei Ihnen abläuft.' },
       { title: 'Umsetzung', text: 'Unser Team erledigt die Arbeit – sauber und zum vereinbarten Termin.' },
     ],
   },
   pricing: {
     tag: 'Preise', title: 'Klare Pakete, klare Preise', subtitle: 'Kein Kleingedrucktes – Sie wissen vorher, was es kostet.',
     plans: [
-      { name: 'Basis', preis: 'ab 89 €', hinweis: 'einmalig', punkte: ['Beratung vor Ort', 'Festpreis-Angebot', 'Ausführung durch das Team'], cta: 'Anfragen' },
+      { name: 'Basis', preis: 'ab 89 €', hinweis: 'einmalig', punkte: ['Leistung 1 eintragen', 'Leistung 2 eintragen', 'Leistung 3 eintragen'], cta: 'Anfragen' },
       { name: 'Komfort', preis: 'ab 149 €', hinweis: 'einmalig', punkte: ['Alles aus Basis', 'Wunschtermin', 'Verlängerte Garantie'], cta: 'Anfragen', highlight: true },
       { name: 'Rundum', preis: 'auf Anfrage', hinweis: 'individuell', punkte: ['Alles aus Komfort', 'Regelmäßige Wartung', 'Fester Ansprechpartner'], cta: 'Beraten lassen' },
     ],
@@ -803,25 +803,25 @@ export const BASIS_DEFAULTS = {
     text1: 'Seit vielen Jahren sind wir in der Region für unsere Kundinnen und Kunden im Einsatz. Was klein angefangen hat, ist heute ein eingespieltes Team mit einem klaren Anspruch: saubere Arbeit, ehrliche Beratung und Termine, die halten.',
     text2: 'Wir nehmen uns Zeit für Ihr Anliegen, erklären jeden Schritt verständlich und bleiben auch nach Abschluss ansprechbar.',
     cta: 'Lernen Sie uns kennen',
-    stats: [{ num: '15+', label: 'Jahre Erfahrung' }, { num: '500+', label: 'Zufriedene Kunden' }, { num: '100%', label: 'Termintreue' }],
+    stats: [{ num: '0', label: 'Ihre Kennzahl' }, { num: '0', label: 'Ihre Kennzahl' }, { num: '0', label: 'Ihre Kennzahl' }],
   },
   team: {
     tag: 'Team', title: 'Die Menschen hinter dem Namen',
     members: [
-      { name: 'Anna Weber', rolle: 'Geschäftsführung', text: 'Erste Ansprechpartnerin für alle Anfragen.' },
-      { name: 'Markus Klein', rolle: 'Projektleitung', text: 'Plant die Abläufe und hält die Termine im Blick.' },
-      { name: 'Sarah Hoffmann', rolle: 'Kundenbetreuung', text: 'Kümmert sich um Angebote und Rückfragen.' },
+      { name: 'Vorname Nachname', rolle: 'Position', text: 'Kurze Beschreibung dieser Person.' },
+      { name: 'Vorname Nachname', rolle: 'Position', text: 'Kurze Beschreibung dieser Person.' },
+      { name: 'Vorname Nachname', rolle: 'Position', text: 'Kurze Beschreibung dieser Person.' },
     ],
   },
   testimonials: {
     title: 'Das sagen unsere Kunden',
     items: [
-      { text: 'Pünktlich, freundlich und das Ergebnis war einwandfrei. Wir buchen wieder.', name: 'Familie Berger', ort: 'Berlin', sterne: 5 },
+      { text: 'Hier steht später eine echte Kundenstimme – im Editor anklicken und ersetzen.', name: 'Kundenname', ort: 'Ort', sterne: 5 },
       { text: 'Endlich ein Betrieb, der zurückruft und sich an Absprachen hält.', name: 'M. Schuster', ort: 'Potsdam', sterne: 5 },
       { text: 'Faires Angebot, saubere Arbeit, alles wie besprochen.', name: 'L. Wagner', ort: 'Berlin', sterne: 5 },
     ],
   },
-  stats: { items: [{ num: '15+', label: 'Jahre Erfahrung' }, { num: '500+', label: 'Zufriedene Kunden' }, { num: '100%', label: 'Termintreue' }] },
+  stats: { items: [{ num: '0', label: 'Ihre Kennzahl' }, { num: '0', label: 'Ihre Kennzahl' }, { num: '0', label: 'Ihre Kennzahl' }] },
   cta: { title: 'Bereit für den nächsten Schritt?', subtitle: 'Schreiben Sie uns oder rufen Sie an – wir melden uns am selben Tag zurück.', cta1: 'Jetzt anfragen', telefon: '+49 30 1234567' },
   gallery: { title: 'Einblicke in unsere Arbeit', images: ['', '', '', '', '', ''] },
   image: { caption: 'Kurze Bildunterschrift' },
@@ -830,7 +830,7 @@ export const BASIS_DEFAULTS = {
     items: [
       { frage: 'Wie schnell bekomme ich einen Termin?', antwort: 'In der Regel innerhalb weniger Tage. Bei dringenden Fällen melden wir uns noch am selben Tag.' },
       { frage: 'Was kostet die Beratung?', antwort: 'Das Erstgespräch und die Besichtigung vor Ort sind für Sie kostenlos und unverbindlich.' },
-      { frage: 'Arbeiten Sie mit Festpreisen?', antwort: 'Ja. Sie bekommen vorab ein schriftliches Angebot mit klarem Endpreis.' },
+      { frage: 'Hier steht eine häufige Kundenfrage?', antwort: 'Und hier die passende Antwort – beides im Editor anklicken und durch echte Inhalte ersetzen.' },
       { frage: 'In welchem Umkreis sind Sie tätig?', antwort: 'Im gesamten Stadtgebiet und im Umkreis von rund 50 Kilometern.' },
     ],
   },

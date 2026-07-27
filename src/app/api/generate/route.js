@@ -253,8 +253,21 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
     const pages = {}
     const stock = getStockImages(formData.branche)
     let galleryIdx = 0
+    // Blöcke, für die die KI KEINEN echten Text geliefert hat, werden
+    // VERWORFEN – sonst erscheinen die neutralen Beispieltexte der Bausteine
+    // auf einer echten Kundenseite (und wirken wie falscher Inhalt).
+    const LEER_ERLAUBT = new Set(['trenner'])
+    const hatText = (v) => typeof v === 'string' ? v.trim().length > 1
+      : Array.isArray(v) ? v.some(hatText)
+      : (v && typeof v === 'object') ? Object.values(v).some(hatText)
+      : false
     Object.entries(pageData).forEach(([seite, data]) => {
-      const blocks = (data.blocks || []).map(b => {
+      const blocks = (data.blocks || []).filter(b => {
+        if (LEER_ERLAUBT.has(b.type)) return true
+        const ok = b.content && typeof b.content === 'object' && Object.values(b.content).some(hatText)
+        if (!ok) console.log(`[generate] Block ohne Inhalt verworfen: ${seite}/${b.type}`)
+        return ok
+      }).map(b => {
         const c = { ...(b.content || {}) }
         // Hero: Bild ja – aber NICHT mehr pauschal abdunkeln.
         // Frueher bekam JEDE Hero-Variante dasselbe dunkle Foto-Overlay,

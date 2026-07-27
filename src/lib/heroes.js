@@ -106,9 +106,9 @@ const BASIS = {
 const MIT_STATS = {
   ...BASIS,
   stats: [
-    { num: '15+', label: 'Jahre Erfahrung' },
-    { num: '500+', label: 'Zufriedene Kunden' },
-    { num: '100%', label: 'Termintreue' },
+    { num: '0', label: 'Ihre Kennzahl' },
+    { num: '0', label: 'Ihre Kennzahl' },
+    { num: '0', label: 'Ihre Kennzahl' },
   ],
 }
 
@@ -280,7 +280,7 @@ neu('h-panel', 'Mit Werte-Karten', MIT_STATS, (c) => `
 
 neu('h-liste', 'Mit Häkchenliste', {
   ...BASIS,
-  punkte: ['Festpreis ohne Überraschungen', 'Termine, die gehalten werden', 'Saubere Übergabe zum Schluss'],
+  punkte: ['Ihr Vorteil 1 – hier eintragen', 'Ihr Vorteil 2 – hier eintragen', 'Ihr Vorteil 3 – hier eintragen'],
 }, (c) => `
 <section data-block="hero-full" data-variant="h-liste" class="${zone(c)}" style="position:relative;overflow:hidden;padding:clamp(60px,8vw,110px) 0;${flaeche(c)}">
   ${musterEbene(c)}
@@ -301,7 +301,7 @@ neu('h-liste', 'Mit Häkchenliste', {
   </div>
 </section>`)
 
-neu('h-bewertung', 'Mit Bewertung', { ...BASIS, badge: '4,9 von 5 · über 200 Bewertungen' }, (c) => `
+neu('h-bewertung', 'Mit Bewertung', { ...BASIS, badge: 'Ihre echte Bewertung eintragen (z. B. Google)' }, (c) => `
 <section data-block="hero-full" data-variant="h-bewertung" class="${zone(c)}" style="position:relative;overflow:hidden;padding:clamp(60px,8vw,110px) 0;${flaeche(c)}">
   ${musterEbene(c)}
   <div class="wg-wrap" style="position:relative;z-index:1;">
@@ -323,7 +323,7 @@ neu('h-bewertung', 'Mit Bewertung', { ...BASIS, badge: '4,9 von 5 · über 200 B
 
 neu('h-laufband', 'Mit Laufband', {
   ...BASIS,
-  punkte: ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden'],
+  punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4'],
 }, (c) => {
   const zeile = (bearbeitbar) => c.punkte.map((p, i) =>
     `<span style="display:inline-flex;align-items:center;gap:11px;padding:0 26px;font-size:13.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${tf(c)};white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : `<span data-kopie="punkte.${i}">${esc(p)}</span>`}</span>`
@@ -424,7 +424,7 @@ neu('h-karten-drei', 'Mit drei Karten', {
   karten: [
     { icon: 'phone', title: 'Anrufen', text: 'Kurz schildern, worum es geht.' },
     { icon: 'calendar-check', title: 'Termin', text: 'Wir schauen es uns an.' },
-    { icon: 'thumbs-up', title: 'Erledigt', text: 'Sauber und zum Festpreis.' },
+    { icon: 'thumbs-up', title: 'Erledigt', text: 'Beschreiben Sie hier kurz diesen Schritt.' },
   ],
 }, (c) => `
 <section data-block="hero-full" data-variant="h-karten-drei" class="${zone(c)}" style="position:relative;overflow:hidden;padding:clamp(58px,8vw,104px) 0 clamp(30px,4vw,48px);${flaeche(c)}">

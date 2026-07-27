@@ -116,7 +116,7 @@ export const MEDIA = {
       <div class="wg-reveal li wg-bildbox" style="height:clamp(300px,44vw,520px);">${bild('mediaImg', c.image, '', 1)}</div>
       <div class="wg-reveal re" style="transition-delay:.1s;">
         <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
-        <h2 class="wg-t2" style="margin-top:14px;">${txt('title', c.title, 'Handwerk, das man sieht')}</h2>
+        <h2 class="wg-t2" style="margin-top:14px;">${txt('title', c.title, 'Worauf Sie sich verlassen können')}</h2>
         <span class="wg-strichlinie"></span>
         <div class="wg-lead" style="margin-bottom:26px;">${txt('text', c.text, LOREM.absatz, 'span')}</div>
         ${(c.punkte || []).length ? `<ul style="list-style:none;padding:0;margin:0 0 28px;display:grid;gap:11px;">
@@ -283,9 +283,9 @@ export const TEXT = {
       id: 'text-highlights', name: 'Text + Highlights',
       render: (c) => {
         const hl = misch(c.highlights, [
-          { num: '15+', label: 'Jahre Erfahrung' },
-          { num: '500+', label: 'Zufriedene Kunden' },
-          { num: '100%', label: 'Termintreue' },
+          { num: '0', label: 'Ihre Kennzahl' },
+          { num: '0', label: 'Ihre Kennzahl' },
+          { num: '0', label: 'Ihre Kennzahl' },
         ])
         return `
 <section data-block="text" data-variant="text-highlights" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
@@ -408,7 +408,7 @@ export const FEATURES = {
       id: 'feat-split-bild', name: 'Liste neben Bild',
       render: (c) => {
         const items = misch(c.items, [
-          { icon: 'check', title: 'Festpreis-Garantie', text: LOREM.kurz },
+          { icon: 'check', title: 'Ihr Vorteil', text: LOREM.kurz },
           { icon: 'check', title: 'Termine, die halten', text: LOREM.kurz },
           { icon: 'check', title: 'Saubere Übergabe', text: LOREM.kurz },
         ])
@@ -518,8 +518,8 @@ export const STIMMEN = {
       id: 'stimmen-gross', name: 'Große Zitatkarten',
       render: (c) => {
         const items = misch(c.items, [
-          { text: 'Schnell, sauber und wirklich freundlich. Wir haben uns von Anfang an gut aufgehoben gefühlt.', name: 'M. Schneider', rolle: 'Privatkundin' },
-          { text: 'Termin gehalten, Preis gehalten, Ergebnis top. Mehr kann man nicht verlangen.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
+          { text: 'Hier steht später eine echte Kundenstimme – im Editor anklicken und ersetzen.', name: 'Kundenname', rolle: 'Kunde' },
+          { text: 'Hier steht später eine echte Kundenstimme – im Editor anklicken und ersetzen.', name: 'Kundenname', rolle: 'Kunde' },
         ])
         return `
 <section data-block="stimmen" data-variant="stimmen-gross" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
@@ -680,7 +680,7 @@ export const BANNER = {
   <div class="wg-wrap">
     <div class="wg-reveal" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;text-align:center;">
       <div style="width:40px;height:40px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon('bannerIcon', c.icon || 'circle-info')}</div>
-      <span style="font-size:16px;font-weight:600;color:#0f172a;">${txt('text', c.text, 'Aktuell: Wir haben wieder freie Termine – melden Sie sich gern.', 'span')}</span>
+      <span style="font-size:16px;font-weight:600;color:#0f172a;">${txt('text', c.text, 'Hier steht Ihre aktuelle Mitteilung – einfach anklicken und Text ersetzen.', 'span')}</span>
     </div>
   </div>
 </section>`
@@ -688,7 +688,7 @@ export const BANNER = {
     {
       id: 'banner-laufband', name: 'Laufband',
       render: (c) => {
-        const punkte = misch(c.punkte, ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden', 'Persönliche Beratung'])
+        const punkte = misch(c.punkte, ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4', 'Stichwort 5'])
         const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : `<span data-kopie="punkte.${i}">${esc(p)}</span>`}</span>`
         const reihe = punkte.map((p, i) => zeile(p, i, true)).join('')
         const reiheKopie = punkte.map((p, i) => zeile(p, i, false)).join('')
@@ -781,7 +781,7 @@ export const ZUSATZ_ADDABLE = [
 
 // Standard-Inhalte für neu eingefügte Blöcke (Editor)
 export const ZUSATZ_DEFAULTS = {
-  media: { tag: 'Über uns', title: 'Handwerk, das man sieht', text: LOREM.absatz, cta: 'Mehr erfahren', punkte: ['Festpreis-Garantie', 'Termine, die halten', 'Saubere Übergabe'] },
+  media: { tag: 'Über uns', title: 'Worauf Sie sich verlassen können', text: LOREM.absatz, cta: 'Mehr erfahren', punkte: ['Punkt 1 eintragen', 'Punkt 2 eintragen', 'Punkt 3 eintragen'] },
   text: { tag: 'Was uns antreibt', title: 'Gute Arbeit spricht für sich', text: LOREM.lang, zitat: 'Wir behandeln jedes Projekt so, als wäre es unser eigenes.', autor: 'Die Geschäftsführung' },
   features: { tag: 'Leistungen', title: 'Das können wir für Sie tun', items: [
     { icon: 'bolt', title: 'Schnell vor Ort', text: LOREM.kurz },
@@ -790,12 +790,12 @@ export const ZUSATZ_DEFAULTS = {
   ] },
   galerie: { tag: 'Galerie', title: 'Einblicke in unsere Arbeit', images: ['', '', '', '', '', ''] },
   stimmen: { tag: 'Kundenstimmen', title: 'Das sagen unsere Kunden', items: [
-    { text: 'Schnell, sauber und wirklich freundlich.', name: 'M. Schneider', rolle: 'Privatkundin' },
-    { text: 'Termin gehalten, Preis gehalten, Ergebnis top.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
+    { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
+    { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
   ] },
   'cta-plus': { title: 'Reden wir über Ihr Vorhaben', text: 'Ein kurzes Gespräch genügt.', cta1: 'Jetzt anfragen', cta2: 'Anrufen' },
   'kontakt-plus': { tag: 'Kontakt', title: 'So erreichen Sie uns', cta: 'Nachricht senden' },
   trenner: {},
   video: { tag: 'Video', title: 'Sehen Sie selbst' },
-  banner: { text: 'Aktuell: Wir haben wieder freie Termine.', icon: 'circle-info', punkte: ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue'] },
+  banner: { text: 'Hier steht Ihre aktuelle Mitteilung.', icon: 'circle-info', punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3'] },
 }

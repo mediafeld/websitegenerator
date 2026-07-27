@@ -82,7 +82,7 @@ export const KICKSTART = {
         const items = misch(c.items, [
           { icon: 'phone', title: 'Anrufen', text: 'Kurz schildern, worum es geht.' },
           { icon: 'calendar-check', title: 'Termin', text: 'Wir kommen vorbei und schauen es uns an.' },
-          { icon: 'thumbs-up', title: 'Erledigt', text: 'Saubere Arbeit, fairer Festpreis.' },
+          { icon: 'thumbs-up', title: 'Erledigt', text: 'Beschreiben Sie hier kurz diesen Schritt.' },
         ])
         return `
 <section data-block="kickstart" data-variant="kick-drei" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
@@ -111,7 +111,7 @@ export const KICKSTART = {
       render: (c) => {
         const items = misch(c.items, [
           { icon: 'clock', title: 'Schnell erreichbar' }, { icon: 'shield-halved', title: 'Versichert & geprüft' },
-          { icon: 'euro-sign', title: 'Festpreis-Garantie' }, { icon: 'star', title: 'Top bewertet' },
+          { icon: 'euro-sign', title: 'Ihr Vorteil' }, { icon: 'star', title: 'Ihr Vorteil' },
         ])
         return `
 <section data-block="kickstart" data-variant="kick-band" style="${bg(c, 'background:var(--p50);')}padding:clamp(24px,3.5vw,40px) 0;">
@@ -273,7 +273,7 @@ export const ICONBOX = {
       id: 'iconbox-links', name: 'Icon links, Text rechts',
       render: (c) => {
         const items = misch(c.items, [
-          { icon: 'certificate', title: 'Meisterbetrieb', text: LOREM.satz }, { icon: 'truck-fast', title: 'Schnell vor Ort', text: LOREM.satz },
+          { icon: 'certificate', title: 'Ihr Vorteil', text: LOREM.satz }, { icon: 'truck-fast', title: 'Ihr Vorteil', text: LOREM.satz },
           { icon: 'euro-sign', title: 'Transparente Preise', text: LOREM.satz }, { icon: 'headset', title: 'Fester Ansprechpartner', text: LOREM.satz },
         ])
         return `
@@ -432,7 +432,7 @@ export const LISTE = {
     {
       id: 'list-nummern', name: 'Nummerierte Liste',
       render: (c) => {
-        const items = misch(c.items, ['Erstgespräch und Bestandsaufnahme', 'Angebot mit Festpreis', 'Terminabstimmung', 'Ausführung durch unser Team', 'Gemeinsame Abnahme'])
+        const items = misch(c.items, ['Schritt 1 beschreiben', 'Schritt 2 beschreiben', 'Schritt 3 beschreiben', 'Schritt 4 beschreiben', 'Schritt 5 beschreiben'])
         return `
 <section data-block="liste" data-variant="list-nummern" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap" style="max-width:820px;">
@@ -545,7 +545,7 @@ export const TEAMGRID = {
         const items = misch(c.items, [
           { name: 'Sabine Krause', rolle: 'Geschäftsführung', text: 'Seit 2008 im Betrieb.' },
           { name: 'Marek Nowak', rolle: 'Objektleitung', text: 'Ihr Ansprechpartner vor Ort.' },
-          { name: 'Lena Fischer', rolle: 'Disposition', text: 'Plant Ihre Termine.' },
+          { name: 'Vorname Nachname', rolle: 'Position', text: 'Kurze Beschreibung dieser Person.' },
         ])
         return `
 <section data-block="teamgrid" data-variant="team-karten" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
@@ -570,7 +570,7 @@ export const TEAMGRID = {
       render: (c) => {
         const items = misch(c.items, [
           { name: 'Sabine Krause', rolle: 'Geschäftsführung' }, { name: 'Marek Nowak', rolle: 'Objektleitung' },
-          { name: 'Lena Fischer', rolle: 'Disposition' }, { name: 'Tom Weber', rolle: 'Technik' },
+          { name: 'Vorname Nachname', rolle: 'Position' }, { name: 'Vorname Nachname', rolle: 'Position' },
         ])
         return `
 <section data-block="teamgrid" data-variant="team-rund" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
@@ -892,10 +892,10 @@ export const SLIDER = {
       id: 'slider-stimmen', name: 'Kundenstimmen-Karussell',
       render: (c) => {
         const items = misch(c.items, [
-          { text: 'Schnell, sauber und wirklich freundlich. Jederzeit wieder.', name: 'M. Schneider', rolle: 'Privatkundin' },
-          { text: 'Termin gehalten, Preis gehalten, Ergebnis top.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
-          { text: 'Endlich ein Betrieb, der zurückruft. Sehr angenehm.', name: 'K. Ahmadi', rolle: 'Gewerbekunde' },
-          { text: 'Wir sind seit drei Jahren Kunde und rundum zufrieden.', name: 'S. Peters', rolle: 'Büroleitung' },
+          { text: 'Hier steht später eine echte Kundenstimme – im Editor anklicken und ersetzen.', name: 'Kundenname', rolle: 'Kunde' },
+          { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
+          { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
+          { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
         ])
         return `
 <section data-block="slider" data-variant="slider-stimmen" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
@@ -1135,10 +1135,10 @@ export const ZUSATZ2_DEFAULTS = {
     // Listen ausdrücklich als Standard – so funktionieren Klonen/Löschen/
     // Verschieben der Folien im pinken Panel auch ohne vorherige Bearbeitung.
     items: [
-      { text: 'Schnell, sauber und wirklich freundlich. Jederzeit wieder.', name: 'M. Schneider', rolle: 'Privatkundin' },
-      { text: 'Termin gehalten, Preis gehalten, Ergebnis top.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
-      { text: 'Endlich ein Betrieb, der zurückruft. Sehr angenehm.', name: 'K. Ahmadi', rolle: 'Gewerbekunde' },
-      { text: 'Wir sind seit drei Jahren Kunde und rundum zufrieden.', name: 'S. Peters', rolle: 'Büroleitung' },
+      { text: 'Hier steht später eine echte Kundenstimme – im Editor anklicken und ersetzen.', name: 'Kundenname', rolle: 'Kunde' },
+      { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
+      { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
+      { text: 'Hier steht später eine echte Kundenstimme.', name: 'Kundenname', rolle: 'Kunde' },
     ],
     folien: [
       { tag: 'Willkommen', headline: 'Große Bühne für Ihr Angebot', text: 'Jede Folie erzählt eine eigene Geschichte – Bild, Botschaft, Knopf.', cta: 'Mehr erfahren' },

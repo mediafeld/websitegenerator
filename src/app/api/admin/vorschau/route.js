@@ -26,12 +26,21 @@ export async function GET(req) {
       ${seiten.map(s => `<a href="?id=${id}&seite=${encodeURIComponent(s)}" style="color:${s === seite ? '#4ade80' : '#93c5fd'};text-decoration:none;">${s.replace(/</g, '&lt;')}</a>`).join('')}
     </div>`
     const seoDaten = p.form_data?.seo || {}
-    const html = renderPage({
+    let html = renderPage({
       blocks: pages[seite], palette: p.palette, font: p.font || 'Inter Tight',
       fontHeadline: p.form_data?.fontHeadline || p.font || 'Inter Tight',
       title: `ADMIN – ${seite}`, forEditor: false,
       seo: { titel: seoDaten.seiten?.[seite]?.titel ? `ADMIN – ${seoDaten.seiten[seite].titel}` : '', beschreibung: seoDaten.seiten?.[seite]?.beschreibung || '', favicon: seoDaten.global?.favicon || '' },
     }).replace('</body>', leiste + '</body>')
+
+    // Interne Seitenlinks (index.html, leistungen.html …) auf die Vorschau
+    // umschreiben – sonst führt jeder Klick im Menü zu einem echten 404.
+    const slug = (s) => (s === 'Startseite' || s === 'Start' || s === 'index') ? 'index.html'
+      : s.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.html'
+    const zielVon = {}
+    seiten.forEach(s => { zielVon[slug(s)] = `?id=${id}&seite=${encodeURIComponent(s)}` })
+    html = html.replace(/href="([a-z0-9\-]+\.html)(#[^"]*)?"/gi, (voll, datei, anker) =>
+      zielVon[datei.toLowerCase()] ? `href="${zielVon[datei.toLowerCase()]}${anker || ''}"` : voll)
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex' } })
   } catch (e) {
     return new Response(`Vorschau fehlgeschlagen (${e?.message || e}).`, { status: 500 })
