@@ -1,3 +1,4 @@
+import { sektionBg } from './sektionBg'
 // ═══════════════════════════════════════════════════════════════════════════
 // BAUSTEIN-BIBLIOTHEK — TEIL 2
 // Kickstart · Step Box · Image Box · Icon Box · Heading · Counter · List
@@ -58,12 +59,7 @@ import { LOREM, platzhalterBild } from './blocksPlus'
 const bild = (key, src, stil = '', n = 1) => `<img data-img="${key}" src="${esc(src || platzhalterBild(n))}" alt="" style="${stil}">`
 const txt = (key, val, fallback, tag) => ed(key, (val && String(val).trim()) ? val : fallback, tag)
 
-function bg(c = {}, fallback = '') {
-  if (c.bgImg) { const ov = c.bgOverlay || 'rgba(15,23,42,0.55)'; return `background-image:linear-gradient(${ov},${ov}),url('${esc(c.bgImg)}');background-size:cover;background-position:center;` }
-  if (c.bgGradient) return `background:${esc(c.bgGradient)};`
-  if (c.bgColor) return `background:${esc(c.bgColor)};`
-  return fallback
-}
+function bg(c = {}, fallback = '') { return sektionBg(c, fallback) }
 
 // Kopfbereich einer Sektion (Eyebrow + Titel + Strich) – überall gleich aufgebaut
 const kopf = (c, dTag, dTitle, mitte = true) => `

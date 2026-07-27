@@ -173,6 +173,17 @@ export function einbauWidgetHtml(w, wi) {
   if (art === 'ueberschrift') return wrap(`<h3 style="font-size:clamp(19px,2.4vw,26px);font-weight:800;letter-spacing:-.02em;color:inherit;">${eEd(`_einbau.${wi}.text`, w.text || 'Neue Überschrift')}</h3>`)
   if (art === 'button') return wrap(`<a href="${eEsc(w.href || '#')}" class="wg-btn" onclick="return false;">${eEd(`_einbau.${wi}.text`, w.text || 'Mehr erfahren')}</a>`)
   if (art === 'abstand') return wrap('', `height:${parseInt(w.hoehe, 10) || 32}px;margin:0;`)
+  if (art === 'baustein') {
+    // Ganzer Baustein im Container: mit EIGENEM Inhalt (w.inhalt) gerendert.
+    // Alle Bearbeitungs-Anker werden in den Widget-Namensraum umgeschrieben –
+    // dadurch ist JEDER Text und JEDES Bild darin ganz normal bearbeitbar,
+    // ohne in den Inhalt des Gast-Bausteins zu schreiben.
+    let h = ''
+    try { h = renderBlock(w.typ, w.variante, w.inhalt || {}) } catch { h = '' }
+    h = h.replace(/\sdata-(block|variant|bi)="[^"]*"/g, '')
+    h = h.replace(/data-(edit|img|icon|stars|kopie)="([^"]*)"/g, (m, a, k) => `data-${a}="_einbau.${wi}.inhalt.${k}"`)
+    return wrap(h)
+  }
   if (art === 'html') return wrap(w.html || '<div style="padding:16px;border:2px dashed rgba(15,23,42,.2);border-radius:10px;color:#94a3b8;font-size:13px;">Eigener Code – über das Panel bearbeiten</div>')
   return wrap(`<div style="font-size:15px;line-height:1.65;">${eEd(`_einbau.${wi}.text`, w.text || 'Neuer Text. Anklicken und schreiben.')}</div>`)
 }

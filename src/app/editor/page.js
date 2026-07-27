@@ -876,7 +876,7 @@ export default function EditorPage() {
       function contLabel(el){
         var kl=(typeof el.className==='string')?el.className:'';
         if(el.hasAttribute&&el.hasAttribute('data-einbau')){
-          var artN={bild:'Bild',ueberschrift:'Überschrift',text:'Text',button:'Button',abstand:'Abstand',html:'Eigener Code'};
+          var artN={bild:'Bild',ueberschrift:'Überschrift',text:'Text',button:'Button',abstand:'Abstand',html:'Eigener Code',baustein:'Baustein'};
           return 'Eingefügt: '+(artN[el.getAttribute('data-einbau-art')]||'Element');
         }
         var b=bindung(el); if(b)return 'Karte '+(b.index+1);
@@ -1285,12 +1285,12 @@ export default function EditorPage() {
     else if (blockType === 'el-abstand') w = { ziel: pfad, art: 'abstand', hoehe: 32 }
     else if (blockType === 'el-code') w = { ziel: pfad, art: 'html', html: '' }
     else {
+      // Ganzer Baustein → als eingebetteter Baustein mit EIGENEM Inhalt.
+      // Der Renderer schreibt die Bearbeitungs-Anker in den Widget-Namensraum
+      // um – Texte und Bilder darin bleiben voll bearbeitbar.
       const vid = getVariants(blockType)[0]?.id
       if (!vid) return
-      let h = ''
-      try { h = renderBlock(blockType, vid, buildDefaultContent(blockType)) } catch { return }
-      h = h.replace(/\s(data-edit|data-img|data-icon|data-stars|data-kopie|data-block|data-variant|data-bi)="[^"]*"/g, '')
-      w = { ziel: pfad, art: 'html', html: h }
+      w = { ziel: pfad, art: 'baustein', typ: blockType, variante: vid, inhalt: buildDefaultContent(blockType) }
     }
     arr[blockIdx] = { ...b, content: { ...(b.content || {}), _einbau: [...(b.content?._einbau || []), w] } }
     const next = { ...pages }; next[activePage] = arr
@@ -2685,34 +2685,119 @@ function CodeFeld({ label, wert, sprache, primary, onSpeichern }) {
 // Panel-Eingabe für Texte, Zahlen und Beschriftungen.
 // Zusätzlich zur Direktbearbeitung in der Vorschau – wichtig bei Elementen,
 // die sich bewegen oder schwer zu treffen sind.
+// ── Font-Awesome-Bibliothek (Free) für den Text-Editor ──
+// Solid-Icons + gängige Marken; zusätzlich freie Eingabe für jeden Namen.
+const FA_SOLID = ('star heart check xmark plus minus circle-check circle-xmark circle-info circle-question circle-exclamation triangle-exclamation thumbs-up thumbs-down face-smile face-frown face-meh fire bolt sun moon cloud cloud-rain snowflake droplet leaf seedling tree feather bug spider fish dove crow paw shield shield-halved lock lock-open key user user-plus user-check user-group users user-tie user-gear person person-walking person-running children baby house house-chimney building building-columns city shop store warehouse industry hotel school hospital church landmark bridge road map map-pin map-location-dot location-dot location-arrow compass route signs-post car car-side taxi bus van-shuttle truck truck-fast truck-pickup motorcycle bicycle train plane plane-departure plane-arrival ship anchor rocket gauge gas-pump charging-station phone phone-volume mobile mobile-screen tablet-screen-button laptop desktop computer tv camera camera-retro video film microphone headphones music volume-high volume-low play pause stop forward backward envelope envelope-open paper-plane inbox at comment comments message bell bell-slash share share-nodes rss wifi signal satellite-dish globe earth-europe earth-americas language calendar calendar-days calendar-check clock hourglass stopwatch timer bars ellipsis grip magnifying-glass magnifying-glass-plus filter sliders gear gears wrench screwdriver screwdriver-wrench hammer toolbox paint-roller paintbrush palette brush pen pencil pen-to-square highlighter eraser scissors ruler ruler-combined pen-ruler compass-drafting stapler paperclip thumbtack link link-slash copy paste clipboard clipboard-check file file-lines file-pdf file-word file-excel file-image file-zipper folder folder-open box box-open boxes-stacked archive book book-open bookmark newspaper graduation-cap chalkboard award trophy medal certificate ribbon gem crown gift cart-shopping bag-shopping basket-shopping credit-card money-bill money-bill-wave coins piggy-bank wallet receipt tag tags percent scale-balanced chart-line chart-column chart-pie chart-area arrow-trend-up arrow-trend-down briefcase handshake handshake-angle hand hand-holding-heart hands-holding people-group rotate rotate-left rotate-right arrows-rotate repeat shuffle arrow-up arrow-down arrow-left arrow-right arrow-up-right-from-square up-down-left-right maximize minimize expand compress eye eye-slash heart-pulse stethoscope syringe pills capsules prescription-bottle kit-medical tooth brain lungs virus bacteria dna weight-scale dumbbell person-swimming futbol basketball baseball table-tennis-paddle-ball golf-ball-tee medal utensils utensil-spoon fork-knife plate-wheat burger pizza-slice hotdog ice-cream cake-candles mug-hot mug-saucer wine-glass martini-glass beer-mug-empty seedling apple-whole carrot lemon egg fish-fins shrimp bone cookie candy-cane wheat-awn jar bottle-water temperature-high temperature-low fan snowplow umbrella umbrella-beach mountain mountain-sun water ship sailboat masks-theater ticket ticket-simple gamepad chess chess-knight dice dice-five puzzle-piece wand-magic-sparkles hat-wizard ghost robot alien-8bit lightbulb plug plug-circle-bolt battery-full battery-half solar-panel wind broom soap spray-can-sparkles recycle trash trash-can dumpster bath shower toilet faucet sink couch chair bed lamp door-open door-closed window-restore stairs elevator igloo campground tent caravan bell-concierge suitcase suitcase-rolling passport id-card address-card signature stamp scroll section gavel handcuffs building-shield person-military-pointing binoculars magnifying-glass-location fingerprint spa hand-sparkles hand-holding-droplet pump-soap mask-face head-side-mask vial vials microscope flask atom magnet radiation biohazard skull-crossbones fire-extinguisher house-fire truck-medical bell-school bus-simple cable-car ferry helicopter jet-fighter parachute-box satellite shuttle-space sim-card microchip memory hard-drive database server network-wired ethernet code code-branch code-merge terminal bug-slash cube cubes layer-group sitemap diagram-project qrcode barcode print scanner-touchscreen keyboard computer-mouse power-off circle-play circle-pause circle-stop backward-step forward-step infinity equals divide calculator square-root-variable pi superscript subscript quote-left quote-right heading paragraph text-height text-width align-left align-center align-right align-justify list list-ol list-check indent outdent table table-cells table-list border-all vector-square crop crop-simple object-group object-ungroup clone images image photo-film panorama circle-half-stroke droplet-slash swatchbook stamp wand-magic spell-check font italic bold underline strikethrough').split(' ')
+const FA_MARKEN = 'facebook-f instagram linkedin-in x-twitter youtube tiktok whatsapp pinterest-p snapchat telegram github google apple amazon paypal stripe cc-visa cc-mastercard android windows'.split(' ')
+
+// ── Text-Editor im Panel: echtes Bearbeiten wie in WordPress ──
+// „Editor“ = visuelles Bearbeiten mit Werkzeugleiste + Font-Awesome-Icons,
+// „HTML“ = Roh-Ansicht. Beides schreibt denselben Wert.
 function TextFeld({ wert, primary, onSpeichern }) {
-  const [text, setText] = useState(wert || '')
   const [htmlModus, setHtmlModus] = useState(false)
+  const [text, setText] = useState(wert || '')
   const [ok, setOk] = useState(false)
-  useEffect(() => { setText(wert || '') }, [wert])
-  const nurText = (h) => String(h || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
-  const anzeige = htmlModus ? text : nurText(text)
+  const [iconOffen, setIconOffen] = useState(false)
+  const [iconSuche, setIconSuche] = useState('')
+  const [linkOffen, setLinkOffen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const editRef = useRef(null)
+  const rangeRef = useRef(null)
+  useEffect(() => {
+    setText(wert || ''); setOk(false); setIconOffen(false); setLinkOffen(false)
+    if (editRef.current) editRef.current.innerHTML = wert || ''
+  }, [wert])
+  useEffect(() => { if (!htmlModus && editRef.current) editRef.current.innerHTML = text }, [htmlModus]) // eslint-disable-line
+  const merken = () => { const s = window.getSelection(); if (s && s.rangeCount && editRef.current && editRef.current.contains(s.anchorNode)) rangeRef.current = s.getRangeAt(0).cloneRange() }
+  const herstellen = () => { const r = rangeRef.current; if (!r) return; try { const s = window.getSelection(); s.removeAllRanges(); s.addRange(r) } catch {} }
+  const uebernehmen = () => { if (editRef.current) setText(editRef.current.innerHTML); setOk(false) }
+  const cmd = (c, v) => { editRef.current?.focus(); herstellen(); document.execCommand(c, false, v); uebernehmen(); merken() }
+  const einfuegen = (html) => { editRef.current?.focus(); herstellen(); document.execCommand('insertHTML', false, html); uebernehmen(); merken() }
+  const KNOPF = { minWidth: 26, height: 26, border: '1px solid #e5e5e5', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 11, color: '#475569', padding: '0 5px' }
+  const treffer = (iconSuche
+    ? FA_SOLID.filter(n => n.includes(iconSuche.toLowerCase())).map(n => [n, 'solid']).concat(FA_MARKEN.filter(n => n.includes(iconSuche.toLowerCase())).map(n => [n, 'brands']))
+    : FA_SOLID.slice(0, 48).map(n => [n, 'solid'])
+  ).slice(0, 60)
   return (
     <div>
       <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
-        {[['Text', false], ['HTML', true]].map(([l, v]) => (
-          <button key={l} onClick={() => setHtmlModus(v)} style={{ flex: 1, padding: '6px 0', border: `1px solid ${htmlModus === v ? primary : '#e5e5e5'}`, borderRadius: 6, background: htmlModus === v ? primary + '12' : '#fff', color: htmlModus === v ? primary : '#64748b', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+        {[['Editor', false], ['HTML', true]].map(([l, v]) => (
+          <button key={l} onClick={() => { if (v && editRef.current && !htmlModus) setText(editRef.current.innerHTML); setHtmlModus(v) }} style={{ flex: 1, padding: '6px 0', border: `1px solid ${htmlModus === v ? primary : '#e5e5e5'}`, borderRadius: 6, background: htmlModus === v ? primary + '12' : '#fff', color: htmlModus === v ? primary : '#64748b', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
         ))}
       </div>
-      <textarea
-        value={anzeige}
-        onChange={e => { setText(htmlModus ? e.target.value : e.target.value.replace(/\n/g, '<br>')); setOk(false) }}
-        rows={htmlModus ? 7 : 4}
-        spellCheck={false}
-        placeholder={htmlModus ? '<b>Fett</b> und <span style="color:red">farbig</span>' : 'Text eingeben …'}
-        style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: htmlModus ? 11.5 : 13, fontFamily: htmlModus ? 'ui-monospace,SFMono-Regular,Menlo,monospace' : 'inherit', lineHeight: 1.6, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+
+      {htmlModus ? (
+        <textarea value={text} onChange={e => { setText(e.target.value); setOk(false) }} rows={8} spellCheck={false}
+          placeholder='<h2>Überschrift</h2> <b>fett</b> <i class="fa-solid fa-star"></i>'
+          style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: 11.5, fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', lineHeight: 1.6, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+      ) : (
+        <>
+          {/* Werkzeugleiste */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6, alignItems: 'center' }}>
+            <select onChange={e => { cmd('formatBlock', e.target.value); e.target.value = '' }} defaultValue="" style={{ height: 26, border: '1px solid #e5e5e5', borderRadius: 6, fontSize: 11, color: '#475569', fontFamily: 'inherit', maxWidth: 78 }}>
+              <option value="" disabled>Absatz</option>
+              <option value="p">Absatz</option>
+              <option value="h1">H1</option>
+              <option value="h2">H2</option>
+              <option value="h3">H3</option>
+              <option value="h4">H4</option>
+              <option value="blockquote">Zitat</option>
+            </select>
+            <button title="Fett" onClick={() => cmd('bold')} style={{ ...KNOPF, fontWeight: 800 }}>B</button>
+            <button title="Kursiv" onClick={() => cmd('italic')} style={{ ...KNOPF, fontStyle: 'italic' }}>I</button>
+            <button title="Unterstrichen" onClick={() => cmd('underline')} style={{ ...KNOPF, textDecoration: 'underline' }}>U</button>
+            <button title="Durchgestrichen" onClick={() => cmd('strikeThrough')} style={{ ...KNOPF, textDecoration: 'line-through' }}>S</button>
+            <button title="Aufzählung" onClick={() => cmd('insertUnorderedList')} style={KNOPF}><i className="fa-solid fa-list" /></button>
+            <button title="Nummerierte Liste" onClick={() => cmd('insertOrderedList')} style={KNOPF}><i className="fa-solid fa-list-ol" /></button>
+            <button title="Link" onClick={() => { merken(); setLinkOffen(o => !o); setIconOffen(false) }} style={{ ...KNOPF, borderColor: linkOffen ? primary : '#e5e5e5', color: linkOffen ? primary : '#475569' }}><i className="fa-solid fa-link" /></button>
+            <button title="Font-Awesome-Icon einfügen" onClick={() => { merken(); setIconOffen(o => !o); setLinkOffen(false) }} style={{ ...KNOPF, borderColor: iconOffen ? primary : '#e5e5e5', color: iconOffen ? primary : '#475569' }}><i className="fa-solid fa-star" /></button>
+            <button title="Formatierung entfernen" onClick={() => { cmd('removeFormat'); cmd('unlink') }} style={KNOPF}><i className="fa-solid fa-eraser" /></button>
+          </div>
+
+          {linkOffen && (
+            <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+              <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://… oder kontakt.html" onKeyDown={e => { if (e.key === 'Enter') { cmd('createLink', linkUrl || '#'); setLinkOffen(false) } }}
+                style={{ flex: 1, border: `1px solid ${primary}`, borderRadius: 6, padding: '6px 8px', fontSize: 11.5, fontFamily: 'monospace', outline: 'none' }} />
+              <button onClick={() => { cmd('createLink', linkUrl || '#'); setLinkOffen(false) }} style={{ ...KNOPF, background: primary, color: '#fff', borderColor: primary }}>OK</button>
+            </div>
+          )}
+
+          {iconOffen && (
+            <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 8, marginBottom: 6, background: '#fafbff' }}>
+              <input value={iconSuche} onChange={e => setIconSuche(e.target.value)} placeholder="Icon suchen (z. B. star, phone, check …)"
+                style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 6, padding: '6px 8px', fontSize: 11.5, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 7 }} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 2, maxHeight: 128, overflowY: 'auto' }}>
+                {treffer.map(([n, stil]) => (
+                  <button key={stil + n} title={n} onClick={() => einfuegen(`<i class="fa-${stil} fa-${n}"></i>&nbsp;`)}
+                    style={{ height: 26, border: 'none', borderRadius: 5, background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#334155' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = primary + '1a' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                    <i className={`fa-${stil} fa-${n}`} />
+                  </button>
+                ))}
+                {!treffer.length && <div style={{ gridColumn: '1/-1', fontSize: 10.5, color: '#94a3b8', padding: 6 }}>Nichts gefunden – Name unten frei eingeben.</div>}
+              </div>
+              <div style={{ display: 'flex', gap: 4, marginTop: 7 }}>
+                <input id="wg-fa-frei" placeholder="fa-Name frei, z. B. mug-hot" onKeyDown={e => { if (e.key === 'Enter') { einfuegen(`<i class="fa-solid fa-${e.target.value.replace(/^fa-/, '').trim()}"></i>&nbsp;`) } }}
+                  style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
+                <button onClick={() => { const el = document.getElementById('wg-fa-frei'); if (el && el.value.trim()) einfuegen(`<i class="fa-solid fa-${el.value.replace(/^fa-/, '').trim()}"></i>&nbsp;`) }} style={{ ...KNOPF }}>Einfügen</button>
+              </div>
+            </div>
+          )}
+
+          {/* Visueller Bearbeitungsbereich */}
+          <div ref={editRef} contentEditable suppressContentEditableWarning spellCheck={false}
+            onInput={() => { setOk(false) }} onKeyUp={merken} onMouseUp={merken} onBlur={() => { merken(); uebernehmen() }}
+            style={{ width: '100%', minHeight: 110, maxHeight: 300, overflowY: 'auto', border: '1px solid #e5e5e5', borderRadius: 7, padding: 10, fontSize: 13, lineHeight: 1.6, outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
+        </>
+      )}
+
       <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
-        <button onClick={() => { onSpeichern(text); setOk(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => { const v = htmlModus ? text : (editRef.current ? editRef.current.innerHTML : text); setText(v); onSpeichern(v); setOk(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {ok ? <><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernommen</> : 'Übernehmen'}
         </button>
       </div>
       <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 7, lineHeight: 1.5 }}>
-        Im HTML-Modus sind Formatierungen wie &lt;b&gt;, &lt;span style="…"&gt; oder &lt;br&gt; erlaubt.
+        Editor: markieren und formatieren wie in Word – Icons über den Stern. HTML: voller Zugriff auf den Code.
       </div>
     </div>
   )

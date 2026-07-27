@@ -1,3 +1,4 @@
+import { sektionBg } from './sektionBg'
 // ═══════════════════════════════════════════════════════════════════════════
 // HERO-BIBLIOTHEK — komplett neu gebaut
 //
@@ -59,11 +60,16 @@ function musterCSS(art, hell) {
   return ''
 }
 function flaeche(c) {
-  if (c.bgImg) {
-    const ov = c.bgOverlay || (c.hell ? 'rgba(255,255,255,.72)' : 'rgba(10,20,32,.66)')
-    return `background-image:linear-gradient(${ov},${ov}),url('${esc(c.bgImg)}');background-size:cover;background-position:center;`
+  const standard = c.hell ? 'background:#fff;' : 'background:linear-gradient(160deg,var(--p900),#0b1622 72%);'
+  // Panel-Einstellungen (Bild, Verlauf, Farbe, Muster, KI-Bild) gelten auch
+  // für Heros – vorher wurden sie hier schlicht ignoriert.
+  if (c.bgImg || c.bgGradient || c.bgColor || (c.bgPattern && c.bgPattern !== 'none')) {
+    const mitOverlay = (c.bgImg && !c.bgOverlay)
+      ? { ...c, bgOverlay: c.hell ? 'rgba(255,255,255,.72)' : 'rgba(10,20,32,.66)' }
+      : c
+    return sektionBg(mitOverlay, standard)
   }
-  return c.hell ? 'background:#fff;' : 'background:linear-gradient(160deg,var(--p900),#0b1622 72%);'
+  return standard
 }
 const zone = (c) => (c.hell ? '' : 'wg-dunkelzone')
 const tf = (c) => (c.hell ? '#0f172a' : '#fff')
@@ -516,7 +522,7 @@ neu('h-geist', 'Mit Geisterwort', { ...BASIS, geistwort: 'QUALITÄT' }, (c) => `
 
 neu('h-farbhaelfte', 'Farbige Hälfte', BASIS, (c) => `
 <section data-block="hero-full" data-variant="h-farbhaelfte" class="wg-split" style="position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;min-height:84vh;">
-  <div class="wg-dunkelzone" style="display:flex;align-items:center;padding:clamp(34px,5vw,72px);background:linear-gradient(160deg,var(--p900),#0b1622 75%);position:relative;overflow:hidden;">
+  <div class="wg-dunkelzone" style="display:flex;align-items:center;padding:clamp(34px,5vw,72px);${flaeche({ ...c, hell: false })}position:relative;overflow:hidden;">
     <div class="wg-mesh"><span class="wg-blob wg-blob-a"></span></div>
     <div class="wg-reveal" style="position:relative;z-index:1;">
       <span class="wg-chip glas">${ed('tag', c.tag)}</span>

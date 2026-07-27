@@ -1,3 +1,4 @@
+import { sektionBg } from './sektionBg'
 // ═══════════════════════════════════════════════════════════════════════════
 // BAUSTEIN-BIBLIOTHEK (Erweiterung)
 //
@@ -97,15 +98,7 @@ const bild = (key, src, stil = '', n = 1) =>
 const txt = (key, val, fallback, tag) => ed(key, (val && String(val).trim()) ? val : fallback, tag)
 
 // Section-Hintergrund (Bild/Verlauf/Farbe/Muster) – gleiche Logik wie blocks.js
-function bg(c = {}, fallback = '') {
-  if (c.bgImg) {
-    const ov = c.bgOverlay || 'rgba(15,23,42,0.55)'
-    return `background-image:linear-gradient(${ov},${ov}),url('${esc(c.bgImg)}');background-size:cover;background-position:center;`
-  }
-  if (c.bgGradient) return `background:${esc(c.bgGradient)};`
-  if (c.bgColor) return `background:${esc(c.bgColor)};`
-  return fallback
-}
+function bg(c = {}, fallback = '') { return sektionBg(c, fallback) }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1) MEDIA-SPLIT — "Bild groß links, Überschrift + Text rechts" (animiert)
