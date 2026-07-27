@@ -81,6 +81,75 @@ function applyParallaxAttr(html, c) {
   return html.replace(/(<section\b)/i, `$1 data-parallax="${sp}"`)
 }
 
+// ── Vom Nutzer eingegebenes HTML soll auch wie HTML AUSSEHEN ───────────────
+// Wer im Panel <h1>, <ul> oder <blockquote> eintippt, bekommt sonst nur den
+// vererbten Stil des umgebenden Textes. Diese Regeln geben Block-Tags in
+// bearbeitbaren Feldern eine sichtbare Grundform – relativ (em), damit sie
+// zur jeweiligen Textgröße passen. Eigene style=""-Angaben gewinnen immer.
+const NUTZER_HTML_CSS = `
+[data-edit] h1{font-size:2.4em;font-weight:800;line-height:1.15;margin:.25em 0;}
+[data-edit] h2{font-size:1.9em;font-weight:800;line-height:1.2;margin:.25em 0;}
+[data-edit] h3{font-size:1.5em;font-weight:700;line-height:1.25;margin:.25em 0;}
+[data-edit] h4{font-size:1.2em;font-weight:700;margin:.25em 0;}
+[data-edit] p{margin:.35em 0;line-height:1.65;}
+[data-edit] ul,[data-edit] ol{margin:.4em 0;padding-left:1.3em;}
+[data-edit] ul{list-style:disc;}
+[data-edit] ol{list-style:decimal;}
+[data-edit] li{margin:.15em 0;}
+[data-edit] blockquote{border-left:3px solid var(--accent);padding:.2em 0 .2em .8em;margin:.4em 0;font-style:italic;}
+[data-edit] pre{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:12px 14px;overflow:auto;font-size:.85em;}
+[data-edit] hr{border:none;border-top:1px solid rgba(15,23,42,.15);margin:.6em 0;}
+[data-edit] table{border-collapse:collapse;width:100%;margin:.4em 0;}
+[data-edit] td,[data-edit] th{border:1px solid rgba(15,23,42,.2);padding:6px 10px;text-align:left;}
+`
+
+// ── Layout-Overrides (Elementor-artig) ─────────────────────────────────────
+// content._layout = { "<kindpfad>": { marginTop:'12px', paddingLeft:'8%', … } }
+// Der Kindpfad ist die Element-Position innerhalb der Sektion ("" = Sektion
+// selbst, "0.2" = 1. Kind → 3. Kind). Für die fertige Seite wird daraus pures
+// CSS über nth-child – funktioniert also auch im Download ohne Editor.
+// content._breite = { modus:'voll'|'boxed', wert:1160 } steuert die Innenbreite.
+const LAYOUT_PROPS = new Set(['marginTop','marginRight','marginBottom','marginLeft','paddingTop','paddingRight','paddingBottom','paddingLeft','width','maxWidth','minWidth','minHeight','height','zIndex','gridTemplateColumns','flexBasis','textAlign','alignSelf','justifySelf','alignItems','justifyContent','gap','borderRadius','background','overflow'])
+const cssName = (p) => p.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())
+
+export function layoutRegeln(c, index) {
+  const regeln = []
+  const basis = `[data-bi="${index}"]`
+  if (c && c._layout && typeof c._layout === 'object') {
+    for (const [pfad, stile] of Object.entries(c._layout)) {
+      if (!stile || typeof stile !== 'object') continue
+      const sel = pfad === '' ? basis
+        : basis + String(pfad).split('.').filter(s => s !== '').map(n => ` > :nth-child(${(parseInt(n, 10) || 0) + 1})`).join('')
+      const dekl = Object.entries(stile)
+        .filter(([p, v]) => LAYOUT_PROPS.has(p) && v !== '' && v !== null && v !== undefined)
+        .map(([p, v]) => `${cssName(p)}:${v} !important;`)
+        .join('')
+      if (dekl) regeln.push(`${sel}{${dekl}}`)
+    }
+  }
+  if (c && c._breite) {
+    if (c._breite.modus === 'voll') regeln.push(`${basis} .wg-wrap{max-width:100% !important;}`)
+    else if (c._breite.modus === 'boxed' && parseInt(c._breite.wert, 10)) regeln.push(`${basis} .wg-wrap{max-width:${parseInt(c._breite.wert, 10)}px !important;}`)
+  }
+  return regeln
+}
+
+// Kennzeichnet die Sektion (data-bi) und hängt CSS-ID/-Klassen des Nutzers an.
+function mitIndexAttr(html, c, index) {
+  return html.replace(/^(\s*<(?:section|nav|footer|div|header)\b[^>]*?)>/i, (m, tag) => {
+    let t = `${tag} data-bi="${index}"`
+    if (c && c._cssId && !/ id="/.test(t)) t += ` id="${String(c._cssId).replace(/[^\w-]/g, '')}"`
+    if (c && c._cssKlassen) {
+      const kl = String(c._cssKlassen).replace(/[^\w\s-]/g, '').trim()
+      if (kl) {
+        if (/class="/.test(t)) t = t.replace(/class="/, `class="${kl} `)
+        else t += ` class="${kl}"`
+      }
+    }
+    return t + '>'
+  })
+}
+
 // ── Freie Bearbeitung für JEDEN Baustein ───────────────────────────────────
 // Jeder Block kann zusätzlich mitbringen:
 //   content.customHTML → ersetzt den Baustein komplett durch eigenen Code
@@ -89,7 +158,9 @@ function applyParallaxAttr(html, c) {
 // Damit ist jeder Baustein frei änderbar – auch die alten.
 function mitEigenemCode(html, c, index) {
   if (!c) return html
-  const id = `wgb${index}`
+  // Hat der Nutzer eine eigene CSS-ID vergeben, nutzt auch das eigene CSS/JS
+  // diese ID – so gibt es nur EINE Kennung am Element.
+  const id = (c._cssId && String(c._cssId).replace(/[^\w-]/g, '')) || `wgb${index}`
   let out = html
 
   if (c.customHTML && String(c.customHTML).trim()) {
@@ -108,9 +179,13 @@ function mitEigenemCode(html, c, index) {
     // "&" steht für den Baustein selbst. Ohne "&" wird jede Regel automatisch
     // auf diesen Baustein begrenzt, damit eigenes CSS nie die ganze Seite trifft.
     const css = String(c.customCSS)
-    const begrenzt = css.includes('&')
+    let begrenzt = css.includes('&')
       ? css.replace(/&/g, `#${id}`)
       : css.replace(/(^|\})\s*([^{}@]+)\s*\{/g, (m, vor, sel) => `${vor} #${id} ${sel.trim()} {`)
+    // Nutzer-CSS gewinnt IMMER – auch gegen die eingebauten style=""-Angaben
+    // der Bausteine. Deshalb bekommt jede Angabe automatisch !important.
+    begrenzt = begrenzt.replace(/([a-zA-Z-]+)\s*:\s*([^;{}]+)(;|(?=\}))/g, (m, p, v, e) =>
+      /!\s*important/i.test(v) ? m : `${p}:${v.trim()} !important${e === ';' ? ';' : ''}`)
     zusatz += `\n<style data-eigen-css="${id}">${begrenzt}</style>`
   }
   if (hatJS) {
@@ -124,8 +199,19 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline
   const fontParam = font.replace(/ /g, '+')
   const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@200;300;400;500;600;700;800;900` : ''
   const blocksHtml = (blocks || [])
-    .map((b, i) => mitEigenemCode(applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content), b.content, i))
+    .map((b, i) => mitIndexAttr(mitEigenemCode(applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content), b.content, i), b.content, i))
     .join('\n')
+
+  // Layout-Overrides (Abstände, Breiten, Z-Index) des Nutzers:
+  //  - fertige Seite: als pures CSS gebacken (funktioniert ohne Editor/JS)
+  //  - Editor-Vorschau: als Daten hinterlegt; das Editor-Skript wendet sie
+  //    direkt am Element an, damit eigene Hilfs-Elemente die Zählung der
+  //    nth-child-Selektoren nicht verschieben können.
+  const alleLayoutRegeln = (blocks || []).flatMap((b, i) => layoutRegeln(b.content, i))
+  const layoutCSS = !forEditor && alleLayoutRegeln.length ? `<style data-wg-layout>${alleLayoutRegeln.join('\n')}</style>` : ''
+  const layoutDaten = forEditor
+    ? `<script>window.__wgLayout=${JSON.stringify(Object.fromEntries((blocks || []).map((b, i) => [i, { layout: b.content?._layout || {}, breite: b.content?._breite || null, name: b.content?._name || '' }])))};</script>`
+    : ''
 
   return `<!DOCTYPE html>
 <html lang="de">
@@ -146,8 +232,11 @@ ${forEditor ? '' : ANIM_CDN}
   ${generatorDesignCSS({ fontHeadline })}
   ${FREITEXT_CSS}
   ${BILDLEER_CSS}
+  ${NUTZER_HTML_CSS}
   ${forEditor ? '[data-reveal]{opacity:1 !important;transform:none !important;}' + GENERATOR_EDITOR_CSS : ''}
 </style>
+${layoutCSS}
+${layoutDaten}
 </head>
 <body>
 ${blocksHtml}

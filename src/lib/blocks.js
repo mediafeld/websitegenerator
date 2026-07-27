@@ -8,8 +8,28 @@
 const esc = (s) => String(s ?? '')
 
 // Helper: editierbarer Text
-const ed = (key, val, tag = 'span', cls = '') =>
-  `<${tag} data-edit="${key}" class="${cls}" style="outline:none;">${esc(val)}</${tag}>`
+// Block-HTML (h1, p, ul, table …) muss in ein <div>: in einem <span> oder in
+// einer Überschrift wirft der Browser solche Tags beim Einlesen wieder heraus.
+const BLOCK_TAGS = /<\s*(h[1-6]|p|div|ul|ol|li|table|blockquote|section|figure|pre|hr)\b/i
+const ed = (key, val, tag = 'span', cls = '') => {
+  const s = esc(val)
+  const t = BLOCK_TAGS.test(s) ? 'div' : tag
+  return `<${t} data-edit="${key}" class="${cls}" style="outline:none;${t === 'div' ? 'display:block;' : ''}">${s}</${t}>`
+}
+
+// Standardwerte elementweise mischen: der Editor schickt nur den geänderten
+// Pfad zurück – ohne das hier wären alle anderen Einträge danach leer.
+const mischStd = (ist, standard) => {
+  const a = Array.isArray(ist) ? ist : []
+  const out = standard.map((v, i) => {
+    const w = a[i]
+    if (w === undefined || w === null || w === '') return v
+    if (v && typeof v === 'object' && !Array.isArray(v) && w && typeof w === 'object') return { ...v, ...w }
+    return w
+  })
+  if (a.length > standard.length) out.push(...a.slice(standard.length))
+  return out
+}
 
 // ── Font-Awesome-Icons (editierbar via data-icon) ──
 // Mappt alte Emojis auf FA-Namen, akzeptiert auch direkte FA-Namen ('bolt', 'fa-bolt')
@@ -115,260 +135,8 @@ export const NAV = {
 // ═══════════════════════════════════════════════════════════════
 // HERO FULL (Startseite – groß)
 // ═══════════════════════════════════════════════════════════════
-export const HERO_FULL = {
-  type: 'hero-full',
-  label: 'Hero (Startseite)',
-  variants: [
-    {
-      id: 'hero-gradient', name: 'Gradient Dunkel',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-gradient" data-section="1" style="position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(135deg,var(--p900),var(--p700) 60%,var(--p600));')}padding:80px 0;">
-  <div style="position:absolute;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.08),transparent 70%);"></div>
-  <div style="position:absolute;bottom:-80px;left:5%;width:300px;height:300px;border-radius:50%;background:var(--accent);opacity:0.12;filter:blur(40px);"></div>
-  <div style="max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
-    <div data-reveal style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:99px;padding:6px 16px;margin-bottom:24px;">
-      <div style="width:7px;height:7px;background:#22c55e;border-radius:50%;"></div>
-      ${ed('tag', c.tag, 'span', '')} 
-    </div>
-    <h1 data-reveal style="font-size:clamp(40px,6vw,72px);font-weight:900;line-height:1.05;letter-spacing:-0.04em;color:#fff;max-width:800px;margin-bottom:20px;">${ed('headline', c.headline, 'span')}</h1>
-    <p data-reveal style="font-size:19px;color:rgba(255,255,255,0.75);max-width:560px;line-height:1.7;margin-bottom:36px;">${ed('subline', c.subline, 'span')}</p>
-    <div data-reveal style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:56px;">
-      <a href="kontakt.html" style="background:#fff;color:var(--p700);text-decoration:none;padding:15px 30px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
-      <a href="#leistungen" style="background:rgba(255,255,255,0.1);color:#fff;text-decoration:none;padding:15px 30px;border-radius:10px;font-weight:600;font-size:16px;border:1px solid rgba(255,255,255,0.3);">${ed('cta2', c.cta2, 'span')}</a>
-    </div>
-    <div data-reveal style="display:flex;gap:48px;flex-wrap:wrap;">
-      ${(c.stats || []).map(s => `<div><div style="font-size:38px;font-weight:800;color:#fff;letter-spacing:-0.02em;">${ed('stat_'+s.label, s.num, 'span')}</div><div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:2px;">${esc(s.label)}</div></div>`).join('')}
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-split', name: 'Split mit Bild',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-split" style="background:var(--p50);padding:80px 0;min-height:85vh;display:flex;align-items:center;">
-  <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="hero-split-grid">
-    <div>
-      <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:20px;">${ed('tag', c.tag, 'span')}</div>
-      <h1 data-reveal style="font-size:clamp(36px,5vw,58px);font-weight:900;line-height:1.1;letter-spacing:-0.04em;color:#0f172a;margin-bottom:20px;">${ed('headline', c.headline, 'span')}</h1>
-      <p data-reveal style="font-size:18px;color:#64748b;line-height:1.7;margin-bottom:32px;max-width:480px;">${ed('subline', c.subline, 'span')}</p>
-      <div data-reveal style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px;">
-        <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
-        <a href="#leistungen" style="background:#fff;color:var(--p700);text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid var(--p200);">${ed('cta2', c.cta2, 'span')}</a>
-      </div>
-      <div data-reveal style="display:flex;gap:32px;flex-wrap:wrap;">
-        ${(c.stats || []).map(s => `<div><div style="font-size:28px;font-weight:800;color:var(--p600);">${ed('stat_'+s.label, s.num, 'span')}</div><div style="font-size:13px;color:#94a3b8;">${esc(s.label)}</div></div>`).join('')}
-      </div>
-    </div>
-    <div data-reveal style="position:relative;">
-      ${img('heroImg', c.heroImg, 'border-radius:20px;width:100%;height:480px;')}
-      <div style="position:absolute;bottom:20px;left:20px;background:#fff;border-radius:12px;padding:14px 18px;box-shadow:0 8px 32px rgba(0,0,0,0.12);display:flex;align-items:center;gap:10px;">
-        <div style="width:10px;height:10px;background:#22c55e;border-radius:50%;"></div>
-        <span style="font-size:13px;font-weight:600;color:#0f172a;">${ed('badge', c.badge || c.tag, 'span')}</span>
-      </div>
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-center', name: 'Zentriert Minimal',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-center" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:120px 0 100px;text-align:center;position:relative;overflow:hidden;">
-  <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,var(--p100),transparent 70%);opacity:0.6;"></div>
-  <div style="max-width:800px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
-    <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 16px;border-radius:99px;margin-bottom:24px;">${ed('tag', c.tag, 'span')}</div>
-    <h1 data-reveal style="font-size:clamp(40px,6vw,68px);font-weight:900;line-height:1.08;letter-spacing:-0.04em;color:${c.bgImg ? '#fff' : '#0f172a'};margin-bottom:24px;">${ed('headline', c.headline, 'span')}</h1>
-    <p data-reveal style="font-size:20px;color:${c.bgImg ? 'rgba(255,255,255,0.85)' : '#64748b'};line-height:1.7;margin:0 auto 36px;max-width:560px;">${ed('subline', c.subline, 'span')}</p>
-    <div data-reveal style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:64px;">
-      <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
-      <a href="#leistungen" style="background:${c.bgImg ? 'rgba(255,255,255,0.15)' : '#fff'};color:${c.bgImg ? '#fff' : 'var(--p700)'};text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid ${c.bgImg ? 'rgba(255,255,255,0.4)' : 'var(--p200)'};">${ed('cta2', c.cta2, 'span')}</a>
-    </div>
-    ${c.bgImg ? '' : `<div data-reveal>${img('heroImg', c.heroImg, 'border-radius:20px;width:100%;height:400px;box-shadow:0 20px 60px rgba(0,0,0,0.15);')}</div>`}
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-bild', name: 'Text + Bild',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-split" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:90px 0;position:relative;overflow:hidden;">
-  <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;" class="about-grid">
-    <div data-reveal>
-      <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 16px;border-radius:99px;margin-bottom:20px;">${ed('tag', c.tag, 'span')}</div>
-      <h1 style="font-size:clamp(34px,4.5vw,56px);font-weight:900;line-height:1.1;letter-spacing:-0.04em;color:#0f172a;margin-bottom:20px;">${ed('headline', c.headline, 'span')}</h1>
-      <p style="font-size:18px;color:#64748b;line-height:1.7;margin-bottom:32px;">${ed('subline', c.subline, 'span')}</p>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;">
-        <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
-        <a href="#leistungen" style="background:#fff;color:var(--p700);text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1.5px solid var(--p200);">${ed('cta2', c.cta2, 'span')}</a>
-      </div>
-    </div>
-    <div data-reveal>
-      ${img('heroImg', c.heroImg, 'border-radius:20px;width:100%;height:440px;box-shadow:0 24px 60px rgba(0,0,0,0.14);')}
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-mesh', name: 'Modern Bewegt',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-mesh" data-section="1" style="position:relative;min-height:90vh;display:flex;align-items:center;overflow:hidden;background:linear-gradient(160deg,var(--p900),#0d1b2a 65%);padding:90px 0;">
-  <style>
-    @keyframes hmDriftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,50px) scale(1.2)}}
-    @keyframes hmDriftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-40px) scale(1.15)}}
-    @keyframes hmStrich{to{clip-path:inset(0 0 0 0)}}
-    .hm-strich{clip-path:inset(0 100% 0 0);animation:hmStrich .9s .5s cubic-bezier(.25,.7,.3,1) forwards}
-  </style>
-  <div aria-hidden="true" style="position:absolute;top:-160px;left:-100px;width:560px;height:560px;border-radius:50%;filter:blur(60px);background:radial-gradient(circle,var(--accent),transparent 70%);opacity:.55;animation:hmDriftA 24s ease-in-out infinite;"></div>
-  <div aria-hidden="true" style="position:absolute;bottom:-180px;right:-80px;width:520px;height:520px;border-radius:50%;filter:blur(60px);background:radial-gradient(circle,var(--p500),transparent 70%);opacity:.5;animation:hmDriftB 29s ease-in-out infinite;"></div>
-  <div style="max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
-    <div data-reveal style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:8px 18px;margin-bottom:26px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;">
-      <span style="width:7px;height:7px;background:var(--accent);border-radius:50%;"></span>${ed('tag', c.tag, 'span')}
-    </div>
-    <h1 data-reveal style="font-size:clamp(42px,7vw,84px);font-weight:200;line-height:1.06;letter-spacing:-.03em;color:#fff;max-width:820px;margin-bottom:22px;">
-      ${ed('headline', c.headline, 'span')}
-    </h1>
-    <p data-reveal style="font-size:19px;font-weight:400;color:rgba(255,255,255,.75);max-width:560px;line-height:1.7;margin-bottom:38px;">${ed('subline', c.subline, 'span')}</p>
-    <div data-reveal style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:58px;">
-      <a href="kontakt.html" style="background:var(--accent);color:#fff;text-decoration:none;padding:17px 32px;border-radius:99px;font-weight:700;font-size:16px;box-shadow:0 14px 30px rgba(0,0,0,.3);">${ed('cta1', c.cta1, 'span')}</a>
-      <a href="#leistungen" style="background:transparent;color:#fff;text-decoration:none;padding:17px 32px;border-radius:99px;font-weight:600;font-size:16px;border:1.5px solid rgba(255,255,255,.35);">${ed('cta2', c.cta2, 'span')}</a>
-    </div>
-    <div data-reveal style="display:flex;gap:48px;flex-wrap:wrap;">
-      ${(c.stats || []).map(s => `<div><div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-.02em;">${ed('stat_'+s.label, s.num, 'span')}</div><div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:2px;">${esc(s.label)}</div></div>`).join('')}
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-foto', name: 'Foto Vollbild',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-foto" data-section="1" class="wg-dunkelzone" style="position:relative;min-height:92vh;display:flex;align-items:flex-end;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a);')}">
-  <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,32,.15),rgba(10,20,32,.8));"></div>
-  <div class="wg-wrap" style="position:relative;z-index:1;padding-top:124px;padding-bottom:66px;">
-    <div class="wg-reveal" style="max-width:920px;">
-      <span class="wg-chip glas">${ed('tag', c.tag, 'span')}</span>
-      <h1 class="wg-t1" style="color:#fff;margin-top:22px;">${ed('headline', c.headline, 'span')}</h1>
-      <span class="wg-strichlinie"></span>
-      <p class="wg-lead" style="color:rgba(255,255,255,.8);max-width:600px;">${ed('subline', c.subline, 'span')}</p>
-    </div>
-    <div class="wg-reveal" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:34px;transition-delay:.1s;">
-      <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
-      <a href="#leistungen" class="wg-btn-leer hell">${ed('cta2', c.cta2, 'span')}</a>
-    </div>
-    ${(c.stats && c.stats.length) ? `<div class="wg-reveal" style="display:flex;gap:46px;flex-wrap:wrap;margin-top:48px;transition-delay:.18s;">${c.stats.map(s => `<div><div class="wg-stat-num">${ed('stat_' + s.label, s.num, 'span')}</div><div class="wg-stat-lab">${esc(s.label)}</div></div>`).join('')}</div>` : ''}
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-editorial', name: 'Editorial Hell',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-editorial" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:clamp(96px,12vw,150px) 0 clamp(56px,7vw,88px);position:relative;overflow:hidden;">
-  <div class="wg-wrap">
-    <div class="wg-reveal" style="max-width:780px;">
-      <span class="wg-eyebrow">${ed('tag', c.tag, 'span')}</span>
-      <h1 class="wg-t1" style="margin-top:20px;">${ed('headline', c.headline, 'span')}</h1>
-      <span class="wg-strichlinie"></span>
-    </div>
-    <div class="wg-split" style="display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:end;margin-top:22px;">
-      <div class="wg-reveal li wg-bildbox" style="height:clamp(280px,42vw,460px);transition-delay:.08s;">${img('heroImg', c.heroImg, '')}</div>
-      <div class="wg-reveal re" style="transition-delay:.14s;">
-        <p class="wg-lead" style="margin-bottom:26px;">${ed('subline', c.subline, 'span')}</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;">
-          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
-          <a href="#leistungen" class="wg-btn-leer">${ed('cta2', c.cta2, 'span')}</a>
-        </div>
-        ${(c.stats && c.stats.length) ? `<div style="display:flex;gap:34px;flex-wrap:wrap;border-top:1px solid rgba(15,23,42,.1);padding-top:22px;">${c.stats.map(s => `<div><div class="wg-stat-num">${ed('stat_' + s.label, s.num, 'span')}</div><div class="wg-stat-lab">${esc(s.label)}</div></div>`).join('')}</div>` : ''}
-      </div>
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-akzent', name: 'Akzent Hell',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-akzent" data-section="1" style="${sectionBgStyle(c, 'background:var(--p50);')}padding:clamp(88px,11vw,140px) 0;position:relative;overflow:hidden;">
-  <div aria-hidden="true" style="position:absolute;top:-120px;right:-60px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,var(--p200),transparent 70%);opacity:.55;"></div>
-  <div class="wg-wrap" style="position:relative;z-index:1;">
-    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;">
-      <div class="wg-reveal li">
-        <span class="wg-eyebrow">${ed('tag', c.tag, 'span')}</span>
-        <h1 class="wg-t1" style="margin-top:18px;">${ed('headline', c.headline, 'span')}</h1>
-        <span class="wg-strichlinie"></span>
-        <p class="wg-lead" style="max-width:480px;margin-bottom:32px;">${ed('subline', c.subline, 'span')}</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
-          <a href="#leistungen" class="wg-btn-leer">${ed('cta2', c.cta2, 'span')}</a>
-        </div>
-      </div>
-      <div class="wg-reveal re" style="position:relative;transition-delay:.12s;">
-        <div class="wg-bildbox" style="height:clamp(320px,44vw,480px);box-shadow:0 30px 70px rgba(15,23,42,.18);">${img('heroImg', c.heroImg, '')}</div>
-        <div style="position:absolute;left:-18px;bottom:26px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 14px 34px rgba(15,23,42,.16);display:flex;align-items:center;gap:10px;">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></span>
-          <span style="font-size:13px;font-weight:700;color:#0f172a;">${ed('badge', c.badge || c.tag, 'span')}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-magazin', name: 'Magazin',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-magazin" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:clamp(80px,10vw,120px) 0;position:relative;overflow:hidden;">
-  <div class="wg-wrap">
-    <div class="wg-split" style="display:grid;grid-template-columns:1.05fr .95fr;gap:0;align-items:center;">
-      <div class="wg-reveal" style="position:relative;z-index:2;">
-        <span class="wg-eyebrow">${ed('tag', c.tag, 'span')}</span>
-        <h1 class="wg-t1" style="margin-top:18px;font-size:clamp(44px,7.5vw,92px);">${ed('headline', c.headline, 'span')}</h1>
-        <p class="wg-lead" style="max-width:440px;margin:22px 0 30px;">${ed('subline', c.subline, 'span')}</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
-          <a href="#leistungen" class="wg-btn-leer">${ed('cta2', c.cta2, 'span')}</a>
-        </div>
-      </div>
-      <div class="wg-reveal re wg-bildbox wg-hide-mob" style="height:clamp(360px,46vw,540px);margin-left:-40px;transition-delay:.12s;">${img('heroImg', c.heroImg, '')}</div>
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-duo', name: 'Duo Karten',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-duo" data-section="1" class="wg-dunkelzone" style="position:relative;min-height:86vh;display:flex;align-items:center;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a 70%);')}">
-  <div class="wg-mesh"><span class="wg-blob wg-blob-a"></span><span class="wg-blob wg-blob-b"></span></div>
-  <div class="wg-wrap" style="position:relative;z-index:1;">
-    <div class="wg-split" style="display:grid;grid-template-columns:1.1fr .9fr;gap:52px;align-items:center;">
-      <div class="wg-reveal">
-        <span class="wg-chip glas">${ed('tag', c.tag, 'span')}</span>
-        <h1 class="wg-t1" style="color:#fff;margin-top:22px;">${ed('headline', c.headline, 'span')}</h1>
-        <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:520px;margin:22px 0 32px;">${ed('subline', c.subline, 'span')}</p>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;">
-          <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
-          <a href="#leistungen" class="wg-btn-leer hell">${ed('cta2', c.cta2, 'span')}</a>
-        </div>
-      </div>
-      <div class="wg-reveal re" style="display:flex;flex-direction:column;gap:16px;transition-delay:.12s;">
-        ${((c.stats && c.stats.length ? c.stats : [{ num: '100%', label: 'Zuverlässig' }, { num: '24/7', label: 'Erreichbar' }]).slice(0, 3)).map(s => `<div class="wg-karte" style="display:flex;align-items:center;gap:16px;padding:20px 22px;"><div class="wg-iconchip" style="width:46px;height:46px;font-size:18px;"><i class="fa-solid fa-check"></i></div><div><div style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.02em;">${esc(s.num)}</div><div style="font-size:13px;color:#64748b;">${esc(s.label)}</div></div></div>`).join('')}
-      </div>
-    </div>
-  </div>
-</section>`
-    },
-    {
-      id: 'hero-minimal', name: 'Vollbild Minimal',
-      render: (c) => `
-<section data-block="hero-full" data-variant="hero-minimal" data-section="1" class="wg-dunkelzone" style="position:relative;min-height:96vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;${sectionBgStyle(c, 'background:linear-gradient(160deg,#0d1b2a,var(--p900));')}">
-  <div class="wg-mesh"><span class="wg-blob wg-blob-a"></span><span class="wg-blob wg-blob-b"></span><span class="wg-blob wg-blob-c"></span></div>
-  <div class="wg-wrap" style="position:relative;z-index:1;max-width:900px;">
-    <div class="wg-reveal">
-      <span class="wg-chip glas">${ed('tag', c.tag, 'span')}</span>
-      <h1 class="wg-t1" style="color:#fff;margin:24px auto 0;font-size:clamp(44px,8vw,96px);">${ed('headline', c.headline, 'span')}</h1>
-      <span class="wg-strichlinie mitte"></span>
-      <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:560px;margin:0 auto 36px;">${ed('subline', c.subline, 'span')}</p>
-      <a href="kontakt.html" class="wg-btn">${ed('cta1', c.cta1, 'span')}</a>
-    </div>
-  </div>
-</section>`
-    },
-  ]
-}
+// HERO_FULL kommt jetzt vollständig aus lib/heroes.js
+import { HERO_FULL } from './heroes'
 
 // ═══════════════════════════════════════════════════════════════
 // HEADER SLIM (Unterseiten – kompakt)
@@ -385,7 +153,7 @@ export const HEADER_SLIM = {
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
     <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.12);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
     <h1 data-reveal style="font-size:clamp(32px,4.5vw,52px);font-weight:900;letter-spacing:-0.03em;color:#fff;margin-bottom:12px;">${ed('headline', c.headline, 'span')}</h1>
-    <p data-reveal style="font-size:18px;color:rgba(255,255,255,0.75);max-width:560px;line-height:1.6;">${ed('subline', c.subline, 'span')}</p>
+    <div data-reveal style="font-size:18px;color:rgba(255,255,255,0.75);max-width:560px;line-height:1.6;">${ed('subline', c.subline, 'span')}</div>
   </div>
 </section>`
     },
@@ -396,7 +164,7 @@ export const HEADER_SLIM = {
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;text-align:center;">
     <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
     <h1 data-reveal style="font-size:clamp(32px,4.5vw,52px);font-weight:900;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('headline', c.headline, 'span')}</h1>
-    <p data-reveal style="font-size:18px;color:#64748b;max-width:560px;margin:0 auto;line-height:1.6;">${ed('subline', c.subline, 'span')}</p>
+    <div data-reveal style="font-size:18px;color:#64748b;max-width:560px;margin:0 auto;line-height:1.6;">${ed('subline', c.subline, 'span')}</div>
   </div>
 </section>`
     },
@@ -418,14 +186,14 @@ export const SERVICES = {
     <div data-reveal style="margin-bottom:48px;max-width:560px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:17px;color:#64748b;line-height:1.7;">${ed('subtitle', c.subtitle, 'span')}</p>
+      <div style="font-size:17px;color:#64748b;line-height:1.7;">${ed('subtitle', c.subtitle, 'span')}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
       ${(c.items || []).map((it, i) => `
         <div data-reveal style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px;transition:all 0.3s;" onmouseover="this.style.boxShadow='0 12px 40px rgba(0,0,0,0.08)';this.style.transform='translateY(-4px)';this.style.borderColor='var(--p200)'" onmouseout="this.style.boxShadow='none';this.style.transform='none';this.style.borderColor='#e2e8f0'">
-          <div style="width:52px;height:52px;background:var(--p50);border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">${icon('svc_icon_'+i, it.icon, 24, 'var(--p600)')}</div>
-          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('svc_title_'+i, it.title, 'span')}</h3>
-          <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('svc_text_'+i, it.text, 'span')}</p>
+          <div style="width:52px;height:52px;background:var(--p50);border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">${icon(`items.${i}.icon`, it.icon, 24, 'var(--p600)')}</div>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
+          <div style="font-size:14px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
         </div>`).join('')}
     </div>
   </div>
@@ -444,7 +212,7 @@ export const SERVICES = {
       ${(c.items || []).map((it, i) => `
         <div data-reveal style="background:#fff;border-radius:14px;padding:24px;display:flex;gap:16px;align-items:flex-start;">
           <div style="width:40px;height:40px;background:var(--p500);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">${i+1}</div>
-          <div><h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed('svc_title_'+i, it.title, 'span')}</h3><p style="font-size:14px;color:#64748b;line-height:1.6;">${ed('svc_text_'+i, it.text, 'span')}</p></div>
+          <div><h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed(`items.${i}.title`, it.title)}</h3><div style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, it.text)}</div></div>
         </div>`).join('')}
     </div>
   </div>
@@ -457,14 +225,14 @@ export const SERVICES = {
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div data-reveal style="text-align:center;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto;">
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</p>
+      <div style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;">
       ${(c.items || []).map((it, i) => `
         <div data-reveal style="text-align:center;">
-          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--p400),var(--p600));border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">${icon('svc_icon_'+i, it.icon, 28, '#fff')}</div>
-          <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('svc_title_'+i, it.title, 'span')}</h3>
-          <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('svc_text_'+i, it.text, 'span')}</p>
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--p400),var(--p600));border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">${icon(`items.${i}.icon`, it.icon, 28, '#fff')}</div>
+          <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
+          <div style="font-size:14px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
         </div>`).join('')}
     </div>
   </div>
@@ -491,8 +259,8 @@ export const ABOUT = {
     <div data-reveal>
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
       <h2 style="font-size:clamp(28px,3.5vw,40px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:16px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:16px;color:#475569;line-height:1.8;margin-bottom:14px;">${ed('text1', c.text1, 'span')}</p>
-      <p style="font-size:15px;color:#64748b;line-height:1.8;margin-bottom:28px;">${ed('text2', c.text2, 'span')}</p>
+      <div style="font-size:16px;color:#475569;line-height:1.8;margin-bottom:14px;">${ed('text1', c.text1, 'span')}</div>
+      <div style="font-size:15px;color:#64748b;line-height:1.8;margin-bottom:28px;">${ed('text2', c.text2, 'span')}</div>
       <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:13px 26px;border-radius:10px;font-weight:700;font-size:15px;display:inline-block;">${ed('cta', c.cta || 'Mehr erfahren', 'span')}</a>
     </div>
   </div>
@@ -506,11 +274,11 @@ export const ABOUT = {
     <div data-reveal>
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
       <h2 style="font-size:clamp(28px,3.5vw,40px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:16px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:16px;color:#475569;line-height:1.8;margin-bottom:14px;">${ed('text1', c.text1, 'span')}</p>
-      <p style="font-size:15px;color:#64748b;line-height:1.8;">${ed('text2', c.text2, 'span')}</p>
+      <div style="font-size:16px;color:#475569;line-height:1.8;margin-bottom:14px;">${ed('text1', c.text1, 'span')}</div>
+      <div style="font-size:15px;color:#64748b;line-height:1.8;">${ed('text2', c.text2, 'span')}</div>
     </div>
     <div data-reveal style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      ${(c.stats || []).map((s, i) => `<div style="background:${i%2===0?'linear-gradient(135deg,var(--p500),var(--p700))':'var(--p50)'};color:${i%2===0?'#fff':'#0f172a'};border-radius:16px;padding:28px;text-align:center;${i%2!==0?'border:1px solid var(--p100);':''}"><div style="font-size:36px;font-weight:900;letter-spacing:-0.02em;${i%2!==0?'color:var(--p600);':''}">${ed('astat_'+i, s.num, 'span')}</div><div style="font-size:13px;${i%2===0?'opacity:0.8;':'color:#94a3b8;'}margin-top:4px;">${esc(s.label)}</div></div>`).join('')}
+      ${(c.stats || []).map((s, i) => `<div style="background:${i%2===0?'linear-gradient(135deg,var(--p500),var(--p700))':'var(--p50)'};color:${i%2===0?'#fff':'#0f172a'};border-radius:16px;padding:28px;text-align:center;${i%2!==0?'border:1px solid var(--p100);':''}"><div style="font-size:36px;font-weight:900;letter-spacing:-0.02em;${i%2!==0?'color:var(--p600);':''}">${ed(`stats.${i}.num`, s.num)}</div><div style="font-size:13px;${i%2===0?'opacity:0.8;':'color:#94a3b8;'}margin-top:4px;">${esc(s.label)}</div></div>`).join('')}
     </div>
   </div>
 </section>`
@@ -537,11 +305,11 @@ export const TEAM = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
       ${(c.members || []).map((m, i) => `
         <div data-reveal style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;transition:all 0.3s;" onmouseover="this.style.boxShadow='0 12px 40px rgba(0,0,0,0.1)';this.style.transform='translateY(-4px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
-          ${img('team_img_'+i, m.img, 'width:100%;height:220px;')}
+          ${img(`members.${i}.img`, m.img, 'width:100%;height:220px;')}
           <div style="padding:20px;">
-            <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed('team_name_'+i, m.name, 'span')}</h3>
-            <div style="font-size:13px;color:var(--p600);font-weight:600;margin-bottom:10px;">${ed('team_role_'+i, m.role, 'span')}</div>
-            <p style="font-size:13px;color:#64748b;line-height:1.6;">${ed('team_bio_'+i, m.bio, 'span')}</p>
+            <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed(`members.${i}.name`, m.name)}</h3>
+            <div style="font-size:13px;color:var(--p600);font-weight:600;margin-bottom:10px;">${ed(`members.${i}.rolle`, m.rolle || m.role)}</div>
+            <div style="font-size:13px;color:#64748b;line-height:1.6;">${ed(`members.${i}.text`, m.text || m.bio)}</div>
           </div>
         </div>`).join('')}
     </div>
@@ -570,11 +338,11 @@ export const TESTIMONIALS = {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
       ${(c.items || []).map((t, i) => `
         <div data-reveal style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
-          <div style="color:#f59e0b;font-size:16px;margin-bottom:14px;">${stars('testi_rating_'+i, t.rating || 5)}</div>
-          <p style="font-size:15px;color:#475569;line-height:1.7;font-style:italic;margin-bottom:20px;">"${ed('testi_quote_'+i, t.quote, 'span')}"</p>
+          <div style="color:#f59e0b;font-size:16px;margin-bottom:14px;">${stars(`items.${i}.sterne`, t.sterne || t.rating || 5)}</div>
+          <p style="font-size:15px;color:#475569;line-height:1.7;font-style:italic;margin-bottom:20px;">"${ed(`items.${i}.text`, t.text || t.quote)}"</p>
           <div style="display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid #f1f5f9;">
             <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p400),var(--p600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;">${esc((t.name||'?').charAt(0))}</div>
-            <div><div style="font-size:14px;font-weight:700;color:#0f172a;">${ed('testi_name_'+i, t.name, 'span')}</div><div style="font-size:12px;color:#94a3b8;">${ed('testi_role_'+i, t.role, 'span')}</div></div>
+            <div><div style="font-size:14px;font-weight:700;color:#0f172a;">${ed(`items.${i}.name`, t.name)}</div><div style="font-size:12px;color:#94a3b8;">${ed(`items.${i}.ort`, t.ort || t.role)}</div></div>
           </div>
         </div>`).join('')}
     </div>
@@ -595,7 +363,7 @@ export const STATS = {
     render: (c) => `
 <section data-block="stats" data-variant="stats-bar" data-section="1" style="${sectionBgStyle(c,'background:linear-gradient(135deg,var(--p600),var(--p800));')}padding:60px 0;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:32px;">
-    ${((c.items && c.items.length) ? c.items : [{num:'15+',label:'Jahre Erfahrung'},{num:'500+',label:'Zufriedene Kunden'},{num:'100%',label:'Termintreue'}]).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed('stat_'+i, s.num, 'span')}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${ed('statLabel_'+i, s.label, 'span')}</div></div>`).join('')}
+    ${mischStd(c.items, [{num:'15+',label:'Jahre Erfahrung'},{num:'500+',label:'Zufriedene Kunden'},{num:'100%',label:'Termintreue'}]).map((s, i) => `<div data-reveal style="text-align:center;"><div style="font-size:clamp(36px,5vw,52px);font-weight:900;color:#fff;letter-spacing:-0.03em;">${ed(`items.${i}.num`, s.num)}</div><div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">${ed(`items.${i}.label`, s.label)}</div></div>`).join('')}
   </div>
 </section>`
   }]
@@ -615,7 +383,7 @@ export const CTA = {
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(255,255,255,0.1),transparent 70%);"></div>
   <div style="max-width:600px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
     <h2 data-reveal style="font-size:clamp(28px,4.5vw,48px);font-weight:900;letter-spacing:-0.03em;color:#fff;margin-bottom:14px;">${ed('title', c.title, 'span')}</h2>
-    <p data-reveal style="font-size:18px;color:rgba(255,255,255,0.8);margin-bottom:32px;">${ed('subtitle', c.subtitle, 'span')}</p>
+    <div data-reveal style="font-size:18px;color:rgba(255,255,255,0.8);margin-bottom:32px;">${ed('subtitle', c.subtitle, 'span')}</div>
     <div data-reveal style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
       <a href="kontakt.html" style="background:#fff;color:var(--p700);text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:700;font-size:16px;">${ed('cta1', c.cta1, 'span')}</a>
       <a href="tel:${esc(c.telefon)}" style="background:rgba(255,255,255,0.12);color:#fff;text-decoration:none;padding:15px 32px;border-radius:10px;font-weight:600;font-size:16px;border:1px solid rgba(255,255,255,0.3);">${ed('telefon', c.telefon, 'span')}</a>
@@ -641,7 +409,7 @@ export const GALLERY = {
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;">${ed('title', c.title, 'span')}</h2>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
-      ${(c.images || [1,2,3,4,5,6]).map((im, i) => `<div data-reveal>${img('img_'+i, typeof im==='string'?im:'', 'border-radius:14px;width:100%;height:240px;')}</div>`).join('')}
+      ${(c.images || [1,2,3,4,5,6]).map((im, i) => `<div data-reveal>${img(`images.${i}`, typeof im==='string'?im:'', 'border-radius:14px;width:100%;height:240px;')}</div>`).join('')}
     </div>
   </div>
 </section>`
@@ -664,8 +432,8 @@ export const FAQ = {
     </div>
     ${(c.items || []).map((f, i) => `
       <details data-reveal style="background:#fff;border-radius:12px;margin-bottom:10px;padding:0 20px;border:1px solid #e2e8f0;">
-        <summary style="padding:18px 0;cursor:pointer;font-weight:600;font-size:16px;color:#0f172a;list-style:none;display:flex;justify-content:space-between;align-items:center;">${ed('faq_q_'+i, f.q, 'span')}<span class="faq-ic" style="color:var(--p500);font-size:18px;">${'<i class="fa-solid fa-plus"></i>'}</span></summary>
-        <p style="padding:0 0 18px;font-size:15px;color:#64748b;line-height:1.7;">${ed('faq_a_'+i, f.a, 'span')}</p>
+        <summary style="padding:18px 0;cursor:pointer;font-weight:600;font-size:16px;color:#0f172a;list-style:none;display:flex;justify-content:space-between;align-items:center;">${ed(`items.${i}.frage`, f.frage || f.q)}<span class="faq-ic" style="color:var(--p500);font-size:18px;">${'<i class="fa-solid fa-plus"></i>'}</span></summary>
+        <div style="padding:0 0 18px;font-size:15px;color:#64748b;line-height:1.7;">${ed(`items.${i}.antwort`, f.antwort || f.a)}</div>
       </details>`).join('')}
   </div>
 </section>`
@@ -686,7 +454,7 @@ export const CONTACT = {
     <div data-reveal style="margin-bottom:48px;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag || 'Kontakt', 'span')}</div>
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</p>
+      <div style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;" class="contact-grid">
       <form action="mail.php" method="POST" data-contact-form>
@@ -728,7 +496,7 @@ export const FOOTER = {
           <img data-img="logoFooter" src="${c.logoFooter || c.logo || ''}" style="height:32px;width:auto;object-fit:contain;${(c.logoFooter || c.logo) ? '' : 'display:none;'}margin-bottom:8px;${c.logoFooter ? '' : 'filter:brightness(0) invert(1);'}">
           ${c.logo ? '' : ed('firmenname', c.firmenname, 'span')}
         </div>
-        <p style="font-size:14px;line-height:1.7;max-width:260px;">${ed('footer_desc', c.footerDesc || c.beschreibung, 'span')}</p>
+        <div style="font-size:14px;line-height:1.7;max-width:260px;">${ed('footerDesc', c.footerDesc || c.beschreibung || 'Ihr verlässlicher Partner in der Region – persönlich, sauber, termintreu.')}</div>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);margin-bottom:14px;">Navigation</div>
@@ -747,7 +515,7 @@ export const FOOTER = {
       </div>
     </div>
     <div style="border-top:1px solid rgba(255,255,255,0.08);padding:20px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-      <span style="font-size:13px;">© ${new Date().getFullYear()} ${ed('firmenname2', c.firmenname, 'span')}. Alle Rechte vorbehalten.</span>
+      <span style="font-size:13px;">© ${new Date().getFullYear()} ${esc(c.firmenname || 'Ihr Unternehmen')}. Alle Rechte vorbehalten.</span>
       <div style="display:flex;gap:20px;">
         <a href="impressum.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">Impressum</a>
         <a href="datenschutz.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">Datenschutz</a>
@@ -775,16 +543,16 @@ export const MENU = {
     </div>
     ${(c.kategorien || []).map((kat, ki) => `
       <div data-reveal style="margin-bottom:40px;">
-        <h3 style="font-size:20px;font-weight:700;color:var(--p700);margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--p200);">${ed('menu_kat_' + ki, kat.name, 'span')}</h3>
+        <h3 style="font-size:20px;font-weight:700;color:var(--p700);margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--p200);">${ed(`kategorien.${ki}.name`, kat.name)}</h3>
         <div style="display:grid;gap:14px;">
           ${(kat.items || []).map((it, ii) => `
             <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;">
               <div style="flex:1;">
-                <div style="font-size:16px;font-weight:600;color:#0f172a;">${ed('menu_name_' + ki + '_' + ii, it.name, 'span')}</div>
-                <div style="font-size:13px;color:#64748b;margin-top:2px;">${ed('menu_desc_' + ki + '_' + ii, it.desc || '', 'span')}</div>
+                <div style="font-size:16px;font-weight:600;color:#0f172a;">${ed(`kategorien.${ki}.items.${ii}.name`, it.name)}</div>
+                <div style="font-size:13px;color:#64748b;margin-top:2px;">${ed(`kategorien.${ki}.items.${ii}.beschreibung`, it.beschreibung || it.desc || '')}</div>
               </div>
               <div style="border-bottom:1px dotted #cbd5e1;flex:0 0 30px;align-self:flex-end;margin-bottom:6px;"></div>
-              <div style="font-size:16px;font-weight:700;color:var(--p600);white-space:nowrap;">${ed('menu_preis_' + ki + '_' + ii, it.preis, 'span')}</div>
+              <div style="font-size:16px;font-weight:700;color:var(--p600);white-space:nowrap;">${ed(`kategorien.${ki}.items.${ii}.preis`, it.preis)}</div>
             </div>`).join('')}
         </div>
       </div>`).join('')}
@@ -825,21 +593,21 @@ export const PRICING = {
     <div data-reveal style="text-align:center;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</p>
+      <div style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;align-items:stretch;">
       ${(c.plans || []).map((p, i) => `
         <div data-reveal style="background:${p.featured ? 'linear-gradient(160deg,var(--p700),var(--p900))' : '#fff'};color:${p.featured ? '#fff' : '#0f172a'};border:1px solid ${p.featured ? 'transparent' : '#e2e8f0'};border-radius:18px;padding:32px 28px;display:flex;flex-direction:column;position:relative;${p.featured ? 'box-shadow:0 20px 50px rgba(0,0,0,0.18);transform:translateY(-6px);' : ''}">
-          ${p.featured ? `<div style="position:absolute;top:16px;right:16px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:0.05em;">${ed('plan_badge_'+i, p.badge || 'Beliebt', 'span')}</div>` : ''}
-          <h3 style="font-size:19px;font-weight:800;margin-bottom:8px;">${ed('plan_name_'+i, p.name, 'span')}</h3>
+          ${p.featured ? `<div style="position:absolute;top:16px;right:16px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:0.05em;">${ed(`plans.${i}.badge`, p.badge || 'Beliebt')}</div>` : ''}
+          <h3 style="font-size:19px;font-weight:800;margin-bottom:8px;">${ed(`plans.${i}.name`, p.name)}</h3>
           <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:18px;">
-            <span style="font-size:42px;font-weight:900;letter-spacing:-0.03em;">${ed('plan_price_'+i, p.price, 'span')}</span>
-            <span style="font-size:14px;opacity:0.7;">${ed('plan_period_'+i, p.period || '/ Monat', 'span')}</span>
+            <span style="font-size:42px;font-weight:900;letter-spacing:-0.03em;">${ed(`plans.${i}.preis`, p.preis || p.price)}</span>
+            <span style="font-size:14px;opacity:0.7;">${ed(`plans.${i}.hinweis`, p.hinweis || p.period || '/ Monat')}</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:28px;flex:1;">
-            ${(p.features || []).map((f, j) => `<div style="display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;"><i class="fa-solid fa-circle-check" style="color:${p.featured ? 'var(--accent)' : 'var(--p500)'};margin-top:3px;flex-shrink:0;"></i><span data-edit="plan_feat_${i}_${j}" style="outline:none;">${esc(f)}</span></div>`).join('')}
+            ${(p.punkte || p.features || []).map((f, j) => `<div style="display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;"><i class="fa-solid fa-circle-check" style="color:${p.featured || p.highlight ? 'var(--accent)' : 'var(--p500)'};margin-top:3px;flex-shrink:0;"></i>${ed(`plans.${i}.punkte.${j}`, f)}</div>`).join('')}
           </div>
-          <a href="kontakt.html" style="background:${p.featured ? '#fff' : 'var(--p500)'};color:${p.featured ? 'var(--p800)' : '#fff'};text-decoration:none;padding:13px;border-radius:10px;font-weight:700;font-size:15px;text-align:center;">${ed('plan_cta_'+i, p.cta || 'Auswählen', 'span')}</a>
+          <a href="kontakt.html" style="background:${p.featured ? '#fff' : 'var(--p500)'};color:${p.featured ? 'var(--p800)' : '#fff'};text-decoration:none;padding:13px;border-radius:10px;font-weight:700;font-size:15px;text-align:center;">${ed(`plans.${i}.cta`, p.cta || 'Auswählen')}</a>
         </div>`).join('')}
     </div>
   </div>
@@ -860,9 +628,9 @@ export const LOGOS = {
       render: (c) => `
 <section data-block="logos" data-variant="logos-row" data-section="1" style="${sectionBgStyle(c,'background:#fff;')}padding:56px 0;">
   <div style="max-width:1100px;margin:0 auto;padding:0 24px;text-align:center;">
-    <p data-reveal style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:28px;">${ed('title', c.title, 'span')}</p>
+    <div data-reveal style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:28px;">${ed('title', c.title, 'span')}</div>
     <div data-reveal style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:18px 40px;">
-      ${(c.logos || []).map((l, i) => `<span data-edit="logo_${i}" style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#cbd5e1;outline:none;">${esc(l)}</span>`).join('')}
+      ${(c.logos || []).map((l, i) => `<span style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#cbd5e1;">${ed(`logos.${i}`, l)}</span>`).join('')}
     </div>
   </div>
 </section>`
@@ -885,17 +653,17 @@ export const STEPS = {
     <div data-reveal style="text-align:center;margin-bottom:52px;max-width:560px;margin-left:auto;margin-right:auto;">
       <div style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p50);padding:6px 14px;border-radius:99px;margin-bottom:16px;">${ed('tag', c.tag, 'span')}</div>
       <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:12px;">${ed('title', c.title, 'span')}</h2>
-      <p style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</p>
+      <div style="font-size:17px;color:#64748b;">${ed('subtitle', c.subtitle, 'span')}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px;">
       ${(c.steps || []).map((s, i) => `
         <div data-reveal style="text-align:center;position:relative;">
           <div style="width:72px;height:72px;background:linear-gradient(135deg,var(--p500),var(--p700));border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;position:relative;">
-            ${icon('step_icon_'+i, s.icon, 28, '#fff')}
+            ${icon(`steps.${i}.icon`, s.icon, 28, '#fff')}
             <span style="position:absolute;top:-8px;right:-8px;width:26px;height:26px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid #fff;">${i + 1}</span>
           </div>
-          <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed('step_title_'+i, s.title, 'span')}</h3>
-          <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed('step_text_'+i, s.text, 'span')}</p>
+          <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed(`steps.${i}.title`, s.title)}</h3>
+          <div style="font-size:14px;color:#64748b;line-height:1.65;">${ed(`steps.${i}.text`, s.text)}</div>
         </div>`).join('')}
     </div>
   </div>
@@ -919,7 +687,7 @@ export const IMAGE = {
     <div data-reveal style="border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,0.10);">
       ${img('image', c.image, 'width:100%;height:auto;min-height:280px;display:block;')}
     </div>
-    ${c.caption ? `<p style="text-align:center;font-size:13px;color:#94a3b8;margin-top:12px;">${ed('caption', c.caption, 'span')}</p>` : ''}
+    ${c.caption ? `<div style="text-align:center;font-size:13px;color:#94a3b8;margin-top:12px;">${ed('caption', c.caption, 'span')}</div>` : ''}
   </div>
 </section>`
     },
@@ -941,10 +709,6 @@ export const IMAGE = {
 // ─────────────────────────────────────────────────────────────
 import { ZUSATZ_BLOECKE, ZUSATZ_ADDABLE, ZUSATZ_DEFAULTS } from './blocksPlus'
 import { ZUSATZ2_BLOECKE, ZUSATZ2_ADDABLE, ZUSATZ2_DEFAULTS } from './blocksPlus2'
-import { HERO_VARIANTEN } from './heroes'
-
-// Neue Hero-Muster vor die alten stellen (die schönen zuerst)
-HERO_FULL.variants = [...HERO_VARIANTEN, ...HERO_FULL.variants]
 
 export const BLOCK_REGISTRY = {
   ...ZUSATZ_BLOECKE,
@@ -975,23 +739,23 @@ export const BLOCK_REGISTRY = {
 export const ADDABLE_BLOCKS = [
   ...ZUSATZ_ADDABLE,
   ...ZUSATZ2_ADDABLE,
-  { type: 'hero-full', label: 'Hero', emoji: '🦸', fa: 'rectangle-ad', cat: 'Kopf & Hero' },
-  { type: 'header-slim', label: 'Seiten-Header', emoji: '📰', fa: 'window-minimize', cat: 'Kopf & Hero' },
-  { type: 'services', label: 'Leistungen', emoji: '⚡', fa: 'bolt', cat: 'Inhalt' },
-  { type: 'steps', label: 'Ablauf / Schritte', emoji: '🪜', fa: 'list-ol', cat: 'Inhalt' },
-  { type: 'about', label: 'Über uns', emoji: '👤', fa: 'circle-info', cat: 'Inhalt' },
-  { type: 'team', label: 'Team', emoji: '👥', fa: 'users', cat: 'Inhalt' },
-  { type: 'image', label: 'Bild', emoji: '🖼️', fa: 'image', cat: 'Inhalt' },
-  { type: 'gallery', label: 'Galerie', emoji: '🖼️', fa: 'images', cat: 'Inhalt' },
-  { type: 'faq', label: 'FAQ', emoji: '❓', fa: 'circle-question', cat: 'Inhalt' },
-  { type: 'testimonials', label: 'Kundenstimmen', emoji: '💬', fa: 'comment', cat: 'Vertrauen' },
-  { type: 'stats', label: 'Zahlen', emoji: '📊', fa: 'chart-simple', cat: 'Vertrauen' },
-  { type: 'logos', label: 'Partner-Logos', emoji: '🏷️', fa: 'handshake-angle', cat: 'Vertrauen' },
-  { type: 'pricing', label: 'Preise / Pakete', emoji: '💶', fa: 'tags', cat: 'Konversion' },
-  { type: 'cta', label: 'Call to Action', emoji: '🎯', fa: 'bullhorn', cat: 'Konversion' },
-  { type: 'contact', label: 'Kontakt', emoji: '✉️', fa: 'envelope', cat: 'Konversion' },
-  { type: 'menu', label: 'Speisekarte', emoji: '🍽️', fa: 'utensils', cat: 'Sonstiges', nurBranche: ['restaurant'] },
-  { type: 'custom', label: 'Eigener Code', emoji: '💻', fa: 'code', cat: 'Sonstiges' },
+  { type: 'hero-full', label: 'Hero', fa: 'rectangle-ad', cat: 'Kopf & Hero' },
+  { type: 'header-slim', label: 'Seiten-Header', fa: 'window-minimize', cat: 'Kopf & Hero' },
+  { type: 'services', label: 'Leistungen', fa: 'bolt', cat: 'Inhalt' },
+  { type: 'steps', label: 'Ablauf / Schritte', fa: 'list-ol', cat: 'Inhalt' },
+  { type: 'about', label: 'Über uns', fa: 'circle-info', cat: 'Inhalt' },
+  { type: 'team', label: 'Team', fa: 'users', cat: 'Inhalt' },
+  { type: 'image', label: 'Bild', fa: 'image', cat: 'Inhalt' },
+  { type: 'gallery', label: 'Galerie', fa: 'images', cat: 'Inhalt' },
+  { type: 'faq', label: 'FAQ', fa: 'circle-question', cat: 'Inhalt' },
+  { type: 'testimonials', label: 'Kundenstimmen', fa: 'comment', cat: 'Vertrauen' },
+  { type: 'stats', label: 'Zahlen', fa: 'chart-simple', cat: 'Vertrauen' },
+  { type: 'logos', label: 'Partner-Logos', fa: 'handshake-angle', cat: 'Vertrauen' },
+  { type: 'pricing', label: 'Preise / Pakete', fa: 'tags', cat: 'Konversion' },
+  { type: 'cta', label: 'Call to Action', fa: 'bullhorn', cat: 'Konversion' },
+  { type: 'contact', label: 'Kontakt', fa: 'envelope', cat: 'Konversion' },
+  { type: 'menu', label: 'Speisekarte', fa: 'utensils', cat: 'Sonstiges', nurBranche: ['restaurant'] },
+  { type: 'custom', label: 'Eigener Code', fa: 'code', cat: 'Sonstiges' },
 ]
 
 // Kategorien-Reihenfolge für die Editor-Bibliothek
@@ -1002,8 +766,88 @@ export function getVariants(type) {
   return BLOCK_REGISTRY[type]?.variants || []
 }
 
-// Standard-Inhalte für neu eingefügte Premium-Bausteine
-export const ALLE_DEFAULTS = { ...ZUSATZ_DEFAULTS, ...ZUSATZ2_DEFAULTS }
+// Standard-Inhalte für die klassischen Bausteine.
+// Ohne diese Werte wird ein frisch eingefügter Block leer gerendert – dann
+// sieht die Seite kaputt aus, obwohl nur noch nichts eingetragen wurde.
+export const BASIS_DEFAULTS = {
+  nav: { firmenname: 'Ihr Unternehmen', navLinks: [{ label: 'Startseite', href: 'index.html' }, { label: 'Leistungen', href: 'leistungen.html' }, { label: 'Über uns', href: 'ueber-uns.html' }, { label: 'Kontakt', href: 'kontakt.html' }] },
+  'header-slim': { tag: 'Willkommen', headline: 'Überschrift der Seite', subline: 'Ein kurzer Satz, der erklärt, worum es auf dieser Seite geht.' },
+  services: {
+    tag: 'Leistungen', title: 'Das können wir für Sie tun', subtitle: 'Von der ersten Beratung bis zur fertigen Umsetzung – alles aus einer Hand.',
+    items: [
+      { icon: 'bolt', title: 'Schnelle Umsetzung', text: 'Kurze Wege, klare Absprachen und Termine, die auch halten.' },
+      { icon: 'shield-halved', title: 'Geprüfte Qualität', text: 'Saubere Arbeit nach Norm – geprüft, dokumentiert und versichert.' },
+      { icon: 'handshake', title: 'Faire Preise', text: 'Festpreis vorab, keine Überraschungen auf der Rechnung.' },
+    ],
+  },
+  steps: {
+    tag: 'Ablauf', title: 'So läuft es bei uns ab', subtitle: 'Vier Schritte bis zum fertigen Ergebnis.',
+    steps: [
+      { title: 'Anfrage', text: 'Sie schildern uns kurz, worum es geht – per Telefon oder Formular.' },
+      { title: 'Termin vor Ort', text: 'Wir schauen uns die Lage an und beraten Sie ehrlich.' },
+      { title: 'Angebot', text: 'Sie bekommen einen klaren Festpreis, schriftlich und verständlich.' },
+      { title: 'Umsetzung', text: 'Unser Team erledigt die Arbeit – sauber und zum vereinbarten Termin.' },
+    ],
+  },
+  pricing: {
+    tag: 'Preise', title: 'Klare Pakete, klare Preise', subtitle: 'Kein Kleingedrucktes – Sie wissen vorher, was es kostet.',
+    plans: [
+      { name: 'Basis', preis: 'ab 89 €', hinweis: 'einmalig', punkte: ['Beratung vor Ort', 'Festpreis-Angebot', 'Ausführung durch das Team'], cta: 'Anfragen' },
+      { name: 'Komfort', preis: 'ab 149 €', hinweis: 'einmalig', punkte: ['Alles aus Basis', 'Wunschtermin', 'Verlängerte Garantie'], cta: 'Anfragen', highlight: true },
+      { name: 'Rundum', preis: 'auf Anfrage', hinweis: 'individuell', punkte: ['Alles aus Komfort', 'Regelmäßige Wartung', 'Fester Ansprechpartner'], cta: 'Beraten lassen' },
+    ],
+  },
+  logos: { title: 'Partner, die uns vertrauen', logos: ['Partner', 'Zertifikat', 'Innung', 'Verband', 'Auszeichnung', 'Mitglied'] },
+  about: {
+    tag: 'Über uns', title: 'Ein Team, auf das Sie sich verlassen können',
+    text1: 'Seit vielen Jahren sind wir in der Region für unsere Kundinnen und Kunden im Einsatz. Was klein angefangen hat, ist heute ein eingespieltes Team mit einem klaren Anspruch: saubere Arbeit, ehrliche Beratung und Termine, die halten.',
+    text2: 'Wir nehmen uns Zeit für Ihr Anliegen, erklären jeden Schritt verständlich und bleiben auch nach Abschluss ansprechbar.',
+    cta: 'Lernen Sie uns kennen',
+    stats: [{ num: '15+', label: 'Jahre Erfahrung' }, { num: '500+', label: 'Zufriedene Kunden' }, { num: '100%', label: 'Termintreue' }],
+  },
+  team: {
+    tag: 'Team', title: 'Die Menschen hinter dem Namen',
+    members: [
+      { name: 'Anna Weber', rolle: 'Geschäftsführung', text: 'Erste Ansprechpartnerin für alle Anfragen.' },
+      { name: 'Markus Klein', rolle: 'Projektleitung', text: 'Plant die Abläufe und hält die Termine im Blick.' },
+      { name: 'Sarah Hoffmann', rolle: 'Kundenbetreuung', text: 'Kümmert sich um Angebote und Rückfragen.' },
+    ],
+  },
+  testimonials: {
+    title: 'Das sagen unsere Kunden',
+    items: [
+      { text: 'Pünktlich, freundlich und das Ergebnis war einwandfrei. Wir buchen wieder.', name: 'Familie Berger', ort: 'Berlin', sterne: 5 },
+      { text: 'Endlich ein Betrieb, der zurückruft und sich an Absprachen hält.', name: 'M. Schuster', ort: 'Potsdam', sterne: 5 },
+      { text: 'Faires Angebot, saubere Arbeit, alles wie besprochen.', name: 'L. Wagner', ort: 'Berlin', sterne: 5 },
+    ],
+  },
+  stats: { items: [{ num: '15+', label: 'Jahre Erfahrung' }, { num: '500+', label: 'Zufriedene Kunden' }, { num: '100%', label: 'Termintreue' }] },
+  cta: { title: 'Bereit für den nächsten Schritt?', subtitle: 'Schreiben Sie uns oder rufen Sie an – wir melden uns am selben Tag zurück.', cta1: 'Jetzt anfragen', telefon: '+49 30 1234567' },
+  gallery: { title: 'Einblicke in unsere Arbeit', images: ['', '', '', '', '', ''] },
+  image: { caption: 'Kurze Bildunterschrift' },
+  faq: {
+    title: 'Häufige Fragen',
+    items: [
+      { frage: 'Wie schnell bekomme ich einen Termin?', antwort: 'In der Regel innerhalb weniger Tage. Bei dringenden Fällen melden wir uns noch am selben Tag.' },
+      { frage: 'Was kostet die Beratung?', antwort: 'Das Erstgespräch und die Besichtigung vor Ort sind für Sie kostenlos und unverbindlich.' },
+      { frage: 'Arbeiten Sie mit Festpreisen?', antwort: 'Ja. Sie bekommen vorab ein schriftliches Angebot mit klarem Endpreis.' },
+      { frage: 'In welchem Umkreis sind Sie tätig?', antwort: 'Im gesamten Stadtgebiet und im Umkreis von rund 50 Kilometern.' },
+    ],
+  },
+  contact: { tag: 'Kontakt', title: 'Schreiben Sie uns', subtitle: 'Wir antworten in der Regel noch am selben Werktag.', adresse: 'Musterstraße 1, 10115 Berlin', telefon: '+49 30 1234567', email: 'info@beispiel.de', oeffnung: 'Mo–Fr 9–18 Uhr' },
+  footer: { firmenname: 'Ihr Unternehmen', footerDesc: 'Ihr verlässlicher Partner in der Region – persönlich, sauber, termintreu.', telefon: '+49 30 1234567', email: 'info@beispiel.de', oeffnung: 'Mo–Fr 9–18 Uhr', navLinks: [{ label: 'Startseite', href: 'index.html' }, { label: 'Leistungen', href: 'leistungen.html' }, { label: 'Kontakt', href: 'kontakt.html' }] },
+  menu: {
+    tag: 'Karte', title: 'Unsere Speisekarte',
+    kategorien: [
+      { name: 'Vorspeisen', items: [{ name: 'Hausgemachte Suppe', beschreibung: 'Mit frischen Kräutern', preis: '5,90 €' }, { name: 'Bruschetta', beschreibung: 'Tomate, Basilikum, Olivenöl', preis: '6,50 €' }] },
+      { name: 'Hauptgerichte', items: [{ name: 'Schnitzel', beschreibung: 'Mit Pommes und Salat', preis: '14,90 €' }, { name: 'Pasta des Tages', beschreibung: 'Täglich wechselnd', preis: '12,50 €' }] },
+    ],
+  },
+  custom: { html: '<div style="padding:40px;text-align:center;">Hier steht Ihr eigener HTML-Code.</div>' },
+}
+
+// Standard-Inhalte für neu eingefügte Bausteine
+export const ALLE_DEFAULTS = { ...ZUSATZ_DEFAULTS, ...ZUSATZ2_DEFAULTS, ...BASIS_DEFAULTS }
 export { ZUSATZ_DEFAULTS, ZUSATZ2_DEFAULTS }
 
 // Rendere einen Block

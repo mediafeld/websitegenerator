@@ -9,14 +9,54 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const esc = (s) => String(s ?? '')
-const ed = (key, val, tag = 'span') => `<${tag} data-edit="${key}" style="outline:none;">${esc(val)}</${tag}>`
+// Bearbeitbarer Text.
+// WICHTIG: Enthält der Wert Block-Elemente (h1, p, ul, table …), muss der
+// Rahmen ein <div> sein. In einem <span> wirft der Browser solche Tags
+// beim Einlesen heraus – dadurch verschwand eingegebenes HTML.
+const BLOCK_TAGS = /<\s*(h[1-6]|p|div|ul|ol|li|table|blockquote|section|figure|pre|hr)\b/i
+const ed = (key, val, tag) => {
+  const s = String(val ?? '')
+  // Block-Elemente (h1, p, ul, table …) dürfen NIE in einem <span> oder in
+  // einer Überschrift stecken – der Browser wirft sie beim Einlesen heraus.
+  // Deshalb entscheidet der Inhalt, nicht der Aufrufer.
+  const t = BLOCK_TAGS.test(s) ? 'div' : (tag || 'span')
+  return `<${t} data-edit="${key}" style="outline:none;${t === 'div' ? 'display:block;' : ''}">${s}</${t}>`
+}
+
+// ── Standardwerte elementweise mischen ─────────────────────────────────────
+// Ohne das hier verschwinden beim Bearbeiten eines Eintrags alle anderen:
+// der Editor schickt nur den geänderten Pfad zurück, die restlichen Einträge
+// wären dann leer. misch() legt den echten Inhalt über die Standardliste.
+const mischObj = (standard, ist) => {
+  const out = { ...standard }
+  for (const k of Object.keys(ist || {})) {
+    const s = standard[k], v = ist[k]
+    if (Array.isArray(s) && Array.isArray(v)) out[k] = misch(v, s)
+    else if (v === undefined || v === null || v === '') out[k] = s
+    else if (s && typeof s === 'object' && !Array.isArray(s) && v && typeof v === 'object') out[k] = mischObj(s, v)
+    else out[k] = v
+  }
+  return out
+}
+const misch = (ist, standard) => {
+  const a = Array.isArray(ist) ? ist : []
+  const out = standard.map((s, i) => {
+    const v = a[i]
+    if (v === undefined || v === null || v === '') return s
+    if (s && typeof s === 'object' && !Array.isArray(s) && v && typeof v === 'object') return mischObj(s, v)
+    return v
+  })
+  if (a.length > standard.length) out.push(...a.slice(standard.length))
+  return out
+}
+
 const fa = (v) => { if (!v) return 'star'; v = String(v).trim(); if (v.indexOf('fa-') === 0) v = v.slice(3); return v.replace(/[^a-z0-9-]/gi, '') || 'star' }
 const icon = (key, name) => `<i data-icon="${key}" class="fa-solid fa-${fa(name)}" style="line-height:1;cursor:pointer;"></i>`
 
 import { LOREM, platzhalterBild } from './blocksPlus'
 
 const bild = (key, src, stil = '', n = 1) => `<img data-img="${key}" src="${esc(src || platzhalterBild(n))}" alt="" style="${stil}">`
-const txt = (key, val, fallback, tag = 'span') => ed(key, (val && String(val).trim()) ? val : fallback, tag)
+const txt = (key, val, fallback, tag) => ed(key, (val && String(val).trim()) ? val : fallback, tag)
 
 function bg(c = {}, fallback = '') {
   if (c.bgImg) { const ov = c.bgOverlay || 'rgba(15,23,42,0.55)'; return `background-image:linear-gradient(${ov},${ov}),url('${esc(c.bgImg)}');background-size:cover;background-position:center;` }
@@ -31,7 +71,7 @@ const kopf = (c, dTag, dTitle, mitte = true) => `
     <span class="wg-eyebrow">${txt('tag', c.tag, dTag)}</span>
     <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, dTitle)}</h2>
     <span class="wg-strichlinie${mitte ? ' mitte' : ''}"></span>
-    ${c.subtitle ? `<p class="wg-lead">${ed('subtitle', c.subtitle)}</p>` : ''}
+    ${c.subtitle ? `<div class="wg-lead">${ed('subtitle', c.subtitle)}</div>` : ''}
   </div>`
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -43,11 +83,11 @@ export const KICKSTART = {
     {
       id: 'kick-drei', name: 'Dreispaltiger Einstieg',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'phone', title: 'Anrufen', text: 'Kurz schildern, worum es geht.' },
           { icon: 'calendar-check', title: 'Termin', text: 'Wir kommen vorbei und schauen es uns an.' },
           { icon: 'thumbs-up', title: 'Erledigt', text: 'Saubere Arbeit, fairer Festpreis.' },
-        ]
+        ])
         return `
 <section data-block="kickstart" data-variant="kick-drei" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -56,13 +96,13 @@ export const KICKSTART = {
         <span class="wg-eyebrow">${txt('tag', c.tag, 'So einfach geht es')}</span>
         <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'In drei Schritten zum Ergebnis')}</h2>
         <span class="wg-strichlinie"></span>
-        <p class="wg-lead">${txt('text', c.text, LOREM.absatz, 'span')}</p>
+        <div class="wg-lead">${txt('text', c.text, LOREM.absatz, 'span')}</div>
       </div>
       <div class="wg-reveal re" style="display:grid;gap:14px;transition-delay:.1s;">
         ${items.map((it, i) => `<div class="wg-karte wg-karte-hover" style="display:flex;align-items:flex-start;gap:16px;padding:20px 22px;">
           <div class="wg-iconchip" style="width:44px;height:44px;font-size:17px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
           <div><h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:4px;">${ed(`items.${i}.title`, it.title)}</h3>
-          <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, it.text)}</p></div>
+          <div style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, it.text)}</div></div>
         </div>`).join('')}
       </div>
     </div>
@@ -73,10 +113,10 @@ export const KICKSTART = {
     {
       id: 'kick-band', name: 'Vorteilsband',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'clock', title: 'Schnell erreichbar' }, { icon: 'shield-halved', title: 'Versichert & geprüft' },
           { icon: 'euro-sign', title: 'Festpreis-Garantie' }, { icon: 'star', title: 'Top bewertet' },
-        ]
+        ])
         return `
 <section data-block="kickstart" data-variant="kick-band" style="${bg(c, 'background:var(--p50);')}padding:clamp(24px,3.5vw,40px) 0;">
   <div class="wg-wrap">
@@ -102,12 +142,12 @@ export const STEPBOX = {
     {
       id: 'step-waagerecht', name: 'Waagerecht mit Linie',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'comments', title: 'Beratung', text: LOREM.kurz },
           { icon: 'pen-ruler', title: 'Planung', text: LOREM.kurz },
           { icon: 'screwdriver-wrench', title: 'Umsetzung', text: LOREM.kurz },
           { icon: 'circle-check', title: 'Abnahme', text: LOREM.kurz },
-        ]
+        ])
         return `
 <section data-block="stepbox" data-variant="step-waagerecht" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -118,7 +158,7 @@ export const STEPBOX = {
         <div style="width:64px;height:64px;border-radius:50%;background:var(--p50);border:2px solid var(--p200);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;position:relative;z-index:1;">${icon(`items.${i}.icon`, it.icon)}</div>
         <div style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent);margin-bottom:7px;">SCHRITT ${i + 1}</div>
         <h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed(`items.${i}.title`, it.title)}</h3>
-        <p style="font-size:14px;color:#64748b;line-height:1.65;max-width:250px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</p>
+        <div style="font-size:14px;color:#64748b;line-height:1.65;max-width:250px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -128,10 +168,10 @@ export const STEPBOX = {
     {
       id: 'step-zeitstrahl', name: 'Zeitstrahl senkrecht',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { title: 'Erstkontakt', text: LOREM.satz }, { title: 'Vor-Ort-Termin', text: LOREM.satz },
           { title: 'Angebot', text: LOREM.satz }, { title: 'Ausführung', text: LOREM.satz },
-        ]
+        ])
         return `
 <section data-block="stepbox" data-variant="step-zeitstrahl" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap" style="max-width:820px;">
@@ -141,7 +181,7 @@ export const STEPBOX = {
       ${items.map((it, i) => `<div class="wg-reveal" style="position:relative;padding-bottom:${i === items.length - 1 ? 0 : '32px'};transition-delay:${i * 80}ms;">
         <div style="position:absolute;left:-52px;top:0;width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;">${i + 1}</div>
         <h3 class="wg-t3" style="font-size:20px;margin-bottom:6px;">${ed(`items.${i}.title`, it.title)}</h3>
-        <p class="wg-lead" style="font-size:15px;">${ed(`items.${i}.text`, it.text)}</p>
+        <div class="wg-lead" style="font-size:15px;">${ed(`items.${i}.text`, it.text)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -160,9 +200,9 @@ export const IMAGEBOX = {
     {
       id: 'imgbox-karten', name: 'Bildkarten',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { title: 'Innenreinigung', text: LOREM.kurz }, { title: 'Außenanlagen', text: LOREM.kurz }, { title: 'Sonderreinigung', text: LOREM.kurz },
-        ]
+        ])
         return `
 <section data-block="imagebox" data-variant="imgbox-karten" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -172,7 +212,7 @@ export const IMAGEBOX = {
         <div class="wg-bildbox" style="border-radius:0;height:210px;">${bild(`items.${i}.image`, it.image, '', i + 1)}</div>
         <div style="padding:22px 24px;">
           <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
-          <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</p>
+          <div style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
         </div>
       </div>`).join('')}
     </div>
@@ -183,9 +223,9 @@ export const IMAGEBOX = {
     {
       id: 'imgbox-overlay', name: 'Bild mit Text darüber',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { title: 'Büroreinigung', text: 'Täglich oder wöchentlich' }, { title: 'Treppenhaus', text: 'Zuverlässig nach Plan' }, { title: 'Glasflächen', text: 'Streifenfrei sauber' },
-        ]
+        ])
         return `
 <section data-block="imagebox" data-variant="imgbox-overlay" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -196,7 +236,7 @@ export const IMAGEBOX = {
         <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,32,.05),rgba(10,20,32,.82));"></div>
         <div style="position:absolute;left:0;right:0;bottom:0;padding:24px;">
           <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:5px;">${ed(`items.${i}.title`, it.title)}</h3>
-          <p style="font-size:14px;color:rgba(255,255,255,.78);">${ed(`items.${i}.text`, it.text)}</p>
+          <div style="font-size:14px;color:rgba(255,255,255,.78);">${ed(`items.${i}.text`, it.text)}</div>
         </div>
       </div>`).join('')}
     </div>
@@ -213,11 +253,11 @@ export const ICONBOX = {
     {
       id: 'iconbox-raster', name: 'Icon-Raster',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'bolt', title: 'Schnell', text: LOREM.kurz }, { icon: 'shield-halved', title: 'Sicher', text: LOREM.kurz },
           { icon: 'handshake', title: 'Fair', text: LOREM.kurz }, { icon: 'medal', title: 'Geprüft', text: LOREM.kurz },
           { icon: 'clock', title: 'Pünktlich', text: LOREM.kurz }, { icon: 'heart', title: 'Persönlich', text: LOREM.kurz },
-        ]
+        ])
         return `
 <section data-block="iconbox" data-variant="iconbox-raster" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -226,7 +266,7 @@ export const ICONBOX = {
       ${items.map((it, i) => `<div class="wg-reveal" style="text-align:center;transition-delay:${i * 60}ms;">
         <div style="width:58px;height:58px;border-radius:16px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px;">${icon(`items.${i}.icon`, it.icon)}</div>
         <h3 style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:7px;">${ed(`items.${i}.title`, it.title)}</h3>
-        <p style="font-size:14px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</p>
+        <div style="font-size:14px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -236,10 +276,10 @@ export const ICONBOX = {
     {
       id: 'iconbox-links', name: 'Icon links, Text rechts',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'certificate', title: 'Meisterbetrieb', text: LOREM.satz }, { icon: 'truck-fast', title: 'Schnell vor Ort', text: LOREM.satz },
           { icon: 'euro-sign', title: 'Transparente Preise', text: LOREM.satz }, { icon: 'headset', title: 'Fester Ansprechpartner', text: LOREM.satz },
-        ]
+        ])
         return `
 <section data-block="iconbox" data-variant="iconbox-links" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -248,7 +288,7 @@ export const ICONBOX = {
       ${items.map((it, i) => `<div class="wg-reveal" style="display:flex;gap:17px;align-items:flex-start;transition-delay:${i * 70}ms;">
         <div class="wg-iconchip" style="flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
         <div><h3 style="font-size:17.5px;font-weight:700;color:#0f172a;margin-bottom:6px;">${ed(`items.${i}.title`, it.title)}</h3>
-        <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</p></div>
+        <div style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div></div>
       </div>`).join('')}
     </div>
   </div>
@@ -271,7 +311,7 @@ export const HEADING = {
       <span class="wg-eyebrow">${txt('tag', c.tag, 'Abschnitt')}</span>
       <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Eine klare Überschrift')}</h2>
       <span class="wg-strichlinie mitte"></span>
-      ${c.subtitle ? `<p class="wg-lead">${ed('subtitle', c.subtitle)}</p>` : ''}
+      ${c.subtitle ? `<div class="wg-lead">${ed('subtitle', c.subtitle)}</div>` : ''}
     </div>
   </div>
 </section>` },
@@ -303,10 +343,10 @@ export const COUNTER = {
     {
       id: 'count-hell', name: 'Heller Balken',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { num: '1200', suffix: '+', label: 'Betreute Objekte' }, { num: '18', suffix: '', label: 'Jahre Erfahrung' },
           { num: '45', suffix: '', label: 'Mitarbeiter' }, { num: '99', suffix: '%', label: 'Weiterempfehlung' },
-        ]
+        ])
         return `
 <section data-block="counter" data-variant="count-hell" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -324,10 +364,10 @@ export const COUNTER = {
     {
       id: 'count-dunkel', name: 'Dunkler Balken',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { num: '1200', suffix: '+', label: 'Betreute Objekte' }, { num: '18', suffix: '', label: 'Jahre Erfahrung' },
           { num: '99', suffix: '%', label: 'Weiterempfehlung' },
-        ]
+        ])
         return `
 <section data-block="counter" data-variant="count-dunkel" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a 70%);')}position:relative;overflow:hidden;">
   <div class="wg-mesh"><span class="wg-blob wg-blob-b"></span></div>
@@ -375,10 +415,10 @@ export const LISTE = {
     {
       id: 'list-haken', name: 'Häkchenliste (2 Spalten)',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           'Unterhaltsreinigung', 'Grundreinigung', 'Fensterreinigung', 'Treppenhausreinigung',
           'Bauabschlussreinigung', 'Winterdienst', 'Grünpflege', 'Hausmeisterservice',
-        ]
+        ])
         return `
 <section data-block="liste" data-variant="list-haken" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -396,7 +436,7 @@ export const LISTE = {
     {
       id: 'list-nummern', name: 'Nummerierte Liste',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : ['Erstgespräch und Bestandsaufnahme', 'Angebot mit Festpreis', 'Terminabstimmung', 'Ausführung durch unser Team', 'Gemeinsame Abnahme']
+        const items = misch(c.items, ['Erstgespräch und Bestandsaufnahme', 'Angebot mit Festpreis', 'Terminabstimmung', 'Ausführung durch unser Team', 'Gemeinsame Abnahme'])
         return `
 <section data-block="liste" data-variant="list-nummern" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap" style="max-width:820px;">
@@ -423,7 +463,7 @@ export const PRICELIST = {
     {
       id: 'plist-zeilen', name: 'Zeilen mit Preis',
       render: (c) => {
-        const gruppen = (c.gruppen && c.gruppen.length) ? c.gruppen : [
+        const gruppen = misch(c.gruppen, [
           { name: 'Reinigung', items: [
             { name: 'Unterhaltsreinigung', desc: 'pro Stunde, inkl. Material', preis: 'ab 29,00 €' },
             { name: 'Grundreinigung', desc: 'pro m², nach Aufwand', preis: 'ab 3,50 €' },
@@ -433,7 +473,7 @@ export const PRICELIST = {
             { name: 'Grünpflege', desc: 'pro Stunde', preis: 'ab 35,00 €' },
             { name: 'Winterdienst', desc: 'pro Einsatz', preis: 'auf Anfrage' },
           ] },
-        ]
+        ])
         return `
 <section data-block="pricelist" data-variant="plist-zeilen" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap" style="max-width:880px;">
@@ -449,7 +489,7 @@ export const PRICELIST = {
         <div style="font-size:17px;font-weight:800;color:var(--accent);white-space:nowrap;">${ed(`gruppen.${gi}.items.${i}.preis`, it.preis)}</div>
       </div>`).join('')}
     </div>`).join('')}
-    <p style="font-size:12.5px;color:#94a3b8;text-align:center;">${txt('hinweis', c.hinweis, 'Alle Preise inkl. gesetzlicher MwSt. Endpreis nach Aufmaß vor Ort.', 'span')}</p>
+    <div style="font-size:12.5px;color:#94a3b8;text-align:center;">${txt('hinweis', c.hinweis, 'Alle Preise inkl. gesetzlicher MwSt. Endpreis nach Aufmaß vor Ort.', 'span')}</div>
   </div>
 </section>`
       }
@@ -463,11 +503,11 @@ export const PRICINGTABLE = {
     {
       id: 'ptab-drei', name: 'Drei Pakete',
       render: (c) => {
-        const pakete = (c.pakete && c.pakete.length) ? c.pakete : [
+        const pakete = misch(c.pakete, [
           { name: 'Basis', preis: '149', einheit: '€ / Monat', punkte: ['Wöchentliche Reinigung', 'Material inklusive', 'Fester Ansprechpartner'], cta: 'Anfragen' },
           { name: 'Komfort', preis: '279', einheit: '€ / Monat', beliebt: true, punkte: ['2× wöchentlich', 'Material inklusive', 'Fensterreinigung quartalsweise', 'Vorrangiger Support'], cta: 'Anfragen' },
           { name: 'Rundum', preis: '449', einheit: '€ / Monat', punkte: ['Täglich', 'Material inklusive', 'Fenster & Außenanlagen', 'Winterdienst', '24/7 erreichbar'], cta: 'Anfragen' },
-        ]
+        ])
         return `
 <section data-block="pricingtable" data-variant="ptab-drei" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -506,11 +546,11 @@ export const TEAMGRID = {
     {
       id: 'team-karten', name: 'Karten mit Foto',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { name: 'Sabine Krause', rolle: 'Geschäftsführung', text: 'Seit 2008 im Betrieb.' },
           { name: 'Marek Nowak', rolle: 'Objektleitung', text: 'Ihr Ansprechpartner vor Ort.' },
           { name: 'Lena Fischer', rolle: 'Disposition', text: 'Plant Ihre Termine.' },
-        ]
+        ])
         return `
 <section data-block="teamgrid" data-variant="team-karten" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -521,7 +561,7 @@ export const TEAMGRID = {
         <div style="padding:22px;">
           <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:3px;">${ed(`items.${i}.name`, m.name)}</h3>
           <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:9px;">${ed(`items.${i}.rolle`, m.rolle)}</div>
-          <p style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, m.text)}</p>
+          <div style="font-size:14px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, m.text)}</div>
         </div>
       </div>`).join('')}
     </div>
@@ -532,10 +572,10 @@ export const TEAMGRID = {
     {
       id: 'team-rund', name: 'Runde Portraits',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { name: 'Sabine Krause', rolle: 'Geschäftsführung' }, { name: 'Marek Nowak', rolle: 'Objektleitung' },
           { name: 'Lena Fischer', rolle: 'Disposition' }, { name: 'Tom Weber', rolle: 'Technik' },
-        ]
+        ])
         return `
 <section data-block="teamgrid" data-variant="team-rund" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -618,12 +658,12 @@ export const OEFFNUNG = {
     {
       id: 'oeff-karte', name: 'Zeiten & Kontakt',
       render: (c) => {
-        const tage = (c.tage && c.tage.length) ? c.tage : [
+        const tage = misch(c.tage, [
           { tag: 'Montag – Donnerstag', zeit: '08:00 – 17:00' },
           { tag: 'Freitag', zeit: '08:00 – 15:00' },
           { tag: 'Samstag', zeit: 'nach Vereinbarung' },
           { tag: 'Sonntag', zeit: 'geschlossen', zu: true },
-        ]
+        ])
         return `
 <section data-block="oeffnung" data-variant="oeff-karte" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -632,7 +672,7 @@ export const OEFFNUNG = {
         <span class="wg-eyebrow">${txt('tag', c.tag, 'Öffnungszeiten')}</span>
         <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Wann Sie uns erreichen')}</h2>
         <span class="wg-strichlinie"></span>
-        <p class="wg-lead">${txt('text', c.text, 'Außerhalb der Zeiten erreichen Sie uns per E-Mail – wir melden uns am nächsten Werktag zurück.', 'span')}</p>
+        <div class="wg-lead">${txt('text', c.text, 'Außerhalb der Zeiten erreichen Sie uns per E-Mail – wir melden uns am nächsten Werktag zurück.', 'span')}</div>
       </div>
       <div class="wg-reveal re wg-karte" style="padding:8px 26px;transition-delay:.1s;">
         ${tage.map((t, i) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0;${i < tage.length - 1 ? 'border-bottom:1px solid rgba(15,23,42,.08);' : ''}">
@@ -724,12 +764,12 @@ export const FAQ_PLUS = {
     {
       id: 'faqp-akkordeon', name: 'Akkordeon',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { q: 'Wie schnell bekomme ich einen Termin?', a: 'In der Regel innerhalb von zwei bis drei Werktagen. Bei dringenden Fällen versuchen wir, noch am selben Tag jemanden vorbeizuschicken.' },
           { q: 'Was kostet ein Vor-Ort-Termin?', a: 'Die Besichtigung und das Angebot sind für Sie kostenlos und unverbindlich. Erst wenn Sie zustimmen, entstehen Kosten.' },
           { q: 'Arbeiten Sie auch am Wochenende?', a: 'Nach Absprache ja. Gerade bei Gewerbeobjekten reinigen wir häufig außerhalb der Geschäftszeiten.' },
           { q: 'Ist Material im Preis enthalten?', a: 'Ja, sämtliche Reinigungsmittel und Geräte sind im genannten Preis bereits enthalten.' },
-        ]
+        ])
         return `
 <section data-block="faq-plus" data-variant="faqp-akkordeon" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap" style="max-width:840px;">
@@ -751,12 +791,12 @@ export const FAQ_PLUS = {
     {
       id: 'faqp-zwei', name: 'Zwei Spalten',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { q: 'Wie schnell bekomme ich einen Termin?', a: 'In der Regel innerhalb von zwei bis drei Werktagen.' },
           { q: 'Was kostet ein Vor-Ort-Termin?', a: 'Besichtigung und Angebot sind kostenlos und unverbindlich.' },
           { q: 'Arbeiten Sie auch am Wochenende?', a: 'Nach Absprache gerne, gerade bei Gewerbeobjekten.' },
           { q: 'Ist Material enthalten?', a: 'Ja, Reinigungsmittel und Geräte sind im Preis enthalten.' },
-        ]
+        ])
         return `
 <section data-block="faq-plus" data-variant="faqp-zwei" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -765,7 +805,7 @@ export const FAQ_PLUS = {
       ${items.map((it, i) => `<div class="wg-reveal" style="transition-delay:${i * 60}ms;">
         <h3 style="display:flex;gap:11px;font-size:17px;font-weight:700;color:#0f172a;margin-bottom:9px;">
           <i class="fa-solid fa-circle-question" style="color:var(--accent);font-size:15px;margin-top:3px;"></i>${ed(`items.${i}.q`, it.q)}</h3>
-        <p style="font-size:14.5px;color:#64748b;line-height:1.72;padding-left:26px;">${ed(`items.${i}.a`, it.a)}</p>
+        <div style="font-size:14.5px;color:#64748b;line-height:1.72;padding-left:26px;">${ed(`items.${i}.a`, it.a)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -822,12 +862,12 @@ export const SLIDER = {
     {
       id: 'slider-stimmen', name: 'Kundenstimmen-Karussell',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { text: 'Schnell, sauber und wirklich freundlich. Jederzeit wieder.', name: 'M. Schneider', rolle: 'Privatkundin' },
           { text: 'Termin gehalten, Preis gehalten, Ergebnis top.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
           { text: 'Endlich ein Betrieb, der zurückruft. Sehr angenehm.', name: 'K. Ahmadi', rolle: 'Gewerbekunde' },
           { text: 'Wir sind seit drei Jahren Kunde und rundum zufrieden.', name: 'S. Peters', rolle: 'Büroleitung' },
-        ]
+        ])
         return `
 <section data-block="slider" data-variant="slider-stimmen" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap" data-slider data-auto>
@@ -862,7 +902,7 @@ export const SLIDER = {
     {
       id: 'slider-galerie', name: 'Bilder-Karussell',
       render: (c) => {
-        const imgs = (c.images && c.images.length) ? c.images : ['', '', '', '', '']
+        const imgs = misch(c.images, ['', '', '', '', ''])
         return `
 <section data-block="slider" data-variant="slider-galerie" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap" data-slider data-auto>
@@ -889,11 +929,11 @@ export const SLIDER = {
     {
       id: 'slider-logos', name: 'Logo-Karussell',
       render: (c) => {
-        const logos = (c.logos && c.logos.length) ? c.logos : ['Partner', 'Zertifikat', 'Innung', 'Verband', 'Auszeichnung', 'Mitglied']
+        const logos = misch(c.logos, ['Partner', 'Zertifikat', 'Innung', 'Verband', 'Auszeichnung', 'Mitglied'])
         return `
 <section data-block="slider" data-variant="slider-logos" style="${bg(c, 'background:var(--p50);')}padding:clamp(30px,4vw,52px) 0;">
   <div class="wg-wrap" data-slider data-auto>
-    <p class="wg-reveal" style="text-align:center;font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#94a3b8;margin-bottom:24px;">${txt('tag', c.tag, 'Partner & Mitgliedschaften')}</p>
+    <div class="wg-reveal" style="text-align:center;font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#94a3b8;margin-bottom:24px;">${txt('tag', c.tag, 'Partner & Mitgliedschaften')}</div>
     <div class="wg-spur" data-spur style="align-items:center;">
       ${logos.map((l, i) => `<div style="width:190px;height:82px;background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:14px;display:flex;align-items:center;justify-content:center;">
         ${(typeof l === 'string' && l.startsWith('data:')) || (typeof l === 'string' && l.startsWith('http'))
@@ -909,11 +949,11 @@ export const SLIDER = {
     {
       id: 'slider-hero', name: 'Hero-Slider',
       render: (c) => {
-        const folien = (c.folien && c.folien.length) ? c.folien : [
+        const folien = misch(c.folien, [
           { tag: 'Willkommen', headline: 'Sauber ist erst der Anfang', text: LOREM.satz, cta: 'Jetzt anfragen' },
           { tag: 'Gewerbe', headline: 'Verlässlich für Ihr Objekt', text: LOREM.satz, cta: 'Angebot holen' },
           { tag: 'Privat', headline: 'Mehr Zeit für Sie', text: LOREM.satz, cta: 'Kontakt' },
-        ]
+        ])
         return `
 <section data-block="slider" data-variant="slider-hero" data-slider data-auto style="position:relative;">
   <div class="wg-spur" data-spur style="gap:0;">
@@ -924,7 +964,7 @@ export const SLIDER = {
           <span class="wg-chip glas">${ed(`folien.${i}.tag`, f.tag)}</span>
           <h2 class="wg-t1" style="color:#fff;margin-top:20px;">${ed(`folien.${i}.headline`, f.headline)}</h2>
           <span class="wg-strichlinie"></span>
-          <p class="wg-lead" style="color:rgba(255,255,255,.78);max-width:520px;margin-bottom:30px;">${ed(`folien.${i}.text`, f.text)}</p>
+          <div class="wg-lead" style="color:rgba(255,255,255,.78);max-width:520px;margin-bottom:30px;">${ed(`folien.${i}.text`, f.text)}</div>
           <a href="kontakt.html" class="wg-btn">${ed(`folien.${i}.cta`, f.cta)}</a>
         </div>
       </div>
@@ -951,7 +991,7 @@ export const SITEPARTS = {
     {
       id: 'nav-transparent', name: 'Navigation (transparent)',
       render: (c) => {
-        const links = (c.navLinks && c.navLinks.length) ? c.navLinks : [{ label: 'Startseite', href: 'index.html' }, { label: 'Leistungen', href: 'leistungen.html' }, { label: 'Über uns', href: 'ueber-uns.html' }, { label: 'Kontakt', href: 'kontakt.html' }]
+        const links = misch(c.navLinks, [{ label: 'Startseite', href: 'index.html' }, { label: 'Leistungen', href: 'leistungen.html' }, { label: 'Über uns', href: 'ueber-uns.html' }, { label: 'Kontakt', href: 'kontakt.html' }])
         return `
 <nav data-block="siteparts" data-variant="nav-transparent" style="position:sticky;top:0;z-index:900;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border-bottom:1px solid rgba(15,23,42,.07);">
   <div class="wg-wrap" style="height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
@@ -971,25 +1011,25 @@ export const SITEPARTS = {
     {
       id: 'footer-gross', name: 'Footer (groß)',
       render: (c) => {
-        const spalten = (c.spalten && c.spalten.length) ? c.spalten : [
+        const spalten = misch(c.spalten, [
           { titel: 'Navigation', punkte: ['Startseite', 'Leistungen', 'Über uns', 'Kontakt'] },
           { titel: 'Leistungen', punkte: ['Unterhaltsreinigung', 'Grundreinigung', 'Fensterreinigung', 'Winterdienst'] },
           { titel: 'Rechtliches', punkte: ['Impressum', 'Datenschutz', 'AGB'] },
-        ]
+        ])
         return `
 <footer data-block="siteparts" data-variant="footer-gross" class="wg-dunkelzone" style="background:linear-gradient(160deg,var(--p900),#0d1b2a 70%);padding:clamp(46px,6vw,72px) 0 0;">
   <div class="wg-wrap">
     <div style="display:grid;grid-template-columns:1.4fr repeat(auto-fit,minmax(150px,1fr));gap:36px;padding-bottom:40px;">
       <div>
         <div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:12px;">${txt('firmenname', c.firmenname, 'Ihr Unternehmen')}</div>
-        <p style="font-size:14.5px;color:rgba(255,255,255,.6);line-height:1.7;max-width:320px;margin-bottom:18px;">${txt('text', c.text, 'Ihr verlässlicher Partner in der Region – seit vielen Jahren.', 'span')}</p>
+        <div style="font-size:14.5px;color:rgba(255,255,255,.6);line-height:1.7;max-width:320px;margin-bottom:18px;">${txt('text', c.text, 'Ihr verlässlicher Partner in der Region – seit vielen Jahren.', 'span')}</div>
         <div style="display:flex;gap:10px;">
           ${['facebook-f', 'instagram', 'linkedin-in'].map((s, i) => `<a href="${esc((c.social || [])[i] || '#')}" aria-label="${s}" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.09);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none;"><i class="fa-brands fa-${s}"></i></a>`).join('')}
         </div>
       </div>
       ${spalten.map((sp, si) => `<div>
-        <div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">${ed('fTitel' + si, sp.titel)}</div>
-        ${(sp.punkte || []).map((p, pi) => `<a href="#" style="display:block;font-size:14.5px;color:rgba(255,255,255,.68);text-decoration:none;padding:5px 0;">${ed('fPunkt' + si + '_' + pi, p)}</a>`).join('')}
+        <div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">${ed(`spalten.${si}.titel`, sp.titel)}</div>
+        ${(sp.punkte || []).map((p, pi) => `<a href="#" style="display:block;font-size:14.5px;color:rgba(255,255,255,.68);text-decoration:none;padding:5px 0;">${ed(`spalten.${si}.punkte.${pi}`, p)}</a>`).join('')}
       </div>`).join('')}
     </div>
     <div style="border-top:1px solid rgba(255,255,255,.12);padding:22px 0;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.5);">
@@ -1008,7 +1048,7 @@ export const SITEPARTS = {
   <div class="wg-wrap" style="position:relative;z-index:1;max-width:640px;">
     <div style="font-size:clamp(80px,16vw,180px);font-weight:200;color:#fff;line-height:1;letter-spacing:-.05em;">404</div>
     <h1 class="wg-t3" style="color:#fff;margin:10px 0 12px;">${txt('title', c.title, 'Diese Seite gibt es nicht mehr')}</h1>
-    <p class="wg-lead" style="color:rgba(255,255,255,.7);margin-bottom:30px;">${txt('text', c.text, 'Vielleicht wurde sie verschoben. Zurück zur Startseite geht es hier.', 'span')}</p>
+    <div class="wg-lead" style="color:rgba(255,255,255,.7);margin-bottom:30px;">${txt('text', c.text, 'Vielleicht wurde sie verschoben. Zurück zur Startseite geht es hier.', 'span')}</div>
     <a href="index.html" class="wg-btn"><i class="fa-solid fa-arrow-left"></i>Zur Startseite</a>
   </div>
 </section>`

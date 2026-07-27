@@ -13,7 +13,10 @@ import { useWarenkorb } from '@/lib/warenkorb'
 import { KAUF, MIETE } from '@/lib/preise'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Brotkrumen } from '@/components/Brotkrumen'
-import { istPfad, pfadSetzen } from '@/lib/blockSchema'
+import { istPfad, pfadSetzen, listeAendern, layoutNachStruktur } from '@/lib/blockSchema'
+
+// Auswahlfarbe für Sektionen/Container (Elementor-artig: pink)
+const PINK = '#e6007e'
 
 const COLORS = ['#111827','#1e3a5f','#1d4ed8','#0891b2','#0f766e','#16a34a','#ca8a04','#c2410c','#dc2626','#e11d48','#9333ea','#7c3aed']
 
@@ -65,6 +68,9 @@ export default function EditorPage() {
   const [lastImgClick, setLastImgClick] = useState(null)
   const [renderKey, setRenderKey] = useState(0)
   const [selected, setSelected] = useState(null)
+  const [contSel, setContSel] = useState(null)   // gewählte Sektion / Container (pinke Elementor-Auswahl)
+  const [baum, setBaum] = useState([])           // Struktur der Seite für den Navigator
+  const [navOffen, setNavOffen] = useState(false)
   const [blockPicker, setBlockPicker] = useState(null)
   const formDataRef = useRef({})
   const [expandedBlock, setExpandedBlock] = useState(null) // welcher Block in der Liste aufgeklappt ist
@@ -359,11 +365,29 @@ export default function EditorPage() {
       .wg-on::after{ content:attr(data-label); position:absolute; top:-19px; left:-2px; background:${primary}; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px 4px 0 0; white-space:nowrap; z-index:99999; pointer-events:none; font-family:sans-serif; }
       [data-block]{ position:relative; }
       [data-block]:hover{ outline:1px solid ${primary}33; outline-offset:-1px; }
-      .wg-bc{ position:absolute; top:8px; right:8px; z-index:99998; display:none; gap:4px; }
+      /* Sektions-Werkzeugleiste: mittig oben angedockt, wie bei Elementor */
+      .wg-bc{ position:absolute; top:-1px; left:50%; transform:translateX(-50%); z-index:99998; display:none; gap:0; background:${PINK}; border-radius:0 0 8px 8px; padding:2px 4px; box-shadow:0 3px 10px rgba(0,0,0,.22); }
       [data-block]:hover .wg-bc{ display:flex; }
-      .wg-b{ width:28px; height:28px; border:none; border-radius:6px; background:rgba(15,23,42,0.85); color:#fff; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-      .wg-b:hover{ background:${primary}; }
-      .wg-b.del:hover{ background:#dc2626; }
+      .wg-b{ width:26px; height:24px; border:none; border-radius:5px; background:transparent; color:#fff; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; }
+      .wg-b:hover{ background:rgba(255,255,255,.22); }
+      .wg-b.del:hover{ background:#7f1d1d; }
+      /* Hover auf Sektionen/Containern */
+      [data-block]:hover{ outline:1px solid ${PINK}55 !important; outline-offset:-1px; }
+      .wg-c-hov{ outline:1px dashed ${PINK}aa !important; outline-offset:-1px; }
+      /* Pinke Auswahl-Overlays (fixe Ebene über allem, blockiert nichts) */
+      #wg-ov{ position:fixed; z-index:2147480000; pointer-events:none; display:none; }
+      #wg-ov .wg-rahmen{ position:absolute; inset:0; outline:2px solid ${PINK}; outline-offset:-1px; box-shadow:0 0 0 1px #ffffff66 inset; }
+      #wg-ov .wg-tabb{ position:absolute; top:-22px; left:0; background:${PINK}; color:#fff; font:700 11px/1 sans-serif; padding:5px 10px; border-radius:6px 6px 0 0; white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+      #wg-ov .wg-mass{ position:absolute; bottom:-20px; right:0; background:#0f172a; color:#fff; font:600 10px/1 sans-serif; padding:4px 8px; border-radius:0 0 6px 6px; white-space:nowrap; }
+      #wg-ov .wg-tools{ position:absolute; top:-24px; right:0; display:flex; gap:2px; pointer-events:auto; }
+      #wg-ov .wg-tools button{ height:22px; min-width:24px; border:none; border-radius:5px; background:${PINK}; color:#fff; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; padding:0 5px; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+      #wg-ov .wg-tools button:hover{ filter:brightness(1.15); }
+      #wg-ov .wg-griff{ position:absolute; left:50%; transform:translateX(-50%); width:44px; height:9px; border-radius:6px; background:#fff; border:2px solid ${PINK}; cursor:ns-resize; pointer-events:auto; box-shadow:0 1px 5px rgba(0,0,0,.3); }
+      #wg-ov .g-oben{ top:-5px; }
+      #wg-ov .g-unten{ bottom:-5px; }
+      .wg-teiler{ position:fixed; z-index:2147480001; width:12px; margin-left:-6px; cursor:col-resize; pointer-events:auto; display:flex; align-items:center; justify-content:center; }
+      .wg-teiler::before{ content:''; width:4px; height:44px; border-radius:4px; background:${PINK}; border:1px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.3); }
+      #wg-tip{ position:fixed; z-index:2147480002; background:#0f172a; color:#fff; font:700 11px/1 sans-serif; padding:5px 8px; border-radius:6px; pointer-events:none; display:none; }
     </style>`
 
     const js = `<script>(function(){
@@ -417,6 +441,10 @@ export default function EditorPage() {
           fontSize:parseInt(cs.fontSize)||16,
           fontWeight:cs.fontWeight,
           block:bIdx(el),
+          pfad:kindPfad(el),
+          stil:{marginTop:cs.marginTop,marginRight:cs.marginRight,marginBottom:cs.marginBottom,marginLeft:cs.marginLeft,
+                paddingTop:cs.paddingTop,paddingRight:cs.paddingRight,paddingBottom:cs.paddingBottom,paddingLeft:cs.paddingLeft,
+                zIndex:cs.zIndex},
           rect:{top:r.top,left:r.left,width:r.width,height:r.height}
         },'*');
       }
@@ -467,12 +495,9 @@ export default function EditorPage() {
         return start.closest(GESTALTBAR)||start;
       }
 
-      document.addEventListener('click',function(e){
-        if(e.target.closest('.wg-bc'))return;      // eigene Werkzeugleiste
-        if(e.target.isContentEditable)return;      // schon im Schreibmodus
-        var ziel=zielFinden(e.target,e.clientX,e.clientY);
-        if(!ziel)return;
-        e.stopPropagation();e.preventDefault();
+      // Text/Bild/Icon anklicken → wie gehabt bearbeiten.
+      function textAuswahl(ziel){
+        contAbwaehlen(false);
         selectEl(ziel);
         if(ziel.hasAttribute('data-edit')){
           ziel.contentEditable=true;
@@ -489,14 +514,57 @@ export default function EditorPage() {
         } else if(ziel.hasAttribute('data-img')){
           parent.postMessage({t:'imgClick',key:ziel.getAttribute('data-img'),block:bIdx(ziel)},'*');
         }
+      }
+
+      document.addEventListener('click',function(e){
+        if(istChrome(e.target))return;             // eigene Werkzeugleisten
+        if(e.target.isContentEditable)return;      // schon im Schreibmodus
+        // 1) Direkt ein bearbeitbares Element getroffen? → Text-Bearbeitung
+        var direkt=e.target.closest(BEARBEITBAR);
+        if(direkt){ e.stopPropagation();e.preventDefault(); textAuswahl(direkt); return; }
+        // 2) Nach oben laufen. Kleine Rahmen mit genau EINEM Text (z. B. ein
+        //    Button) zählen weiter als Text-Klick; erst der erste echte
+        //    Container/die Sektion wird pink gewählt (Elementor-Auswahl).
+        var c=e.target,einzel=null;
+        while(c&&c!==document.body&&c!==document.documentElement){
+          if(c.hasAttribute&&c.hasAttribute('data-block'))break;
+          if(istContainer(c))break;
+          var inn=c.querySelectorAll(BEARBEITBAR);
+          if(inn.length===1&&!einzel)einzel=inn[0];
+          c=c.parentElement;
+        }
+        if(einzel){ e.stopPropagation();e.preventDefault(); textAuswahl(einzel); return; }
+        if(c&&c!==document.body&&c!==document.documentElement){
+          var innen=c.querySelectorAll(BEARBEITBAR);
+          if(innen.length===1&&!c.hasAttribute('data-block')){
+            e.stopPropagation();e.preventDefault(); textAuswahl(innen[0]); return;
+          }
+          e.stopPropagation();e.preventDefault(); contWaehlen(c); return;
+        }
+        // 3) Sonst wie bisher das nächste sinnvolle Element
+        var ziel=zielFinden(e.target,e.clientX,e.clientY);
+        if(!ziel)return;
+        e.stopPropagation();e.preventDefault();
+        textAuswahl(ziel);
       },false);
 
-      // Umrandung beim Überfahren, damit man sieht was man trifft
+      // Umrandung beim Überfahren, damit man sieht was man trifft:
+      // Texte gestrichelt, Container/Sektionen pink gestrichelt.
       document.addEventListener('mouseover',function(e){
-        if(e.target.closest('.wg-bc'))return;
-        var z=zielFinden(e.target,e.clientX,e.clientY);
+        if(istChrome(e.target))return;
         document.querySelectorAll('.wg-hover').forEach(function(x){x.classList.remove('wg-hover')});
-        if(z&&z!==sel)z.classList.add('wg-hover');
+        document.querySelectorAll('.wg-c-hov').forEach(function(x){x.classList.remove('wg-c-hov')});
+        var direkt=e.target.closest(BEARBEITBAR);
+        if(direkt){ if(direkt!==sel)direkt.classList.add('wg-hover'); return; }
+        var c=e.target,einzel=null;
+        while(c&&c!==document.body&&c!==document.documentElement){
+          if((c.hasAttribute&&c.hasAttribute('data-block'))||istContainer(c))break;
+          var inn=c.querySelectorAll(BEARBEITBAR);
+          if(inn.length===1&&!einzel)einzel=inn[0];
+          c=c.parentElement;
+        }
+        if(einzel){ if(einzel!==sel)einzel.classList.add('wg-hover'); return; }
+        if(c&&c!==document.body&&c!==document.documentElement&&!c.hasAttribute('data-block')&&c!==selC)c.classList.add('wg-c-hov');
       },false);
 
       // Speichern beim Verlassen
@@ -525,6 +593,13 @@ export default function EditorPage() {
           for(var i=0;i<els.length;i++){
             var k=els[i].getAttribute('data-edit');
             if(k)felder[k]=els[i].innerHTML;
+          }
+          // Icons mitschreiben, damit geklonte Karten ihr Icon behalten
+          var ics=bloecke[b].querySelectorAll('[data-icon]');
+          for(var j=0;j<ics.length;j++){
+            var ik=ics[j].getAttribute('data-icon');
+            var im=((ics[j].getAttribute('class')||'').match(/fa-(?!solid|regular|brands)[a-z0-9-]+/)||[null])[0];
+            if(ik&&im)felder[ik]=im.slice(3);
           }
           inventar.push({block:b,felder:felder});
         }
@@ -569,9 +644,10 @@ export default function EditorPage() {
         var type=el.dataset.block;
         if(type==='nav'||type==='footer')return;
         var bc=document.createElement('div');bc.className='wg-bc';
-        bc.innerHTML='<button class="wg-b" data-x="var" title="Layout">⟳</button><button class="wg-b" data-x="up" title="Hoch">↑</button><button class="wg-b" data-x="down" title="Runter">↓</button><button class="wg-b" data-x="dup" title="Duplizieren">⧉</button><button class="wg-b del" data-x="del" title="Löschen">✕</button>';
+        bc.innerHTML='<button class="wg-b" data-x="set" title="Sektion wählen (Abstände & Breite)"><i class="fa-solid fa-up-down-left-right"></i></button><button class="wg-b" data-x="var" title="Layout-Variante"><i class="fa-solid fa-rotate"></i></button><button class="wg-b" data-x="up" title="Hoch"><i class="fa-solid fa-arrow-up"></i></button><button class="wg-b" data-x="down" title="Runter"><i class="fa-solid fa-arrow-down"></i></button><button class="wg-b" data-x="dup" title="Duplizieren"><i class="fa-solid fa-clone"></i></button><button class="wg-b del" data-x="del" title="Löschen"><i class="fa-solid fa-xmark"></i></button>';
         bc.querySelectorAll('button').forEach(function(btn){
           btn.onclick=function(e){e.stopPropagation();var x=btn.dataset.x;
+            if(x==='set')contWaehlen(el);
             if(x==='var')parent.postMessage({t:'variant',block:i,type:type},'*');
             if(x==='up')parent.postMessage({t:'move',block:i,dir:-1},'*');
             if(x==='down')parent.postMessage({t:'move',block:i,dir:1},'*');
@@ -601,7 +677,7 @@ export default function EditorPage() {
       // ── Drag & Drop: Block aus der Bibliothek einfuegen (mit Platzhalter-Rahmen) ──
       var wgPlace=null;
       function wgRemovePlace(){ if(wgPlace&&wgPlace.parentNode)wgPlace.parentNode.removeChild(wgPlace); wgPlace=null; }
-      function wgMakePlace(){ var d=document.createElement('div'); d.className='wg-place'; d.style.cssText='height:84px;margin:10px 14px;border:3px dashed ${primary};border-radius:16px;background:${primary}14;display:flex;align-items:center;justify-content:center;color:${primary};font:700 14px sans-serif;box-shadow:0 0 0 4px ${primary}22;'; d.textContent='⬇ Hier einfügen'; return d; }
+      function wgMakePlace(){ var d=document.createElement('div'); d.className='wg-place'; d.style.cssText='height:84px;margin:10px 14px;border:3px dashed ${primary};border-radius:16px;background:${primary}14;display:flex;align-items:center;justify-content:center;color:${primary};font:700 14px sans-serif;box-shadow:0 0 0 4px ${primary}22;'; d.innerHTML='<i class="fa-solid fa-arrow-down" style="margin-right:8px"></i>Hier einfügen'; return d; }
       function wgPlaceAt(y){
         var bs=Array.prototype.slice.call(document.querySelectorAll('[data-block]')).filter(function(b){return !b.classList.contains('wg-place');});
         if(!wgPlace) wgPlace=wgMakePlace();
@@ -613,6 +689,385 @@ export default function EditorPage() {
       document.addEventListener('dragover',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); try{e.dataTransfer.dropEffect='copy';}catch(x){} wgPlaceAt(e.clientY); });
       document.addEventListener('drop',function(e){ if(!parent.__wgDrag)return; e.preventDefault(); var idx=window.__wgDropIndex||0; wgRemovePlace(); parent.postMessage({t:'dropBlock', blockType:parent.__wgDrag, index:idx},'*'); });
       window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd')wgRemovePlace(); if(dd.cmd==='setParallax'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.block]; if(el){ if(dd.on){el.setAttribute('data-parallax',dd.speed);}else{el.removeAttribute('data-parallax');el.style.backgroundPositionY='';} if(typeof window.wgRunParallax==='function')window.wgRunParallax(); } } if(dd.cmd==='gotoBlock'){ var bs2=document.querySelectorAll('[data-block]'); var el2=bs2[dd.index]; if(el2){ el2.scrollIntoView({behavior:'smooth',block:'start'}); el2.style.transition='outline 0.2s'; el2.style.outline='3px solid ${primary}'; setTimeout(function(){el2.style.outline='';},900); } } });
+
+      // ═══════════════════════════════════════════════════════════════
+      // SEKTIONEN & CONTAINER – Elementor-artige Auswahl
+      //   • pinke Umrandung mit Namens-Tab + Breite×Höhe
+      //   • Griffe: Kanten ziehen = Innenabstand; Trennlinien = Spalten
+      //   • Karten, die zu einer Liste gehören, können geklont/gelöscht
+      //     und verschoben werden – über den INHALT, nie übers HTML
+      //   • Abstände/Breite kommen aus content._layout und werden hier
+      //     direkt am Element gesetzt (fertige Seite: gebackenes CSS)
+      // ═══════════════════════════════════════════════════════════════
+      var selC=null;
+
+      function istChrome(el){
+        return !!(el&&el.closest&&el.closest('#wg-ov,.wg-bc,.wg-teiler,#wg-tip,.wg-place,[data-wg-chrome]'));
+      }
+      function istChromeEl(c){
+        if(!c||c.nodeType!==1)return true;
+        if(c.hasAttribute('data-wg-chrome'))return true;
+        var kl=(typeof c.className==='string')?c.className:'';
+        return /(^|\\s)(wg-bc|wg-teiler|wg-place)(\\s|$)/.test(kl)||c.id==='wg-ov'||c.id==='wg-tip';
+      }
+      function echteKinder(el){
+        return [].filter.call(el.children,function(c){return !istChromeEl(c);});
+      }
+      function istContainer(el){
+        if(!el||el.nodeType!==1)return false;
+        if(istChromeEl(el))return false;
+        var tag=el.tagName.toLowerCase();
+        if(tag==='style'||tag==='script'||tag==='i'||tag==='br'||tag==='img'||tag==='iframe')return false;
+        if(el.hasAttribute('data-edit')||el.hasAttribute('data-img')||el.hasAttribute('data-icon')||el.hasAttribute('data-stars'))return false;
+        if(el.closest('[data-edit]'))return false;
+        var kl=(typeof el.className==='string')?el.className:'';
+        if(/(^|\\s)wg-(wrap|karte|split|bildbox)(\\s|$)/.test(kl))return true;
+        var cs=getComputedStyle(el);
+        return cs.display==='grid'||cs.display==='flex'||cs.display==='inline-grid';
+      }
+      // Kindpfad: Position des Elements innerhalb der Sektion, z. B. "0.2"
+      function kindPfad(el){
+        var sec=el.closest('[data-block]'); if(!sec)return null;
+        if(el===sec)return '';
+        var teile=[],n=el;
+        while(n&&n!==sec){
+          var p=n.parentElement; if(!p)return null;
+          var ix=echteKinder(p).indexOf(n); if(ix<0)return null;
+          teile.unshift(ix); n=p;
+        }
+        return teile.join('.');
+      }
+      function vonPfad(sec,pfad){
+        if(pfad===''||pfad==null)return sec;
+        var n=sec,teile=String(pfad).split('.');
+        for(var i=0;i<teile.length;i++){
+          n=echteKinder(n)[parseInt(teile[i],10)];
+          if(!n)return null;
+        }
+        return n;
+      }
+      // Gehört diese Karte zu content[feld][index]? (alle Pfade gleicher Anfang)
+      function bindung(el){
+        var els=el.querySelectorAll('[data-edit],[data-img],[data-icon],[data-stars]');
+        if(!els.length)return null;
+        var feld=null,ix=null;
+        for(var i=0;i<els.length;i++){
+          var k=els[i].getAttribute('data-edit')||els[i].getAttribute('data-img')||els[i].getAttribute('data-icon')||els[i].getAttribute('data-stars')||'';
+          var m=k.match(/^([a-zA-Z0-9_]+)\\.(\\d+)(?:\\.|$)/);
+          if(!m)return null;
+          if(feld===null){feld=m[1];ix=m[2];}
+          else if(feld!==m[1]||ix!==m[2])return null;
+        }
+        return {feld:feld,index:parseInt(ix,10)};
+      }
+      function contLabel(el){
+        var kl=(typeof el.className==='string')?el.className:'';
+        var b=bindung(el); if(b)return 'Karte '+(b.index+1);
+        if(/wg-wrap/.test(kl))return 'Innen-Bereich';
+        if(/wg-karte/.test(kl))return 'Karte';
+        var cs=getComputedStyle(el);
+        if(cs.display==='grid'||cs.display==='inline-grid')return 'Raster';
+        if(cs.display==='flex')return 'Zeile';
+        return 'Container';
+      }
+      function cssProp(p){return p.replace(/[A-Z]/g,function(m){return '-'+m.toLowerCase()});}
+
+      // ── Overlay (fixe Ebene, blockiert nichts) ──
+      var ov=document.createElement('div');ov.id='wg-ov';ov.setAttribute('data-wg-chrome','1');
+      ov.innerHTML='<div class="wg-rahmen"></div><div class="wg-tabb"></div><div class="wg-mass"></div><div class="wg-tools"></div><div class="wg-griff g-oben" title="Innenabstand oben ziehen"></div><div class="wg-griff g-unten" title="Innenabstand unten ziehen"></div>';
+      document.body.appendChild(ov);
+      var tip=document.createElement('div');tip.id='wg-tip';tip.setAttribute('data-wg-chrome','1');document.body.appendChild(tip);
+      var teilerBox=[];
+
+      function ovTab(){return ov.querySelector('.wg-tabb');}
+      function ovUpdate(){
+        if(!selC||!document.contains(selC)){ov.style.display='none';teilerWeg();requestAnimationFrame(ovUpdate);return;}
+        var r=selC.getBoundingClientRect();
+        ov.style.display='block';
+        ov.style.left=r.left+'px';ov.style.top=r.top+'px';
+        ov.style.width=r.width+'px';ov.style.height=r.height+'px';
+        ov.querySelector('.wg-mass').textContent=Math.round(r.width)+' × '+Math.round(r.height)+' px';
+        teilerUpdate();
+        requestAnimationFrame(ovUpdate);
+      }
+      requestAnimationFrame(ovUpdate);
+
+      function contAbwaehlen(melden){
+        selC=null;
+        ov.style.display='none';teilerWeg();
+        if(melden)parent.postMessage({t:'contWeg'},'*');
+      }
+      function contWaehlen(el){
+        if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}
+        document.querySelectorAll('.wg-c-hov').forEach(function(x){x.classList.remove('wg-c-hov')});
+        selC=el;
+        var istSek=el.hasAttribute('data-block');
+        var bi=bIdx(el);
+        var name;
+        if(istSek){
+          var lj=(window.__wgLayout||{})[bi];
+          name=(lj&&lj.name)||WG_NAMES[el.getAttribute('data-block')]||'Sektion';
+        } else name=contLabel(el);
+        ovTab().textContent=name;
+        // Bewegung im Bereich anhalten, damit man in Ruhe arbeiten kann
+        document.querySelectorAll('[data-block].wg-aktiv').forEach(function(b){b.classList.remove('wg-aktiv')});
+        var seine=el.closest('[data-block]');if(seine)seine.classList.add('wg-aktiv');
+        // Werkzeuge
+        var tools=ov.querySelector('.wg-tools');var h='';
+        if(!istSek){
+          h+='<button data-w="eltern" title="Übergeordnetes Element wählen"><i class="fa-solid fa-turn-up"></i></button>';
+          var b=bindung(el);
+          if(b){
+            h+='<button data-w="hoch" title="Nach vorn"><i class="fa-solid fa-arrow-left"></i></button>';
+            h+='<button data-w="runter" title="Nach hinten"><i class="fa-solid fa-arrow-right"></i></button>';
+            h+='<button data-w="dup" title="Karte klonen"><i class="fa-solid fa-clone"></i></button>';
+            h+='<button data-w="del" title="Karte löschen"><i class="fa-solid fa-xmark"></i></button>';
+          }
+        }
+        tools.innerHTML=h;
+        tools.querySelectorAll('button').forEach(function(btn){
+          btn.onclick=function(ev){ev.stopPropagation();
+            var w=btn.getAttribute('data-w');
+            if(w==='eltern'){
+              var p=selC.parentElement;
+              while(p&&!istContainer(p)&&!p.hasAttribute('data-block'))p=p.parentElement;
+              if(p)contWaehlen(p);
+              return;
+            }
+            var bb=bindung(selC);if(!bb)return;
+            parent.postMessage({t:'arrayOp',block:bIdx(selC),feld:bb.feld,index:bb.index,op:w},'*');
+          };
+        });
+        // Meldung ans Panel
+        var cs=getComputedStyle(el);var r=el.getBoundingClientRect();
+        parent.postMessage({t:'contSel',block:bi,pfad:istSek?'':kindPfad(el),kind:istSek?'sektion':'container',name:name,
+          bind:istSek?null:bindung(el),
+          stil:{marginTop:cs.marginTop,marginRight:cs.marginRight,marginBottom:cs.marginBottom,marginLeft:cs.marginLeft,
+                paddingTop:cs.paddingTop,paddingRight:cs.paddingRight,paddingBottom:cs.paddingBottom,paddingLeft:cs.paddingLeft,
+                zIndex:cs.zIndex,breite:Math.round(r.width),hoehe:Math.round(r.height),display:cs.display}
+        },'*');
+        teilerBauen();
+      }
+
+      // ── Kanten ziehen = Innenabstand oben/unten ──
+      function griffDrag(griff,eigenschaft){
+        griff.addEventListener('mousedown',function(e){
+          if(!selC)return;
+          e.preventDefault();e.stopPropagation();
+          var startY=e.clientY;
+          var start=parseFloat(getComputedStyle(selC)[eigenschaft])||0;
+          var richtung=(eigenschaft==='paddingTop')?-1:1; // unten: nach unten ziehen = mehr Innenabstand
+          function move(ev){
+            var d=(ev.clientY-startY)*richtung;
+            var wert=Math.max(0,Math.round(start+d));
+            selC.style.setProperty(cssProp(eigenschaft),wert+'px','important');
+            tip.style.display='block';
+            tip.style.left=(ev.clientX+14)+'px';tip.style.top=(ev.clientY+14)+'px';
+            tip.textContent=(eigenschaft==='paddingTop'?'Innenabstand oben: ':'Innenabstand unten: ')+wert+'px';
+          }
+          function up(ev){
+            document.removeEventListener('mousemove',move);
+            document.removeEventListener('mouseup',up);
+            tip.style.display='none';
+            if(!selC)return;
+            var fertig=parseFloat(getComputedStyle(selC)[eigenschaft])||0;
+            var stil={};stil[eigenschaft]=Math.round(fertig)+'px';
+            parent.postMessage({t:'layout',block:bIdx(selC),pfad:kindPfad(selC),stil:stil},'*');
+          }
+          document.addEventListener('mousemove',move);
+          document.addEventListener('mouseup',up);
+        });
+      }
+      griffDrag(ov.querySelector('.g-oben'),'paddingTop');
+      griffDrag(ov.querySelector('.g-unten'),'paddingBottom');
+
+      // ── Spalten-Trennlinien (Raster/Zeilen) ──
+      function spaltenInfo(el){
+        if(!el)return null;
+        var cs=getComputedStyle(el);
+        var kids=echteKinder(el).filter(function(c){return getComputedStyle(c).position!=='absolute';});
+        if(kids.length<2)return null;
+        if(cs.display==='grid'||cs.display==='inline-grid'){
+          var cols=cs.gridTemplateColumns.split(' ').filter(Boolean);
+          if(cols.length<2)return null;
+          return {typ:'grid',kids:kids.slice(0,cols.length),anzahl:cols.length};
+        }
+        if(cs.display==='flex'&&(cs.flexDirection==='row'||cs.flexDirection==='row-reverse'))return {typ:'flex',kids:kids,anzahl:kids.length};
+        return null;
+      }
+      function teilerWeg(){teilerBox.forEach(function(t){t.remove()});teilerBox=[];}
+      function teilerBauen(){
+        teilerWeg();
+        var info=spaltenInfo(selC);if(!info)return;
+        for(var i=0;i<info.anzahl-1;i++){
+          (function(i){
+            var t=document.createElement('div');t.className='wg-teiler';t.setAttribute('data-wg-chrome','1');
+            t.title='Spaltenbreite ziehen';
+            document.body.appendChild(t);teilerBox.push(t);
+            t.addEventListener('mousedown',function(e){
+              e.preventDefault();e.stopPropagation();
+              var info2=spaltenInfo(selC);if(!info2)return;
+              var breiten=info2.kids.map(function(k){return k.getBoundingClientRect().width;});
+              var startX=e.clientX;
+              function move(ev){
+                var d=ev.clientX-startX;
+                var w=breiten.slice();
+                var min=40;
+                d=Math.max(-(w[i]-min),Math.min(w[i+1]-min,d));
+                w[i]+=d;w[i+1]-=d;
+                if(info2.typ==='grid'){
+                  selC.style.setProperty('grid-template-columns',w.map(function(x){return x.toFixed(1)+'fr';}).join(' '),'important');
+                } else {
+                  var summe=w.reduce(function(a,b){return a+b},0);
+                  info2.kids[i].style.setProperty('flex','0 0 '+(w[i]/summe*100).toFixed(1)+'%','important');
+                  info2.kids[i+1].style.setProperty('flex','0 0 '+(w[i+1]/summe*100).toFixed(1)+'%','important');
+                }
+                tip.style.display='block';
+                tip.style.left=(ev.clientX+14)+'px';tip.style.top=(ev.clientY-28)+'px';
+                tip.textContent=Math.round(w[i])+'px | '+Math.round(w[i+1])+'px';
+              }
+              function up(){
+                document.removeEventListener('mousemove',move);
+                document.removeEventListener('mouseup',up);
+                tip.style.display='none';
+                if(!selC)return;
+                if(info2.typ==='grid'){
+                  parent.postMessage({t:'layout',block:bIdx(selC),pfad:kindPfad(selC),stil:{gridTemplateColumns:selC.style.gridTemplateColumns}},'*');
+                } else {
+                  var basisPfad=kindPfad(selC);
+                  [i,i+1].forEach(function(j){
+                    var kp=kindPfad(info2.kids[j]);
+                    if(kp!=null)parent.postMessage({t:'layout',block:bIdx(selC),pfad:kp,stil:{flexBasis:info2.kids[j].style.flexBasis||((100/info2.anzahl).toFixed(1)+'%')}},'*');
+                  });
+                }
+              }
+              document.addEventListener('mousemove',move);
+              document.addEventListener('mouseup',up);
+            });
+          })(i);
+        }
+        teilerUpdate();
+      }
+      function teilerUpdate(){
+        if(!teilerBox.length)return;
+        var info=spaltenInfo(selC);
+        if(!info){teilerWeg();return;}
+        for(var i=0;i<teilerBox.length&&i<info.anzahl-1;i++){
+          var a=info.kids[i].getBoundingClientRect();
+          var b=info.kids[i+1].getBoundingClientRect();
+          var x=(a.right+b.left)/2;
+          teilerBox[i].style.left=x+'px';
+          teilerBox[i].style.top=Math.min(a.top,b.top)+'px';
+          teilerBox[i].style.height=Math.max(a.height,b.height)+'px';
+        }
+      }
+
+      // ── Gespeicherte Layout-Overrides direkt am Element anwenden ──
+      (function(){
+        var L=window.__wgLayout||{};
+        var secs=document.querySelectorAll('[data-block]');
+        Object.keys(L).forEach(function(bi){
+          var sec=secs[parseInt(bi,10)];if(!sec)return;
+          var lay=L[bi].layout||{};
+          Object.keys(lay).forEach(function(pfad){
+            var el=vonPfad(sec,pfad);if(!el)return;
+            var st=lay[pfad]||{};
+            Object.keys(st).forEach(function(p){
+              if(st[p]!==''&&st[p]!=null)el.style.setProperty(cssProp(p),String(st[p]),'important');
+            });
+          });
+          var br=L[bi].breite;
+          if(br){var w=sec.querySelector('.wg-wrap');if(w){
+            if(br.modus==='voll')w.style.setProperty('max-width','100%','important');
+            else if(br.modus==='boxed'&&parseInt(br.wert,10))w.style.setProperty('max-width',parseInt(br.wert,10)+'px','important');
+          }}
+        });
+      })();
+
+      // ── Strukturbaum für den Navigator ──
+      function leafLabel(el){
+        if(el.hasAttribute('data-img'))return 'Bild';
+        if(el.hasAttribute('data-icon'))return 'Icon';
+        if(el.hasAttribute('data-stars'))return 'Sterne';
+        var t=(el.textContent||'').trim().replace(/\\s+/g,' ');
+        return t?t.slice(0,26):'Text';
+      }
+      function kinderVon(el,tiefe){
+        if(tiefe>4)return [];
+        var res=[];
+        var kids=echteKinder(el);
+        for(var i=0;i<kids.length;i++){
+          var k=kids[i],tag=k.tagName.toLowerCase();
+          if(tag==='style'||tag==='script')continue;
+          if(k.hasAttribute('data-edit')||k.hasAttribute('data-img')||k.hasAttribute('data-icon')||k.hasAttribute('data-stars')){
+            res.push({art:k.hasAttribute('data-img')?'bild':(k.hasAttribute('data-icon')?'icon':'text'),pfad:kindPfad(k),label:leafLabel(k)});
+          } else if(istContainer(k)){
+            res.push({art:'container',pfad:kindPfad(k),label:contLabel(k),kinder:kinderVon(k,tiefe+1)});
+          } else {
+            var unter=kinderVon(k,tiefe);
+            for(var j=0;j<unter.length;j++)res.push(unter[j]);
+          }
+        }
+        return res;
+      }
+      function baumBauen(){
+        var secs=document.querySelectorAll('[data-block]');var out=[];
+        for(var i=0;i<secs.length;i++){
+          var lj=(window.__wgLayout||{})[i];
+          out.push({bi:i,typ:secs[i].getAttribute('data-block'),
+            label:(lj&&lj.name)||WG_NAMES[secs[i].getAttribute('data-block')]||'Sektion',
+            kinder:kinderVon(secs[i],0)});
+        }
+        parent.postMessage({t:'baum',baum:out},'*');
+      }
+      baumBauen();
+      // kleine Prüf-Schnittstelle (auch für automatische Tests)
+      window.__wgApi={kindPfad:kindPfad,vonPfad:vonPfad,istContainer:istContainer,bindung:bindung,contWaehlen:contWaehlen,spaltenInfo:spaltenInfo,baumBauen:baumBauen};
+      parent.postMessage({t:'bereit'},'*');
+
+      // ── Befehle vom Panel / Navigator ──
+      window.addEventListener('message',function(e){
+        var d=e.data;if(!d||!d.cmd)return;
+        var secs=document.querySelectorAll('[data-block]');
+        if(d.cmd==='layout'){
+          var sec=secs[d.block];if(!sec)return;
+          var el=vonPfad(sec,d.pfad);if(!el)return;
+          Object.keys(d.stil||{}).forEach(function(p){
+            if(d.stil[p]===''||d.stil[p]==null)el.style.removeProperty(cssProp(p));
+            else el.style.setProperty(cssProp(p),String(d.stil[p]),'important');
+          });
+        }
+        if(d.cmd==='breite'){
+          var sec2=secs[d.block];if(!sec2)return;
+          var w=sec2.querySelector('.wg-wrap');if(!w)return;
+          if(d.modus==='voll')w.style.setProperty('max-width','100%','important');
+          else if(d.modus==='boxed'&&parseInt(d.wert,10))w.style.setProperty('max-width',parseInt(d.wert,10)+'px','important');
+          else w.style.removeProperty('max-width');
+        }
+        if(d.cmd==='contName'){
+          if(window.__wgLayout&&window.__wgLayout[d.block])window.__wgLayout[d.block].name=d.name;
+          if(selC&&bIdx(selC)===d.block&&selC.hasAttribute('data-block'))ovTab().textContent=d.name||WG_NAMES[selC.getAttribute('data-block')]||'Sektion';
+          baumBauen();
+        }
+        if(d.cmd==='gehePfad'){
+          var sec3=secs[d.block];if(!sec3)return;
+          var el3=vonPfad(sec3,d.pfad);if(!el3)return;
+          el3.scrollIntoView({behavior:'smooth',block:'center'});
+          if(d.art==='text'&&el3.hasAttribute('data-edit'))textAuswahl(el3);
+          else contWaehlen(el3);
+        }
+        if(d.cmd==='hovPfad'){
+          document.querySelectorAll('.wg-c-hov').forEach(function(x){x.classList.remove('wg-c-hov')});
+          if(d.pfad==null)return;
+          var sec4=secs[d.block];if(!sec4)return;
+          var el4=vonPfad(sec4,d.pfad);
+          if(el4&&el4!==selC)el4.classList.add('wg-c-hov');
+        }
+        if(d.cmd==='deselect'){contAbwaehlen(false);}
+      });
+      document.addEventListener('keydown',function(e){
+        if(e.key==='Escape'&&selC){contAbwaehlen(true);}
+      },true);
     })();</script>`
 
     return html.replace('</head>', css + '</head>').replace('</body>', js + '</body>')
@@ -627,8 +1082,14 @@ export default function EditorPage() {
       if (d.t === 'edit') updateContent(d.block, d.key, d.val, false)
       if (d.t === 'imgClick') { setLastImgClick({ blockIdx: d.block, key: d.key }) }
       if (d.t === 'iconClick') setIconPicker({ blockIdx: d.block, key: d.key })
-      if (d.t === 'select') setSelected(d)
+      if (d.t === 'select') { setContSel(null); setSelected(d) }
       if (d.t === 'selectSection') { const t = pages[activePage]?.[d.block]?.type; setSelected({ isSection: true, block: d.block, secName: BLOCK_REGISTRY[t]?.label || 'Bereich' }) }
+      if (d.t === 'contSel') { setSelected(null); setContSel(d) }
+      if (d.t === 'contWeg') setContSel(null)
+      if (d.t === 'layout') applyLayoutPatch(d.block, d.pfad, d.stil)
+      if (d.t === 'arrayOp') doArrayOp(d.block, d.feld, d.index, d.op)
+      if (d.t === 'baum') setBaum(d.baum || [])
+      if (d.t === 'bereit') { if (contSel) sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad }) }
       if (d.t === 'sectionStyle') saveSectionStyle(d.block, d.img, d.overlay, d.parallax)
       if (d.t === 'deselect') setSelected(null)
       if (d.t === 'style') { /* live im iframe, kein extra Speichern nötig */ }
@@ -640,11 +1101,67 @@ export default function EditorPage() {
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
-  }, [activePage, pages, histIdx, history])
+  }, [activePage, pages, histIdx, history, contSel])
 
   // Befehl an iframe senden (Formatierung)
   function sendCmd(cmd, val) {
     iframeRef.current?.contentWindow?.postMessage({ cmd, val }, '*')
+  }
+  // Befehl mit mehreren Feldern an die Vorschau senden
+  function sendeAnVorschau(obj) {
+    iframeRef.current?.contentWindow?.postMessage(obj, '*')
+  }
+
+  // ── Layout-Overrides (Elementor-artig): Abstände, Breite, Z-Index ──
+  // Persistiert in content._layout[pfad]; die Vorschau setzt die Werte sofort
+  // am Element, die fertige Seite bekommt sie als gebackenes CSS.
+  function applyLayoutPatch(blockIdx, pfad, patch) {
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b) return
+    const c = { ...(b.content || {}) }
+    const layout = { ...(c._layout || {}) }
+    const eintrag = { ...(layout[pfad ?? ''] || {}), ...(patch || {}) }
+    Object.keys(eintrag).forEach(k => { if (eintrag[k] === '' || eintrag[k] === null || eintrag[k] === undefined) delete eintrag[k] })
+    if (Object.keys(eintrag).length) layout[pfad ?? ''] = eintrag
+    else delete layout[pfad ?? '']
+    c._layout = layout
+    arr[blockIdx] = { ...b, content: c }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, false)
+  }
+  // Vom Panel aus: live in die Vorschau UND persistieren
+  function layoutAendern(blockIdx, pfad, patch) {
+    sendeAnVorschau({ cmd: 'layout', block: blockIdx, pfad: pfad ?? '', stil: patch })
+    applyLayoutPatch(blockIdx, pfad ?? '', patch)
+  }
+  // Innenbreite der Sektion: voll / boxed (+px)
+  function breiteAendern(blockIdx, modus, wert) {
+    sendeAnVorschau({ cmd: 'breite', block: blockIdx, modus, wert })
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b) return
+    arr[blockIdx] = { ...b, content: { ...(b.content || {}), _breite: modus ? { modus, wert } : undefined } }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, false)
+  }
+  // Name / CSS-ID / CSS-Klassen einer Sektion
+  function contFeld(blockIdx, fields) {
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b) return
+    arr[blockIdx] = { ...b, content: { ...(b.content || {}), ...fields } }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, false)
+    if (fields._name !== undefined) sendeAnVorschau({ cmd: 'contName', block: blockIdx, name: fields._name })
+  }
+  // Karten klonen / löschen / verschieben – ändert die LISTE im Inhalt,
+  // damit nichts auseinanderlaufen kann.
+  function doArrayOp(blockIdx, feld, index, op) {
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b) return
+    const neu = listeAendern(b.content || {}, feld, index, op)
+    if (!neu) return
+    arr[blockIdx] = { ...b, content: layoutNachStruktur(neu) }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, true)
   }
 
   // Section-Hintergrund speichern (im content als bgImg/bgOverlay/bgParallax)
@@ -710,50 +1227,10 @@ export default function EditorPage() {
       applyPages(next, true, !!neuAufbau); return
     }
 
-    if (key.startsWith('svc_icon_')) {
-      const idx = parseInt(key.split('_').pop())
-      content.items = [...(content.items || [])]; content.items[idx] = { ...content.items[idx], icon: val }
-    } else if (key.startsWith('plan_feat_')) {
-      const parts = key.split('_'); const j = parseInt(parts.pop()); const i = parseInt(parts.pop())
-      content.plans = [...(content.plans || [])]
-      const features = [...(content.plans[i]?.features || [])]; features[j] = val
-      content.plans[i] = { ...content.plans[i], features }
-    } else if (key.startsWith('plan_')) {
-      const parts = key.split('_'); const i = parseInt(parts.pop()); const field = parts[1]
-      content.plans = [...(content.plans || [])]; content.plans[i] = { ...content.plans[i], [field]: val }
-    } else if (key.startsWith('step_icon_')) {
-      const i = parseInt(key.split('_').pop())
-      content.steps = [...(content.steps || [])]; content.steps[i] = { ...content.steps[i], icon: val }
-    } else if (key.startsWith('step_')) {
-      const parts = key.split('_'); const i = parseInt(parts.pop()); const field = parts[1]
-      content.steps = [...(content.steps || [])]; content.steps[i] = { ...content.steps[i], [field]: val }
-    } else if (key.startsWith('logo_')) {
-      const i = parseInt(key.split('_').pop())
-      content.logos = [...(content.logos || [])]; content.logos[i] = val
-    } else if (key.startsWith('svc_title_') || key.startsWith('svc_text_')) {
-      const idx = parseInt(key.split('_').pop()); const field = key.includes('title') ? 'title' : 'text'
-      content.items = [...(content.items || [])]; content.items[idx] = { ...content.items[idx], [field]: val }
-    } else if (key.startsWith('testi_') || key.startsWith('faq_')) {
-      const parts = key.split('_'); const idx = parseInt(parts.pop()); const field = parts[1]
-      content.items = [...(content.items || [])]; content.items[idx] = { ...content.items[idx], [field]: val }
-    } else if (key.startsWith('team_')) {
-      const parts = key.split('_'); const idx = parseInt(parts.pop()); const field = parts[1]
-      content.members = [...(content.members || [])]; content.members[idx] = { ...content.members[idx], [field]: val }
-    } else if (key.startsWith('menu_kat_')) {
-      const ki = parseInt(key.split('_').pop())
-      content.kategorien = [...(content.kategorien || [])]
-      content.kategorien[ki] = { ...content.kategorien[ki], name: val }
-    } else if (key.startsWith('menu_name_') || key.startsWith('menu_desc_') || key.startsWith('menu_preis_')) {
-      const parts = key.split('_'); const ii = parseInt(parts.pop()); const ki = parseInt(parts.pop())
-      const field = parts[1] === 'name' ? 'name' : parts[1] === 'desc' ? 'desc' : 'preis'
-      content.kategorien = [...(content.kategorien || [])]
-      const items = [...(content.kategorien[ki]?.items || [])]
-      items[ii] = { ...items[ii], [field]: val }
-      content.kategorien[ki] = { ...content.kategorien[ki], items }
-    } else if (key.startsWith('img_')) {
-      const idx = parseInt(key.split('_').pop())
-      content.images = [...(content.images || [])]; content.images[idx] = val
-    } else { content[key] = val }
+    // Alles andere ist ein einfaches Feld auf oberster Ebene.
+    // Verschachtelte Werte kommen immer als Pfad ("items.2.title") an –
+    // dafür ist der Zweig oben zuständig. Geraten wird hier nichts mehr.
+    content[key] = val
 
     block.content = content; arr[blockIdx] = block; next[activePage] = arr
     // Text-Edits: KEIN iframe-Neubau (kein Scroll-Sprung, Formatierung bleibt)
@@ -920,8 +1397,8 @@ export default function EditorPage() {
 
         {/* Undo/Redo */}
         <div style={{ display: 'flex', gap: 2, marginLeft: 8 }}>
-          <button onClick={undo} disabled={histIdx <= 0} title="Rückgängig" style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: histIdx <= 0 ? 'not-allowed' : 'pointer', opacity: histIdx <= 0 ? 0.35 : 1, fontSize: 15 }}>↶</button>
-          <button onClick={redo} disabled={histIdx >= history.length - 1} title="Wiederholen" style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: histIdx >= history.length - 1 ? 'not-allowed' : 'pointer', opacity: histIdx >= history.length - 1 ? 0.35 : 1, fontSize: 15 }}>↷</button>
+          <button onClick={undo} disabled={histIdx <= 0} title="Rückgängig" style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: histIdx <= 0 ? 'not-allowed' : 'pointer', opacity: histIdx <= 0 ? 0.35 : 1, fontSize: 15 }}><i className="fa-solid fa-rotate-left" /></button>
+          <button onClick={redo} disabled={histIdx >= history.length - 1} title="Wiederholen" style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: histIdx >= history.length - 1 ? 'not-allowed' : 'pointer', opacity: histIdx >= history.length - 1 ? 0.35 : 1, fontSize: 15 }}><i className="fa-solid fa-rotate-right" /></button>
           <button onClick={resetAll} title="Alles zurücksetzen" style={{ width: 32, height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 13 }}>⟲</button>
         </div>
 
@@ -934,6 +1411,7 @@ export default function EditorPage() {
           style={{ width: 30, height: 30, border: `1px solid ${bewegungStopp ? primary : '#e5e5e5'}`, borderRadius: 7, background: bewegungStopp ? primary + '14' : '#fff', cursor: 'pointer', fontSize: 13, color: bewegungStopp ? primary : '#475569' }}>
           <i className={`fa-solid fa-${bewegungStopp ? 'play' : 'pause'}`} />
         </button>
+        <button onClick={() => setNavOffen(o => !o)} title="Navigator – Struktur der Seite" style={{ height: 30, border: `1px solid ${navOffen ? PINK : '#e5e5e5'}`, borderRadius: 7, background: navOffen ? PINK + '14' : '#fff', cursor: 'pointer', fontSize: 12, color: navOffen ? PINK : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-layer-group" />Navigator</button>
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
         <button disabled={kauft} onClick={async () => {
@@ -998,7 +1476,7 @@ export default function EditorPage() {
                     </div>
                   )
                 })}
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Block → wähle aus mehreren Design-Vorlagen mit Live-Vorschau.</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Block: wähle aus mehreren Design-Vorlagen mit Live-Vorschau.</div>
               </>
             )}
             {tab === 'sections' && (
@@ -1017,7 +1495,7 @@ export default function EditorPage() {
                     </div>
                   )
                 })}
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 8, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Bereich → springt in der Vorschau dorthin und öffnet die Bearbeitung rechts.</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 8, lineHeight: 1.5, padding: '0 4px' }}>Klick auf einen Bereich: springt in der Vorschau dorthin und öffnet die Bearbeitung rechts.</div>
               </>
             )}
             {tab === 'pages' && (
@@ -1039,18 +1517,39 @@ export default function EditorPage() {
             </div>
             <iframe ref={iframeRef} style={{ width: '100%', minHeight: '85vh', border: 'none', borderRadius: 8, boxShadow: '0 4px 32px rgba(0,0,0,0.12)', display: 'block', background: '#fff' }} />
           </div>
+          {navOffen && (
+            <Navigator baum={baum} primary={primary} aktiv={contSel?.block}
+              onClose={() => setNavOffen(false)}
+              onHover={(bi, pfad) => sendeAnVorschau({ cmd: 'hovPfad', block: bi, pfad })}
+              onGehe={(bi, pfad, art) => sendeAnVorschau({ cmd: 'gehePfad', block: bi, pfad, art })}
+              onName={(bi, name) => contFeld(bi, { _name: name })}
+              onMove={(bi, dir) => moveBlock(bi, dir)}
+              onDup={(bi) => dupBlock(bi)}
+              onDel={(bi) => delBlock(bi)}
+            />
+          )}
         </div>
 
         {/* RIGHT PANEL */}
         <div style={{ width: 250, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
-          {selected ? (
-            <PropsPanel selected={selected} primary={primary} onTextChange={(v) => { updateContent(selected.block, selected.key, v, false, true); setSelected(sx => sx ? { ...sx, text: v } : sx) }} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+          {contSel ? (
+            <LayoutPanel contSel={contSel} primary={primary} content={pages[activePage]?.[contSel.block]?.content}
+              onLayout={(patch) => layoutAendern(contSel.block, contSel.pfad ?? '', patch)}
+              onBreite={(m, w) => breiteAendern(contSel.block, m, w)}
+              onFeld={(f) => contFeld(contSel.block, f)}
+              onArrayOp={(op) => contSel.bind && doArrayOp(contSel.block, contSel.bind.feld, contSel.bind.index, op)}
+              onClose={() => { sendCmd('deselect'); setContSel(null) }}
+              onStilOeffnen={() => { const t = pages[activePage]?.[contSel.block]?.type; setContSel(null); setSelected({ isSection: true, block: contSel.block, secName: BLOCK_REGISTRY[t]?.label || 'Bereich' }) }}
+              onEltern={() => { const p = String(contSel.pfad || '').split('.').slice(0, -1).join('.'); sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad ? p : '' }) }}
+            />
+          ) : selected ? (
+            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onTextChange={(v) => { updateContent(selected.block, selected.key, v, false, true); setSelected(sx => sx ? { ...sx, text: v } : sx) }} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
           <div style={{ marginBottom: 14 }}>
-            <button onClick={() => { setImgTarget('logo'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569', marginBottom: 6 }}>🖼 Header-Logo hochladen</button>
-            <button onClick={() => { setImgTarget('logoFooter'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569' }}>🖼 Footer-Logo (hell/invertiert)</button>
+            <button onClick={() => { setImgTarget('logo'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569', marginBottom: 6 }}>Header-Logo hochladen</button>
+            <button onClick={() => { setImgTarget('logoFooter'); fileRef.current?.click() }} style={{ width: '100%', border: '1px dashed #cbd5e1', background: '#fafbff', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569' }}>Footer-Logo (hell/invertiert)</button>
             <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, lineHeight: 1.4 }}>Footer ist meist dunkel – lad dort eine helle Logo-Version hoch. Ohne Footer-Logo wird das Header-Logo automatisch aufgehellt.</div>
           </div>
 
@@ -1082,8 +1581,8 @@ export default function EditorPage() {
 
           <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
             <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>So bearbeitest du</div>
-            {[['📝', 'Text anklicken → Toolbar'], ['🖼️', 'Bild anklicken → hochladen'], ['⟳', 'Layout-Variante wechseln'], ['⎘', 'Block duplizieren'], ['↑↓', 'Block verschieben'], ['↶', 'Rückgängig']].map(([ic, t]) => (
-              <div key={t} style={{ display: 'flex', gap: 8, fontSize: 11, color: '#666', padding: '3px 0', alignItems: 'center' }}><span style={{ width: 18 }}>{ic}</span><span>{t}</span></div>
+            {[['pen', 'Text anklicken – Panel rechts öffnet sich'], ['image', 'Bild anklicken – hochladen'], ['rotate', 'Layout-Variante wechseln'], ['clone', 'Block duplizieren'], ['up-down', 'Block verschieben'], ['rotate-left', 'Rückgängig']].map(([ic, t]) => (
+              <div key={t} style={{ display: 'flex', gap: 8, fontSize: 11, color: '#666', padding: '3px 0', alignItems: 'center' }}><span style={{ width: 18, textAlign: 'center', color: '#94a3b8' }}><i className={`fa-solid fa-${ic}`} /></span><span>{t}</span></div>
             ))}
           </div>
 
@@ -1093,15 +1592,15 @@ export default function EditorPage() {
                 {speicherStatus === 'speichert' ? 'Speichert…' : 'Jetzt speichern'}
               </button>
               <div style={{ fontSize: 9.5, textAlign: 'center', marginTop: 6, minHeight: 13, color: speicherStatus === 'fehler' ? '#dc2626' : '#94a3b8', fontWeight: 600 }}>
-                {speicherStatus === 'gespeichert' && '✓ In deinem Konto gespeichert'}
+                {speicherStatus === 'gespeichert' && <><i className="fa-solid fa-check" style={{ marginRight: 5 }} />In deinem Konto gespeichert</>}
                 {speicherStatus === 'speichert' && 'Änderungen werden gesichert…'}
                 {speicherStatus === 'fehler' && 'Speichern fehlgeschlagen'}
                 {speicherStatus === '' && 'Änderungen werden automatisch gesichert'}
               </div>
-              <button onClick={() => router.push('/dashboard')} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 8 }}>← Meine Websites</button>
+              <button onClick={() => router.push('/dashboard')} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 8 }}><i className="fa-solid fa-arrow-left" style={{ marginRight: 6 }} />Meine Websites</button>
             </div>
           )}
-          <button onClick={() => { if (confirm('Neu starten? Aktuelle Website geht verloren.')) { sessionStorage.clear(); router.push('/start') } }} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 12 }}>← Neu starten</button>
+          <button onClick={() => { if (confirm('Neu starten? Aktuelle Website geht verloren.')) { sessionStorage.clear(); router.push('/start') } }} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: 8, borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer', color: '#666', marginTop: 12 }}><i className="fa-solid fa-arrow-left" style={{ marginRight: 6 }} />Neu starten</button>
           </div>
           )}
         </div>
@@ -1143,7 +1642,7 @@ export default function EditorPage() {
                 <div key={v.id} onClick={() => changeVariant(variantPicker.blockIdx, v.id)} style={{ border: `3px solid ${isActive ? primary : '#e5e5e5'}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}>
                   <div style={{ padding: '10px 14px', background: isActive ? primary : '#f9f9f9', display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? '#fff' : '#111' }}>{v.name}</span>
-                    {isActive && <span style={{ fontSize: 11, color: '#fff' }}>✓</span>}
+                    {isActive && <span style={{ fontSize: 11, color: '#fff' }}><i className="fa-solid fa-check" /></span>}
                   </div>
                   <div style={{ height: 200, overflow: 'hidden', background: '#fff' }}>
                     <iframe srcDoc={previewHtml} style={{ width: '300%', height: '600%', transform: 'scale(0.333)', transformOrigin: 'top left', border: 'none', pointerEvents: 'none' }} />
@@ -1231,7 +1730,7 @@ function Modal({ children, onClose, title, sub }) {
       <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 820, width: '100%', maxHeight: '82vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div><h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>{title}</h3>{sub && <p style={{ fontSize: 13, color: '#888' }}>{sub}</p>}</div>
-          <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 32, height: 32, borderRadius: 8, cursor: 'pointer', fontSize: 16 }}>✕</button>
+          <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 32, height: 32, borderRadius: 8, cursor: 'pointer', fontSize: 16 }}><i className="fa-solid fa-xmark" /></button>
         </div>
         {children}
       </div>
@@ -1248,17 +1747,17 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
   const hasContact = blocks.some(b => b.type === 'contact')
   const hasCTA = blocks.some(b => b.type === 'cta')
 
-  const tabs = [['seo', '🔍 SEO'], ['headlines', '📝 Headlines'], ['cta', '🎯 CTA'], ['images', '🖼️ Bilder']]
+  const tabs = [['seo', 'magnifying-glass', 'SEO'], ['headlines', 'heading', 'Headlines'], ['cta', 'bullhorn', 'CTA'], ['images', 'image', 'Bilder']]
 
   return (
     <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 500, width: 320, background: '#0f172a', borderRadius: 14, boxShadow: '0 12px 48px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>✨ AI Designer</span>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: 24, height: 24, borderRadius: 6, cursor: 'pointer' }}>✕</button>
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 7 }} />AI Designer</span>
+        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: 24, height: 24, borderRadius: 6, cursor: 'pointer' }}><i className="fa-solid fa-xmark" /></button>
       </div>
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        {tabs.map(([id, l]) => (
-          <button key={id} onClick={() => setAiTab(id)} style={{ flex: 1, padding: '10px 4px', fontSize: 11, fontWeight: 600, background: aiTab === id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: aiTab === id ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', borderBottom: aiTab === id ? `2px solid ${primary}` : '2px solid transparent' }}>{l}</button>
+        {tabs.map(([id, ic, l]) => (
+          <button key={id} onClick={() => setAiTab(id)} style={{ flex: 1, padding: '10px 4px', fontSize: 11, fontWeight: 600, background: aiTab === id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: aiTab === id ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', borderBottom: aiTab === id ? `2px solid ${primary}` : '2px solid transparent' }}><i className={`fa-solid fa-${ic}`} style={{ marginRight: 5 }} />{l}</button>
         ))}
       </div>
       <div style={{ padding: 16, color: '#fff', maxHeight: 320, overflowY: 'auto' }}>
@@ -1270,7 +1769,7 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
             <SeoRow ok={hasContact} label="Kontaktbereich" val={hasContact ? 'vorhanden' : 'fehlt'} />
             <SeoRow ok={hasCTA} label="Call-to-Action" val={hasCTA ? 'vorhanden' : 'fehlt'} />
             <div style={{ marginTop: 12, padding: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
-              💡 Alle Texte wurden bereits SEO-optimiert generiert. Du kannst sie direkt in der Vorschau anklicken und anpassen.
+              <i className="fa-solid fa-lightbulb" style={{ marginRight: 6 }} />Alle Texte wurden bereits SEO-optimiert generiert. Du kannst sie direkt in der Vorschau anklicken und anpassen.
             </div>
           </div>
         )}
@@ -1309,7 +1808,189 @@ function AIPanel({ onClose, primary, aiTab, setAiTab, blocks, activePage, onImag
 }
 
 // ── Eigenschaften-Panel (Elementor-Stil) ──
-function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0 }) {
+// ── Abstände wie bei Elementor: 4 Felder (oben/rechts/unten/links) + Kette + Einheit ──
+function AbstandGruppe({ titel, praefix, werte, onAendern, primary }) {
+  const SEITEN = [['Top', 'OBEN'], ['Right', 'RECHTS'], ['Bottom', 'UNTEN'], ['Left', 'LINKS']]
+  const zerlege = (v) => { const m = String(v ?? '').match(/^(-?[\d.]+)/); return m ? m[1] : '' }
+  const [einheit, setEinheit] = useState(() => { const m = String(werte?.[praefix + 'Top'] ?? '').match(/(px|%|em|rem)/); return m ? m[1] : 'px' })
+  const [kette, setKette] = useState(false)
+  const [felder, setFelder] = useState(() => Object.fromEntries(SEITEN.map(([s]) => [s, zerlege(werte?.[praefix + s])])))
+  const werteKey = JSON.stringify([werte?.[praefix + 'Top'], werte?.[praefix + 'Right'], werte?.[praefix + 'Bottom'], werte?.[praefix + 'Left']])
+  useEffect(() => { setFelder(Object.fromEntries(SEITEN.map(([s]) => [s, zerlege(werte?.[praefix + s])]))) }, [werteKey]) // eslint-disable-line
+  const setze = (seite, wert) => {
+    const neu = kette ? Object.fromEntries(SEITEN.map(([s]) => [s, wert])) : { ...felder, [seite]: wert }
+    setFelder(neu)
+    const patch = {}
+    ;(kette ? SEITEN.map(([s]) => s) : [seite]).forEach(s => { patch[praefix + s] = wert === '' ? '' : `${parseFloat(wert) || 0}${einheit}` })
+    onAendern(patch)
+  }
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{titel}</span>
+        <span style={{ display: 'flex', gap: 2 }}>
+          {['px', 'em', '%', 'rem'].map(u => (
+            <button key={u} onClick={() => setEinheit(u)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 9.5, fontWeight: 700, color: einheit === u ? primary : '#94a3b8', textDecoration: einheit === u ? 'underline' : 'none', padding: '0 2px' }}>{u.toUpperCase()}</button>
+          ))}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 26px', gap: 4, alignItems: 'start' }}>
+        {SEITEN.map(([s, l]) => (
+          <div key={s}>
+            <input type="number" value={felder[s]} placeholder="–" onChange={e => setze(s, e.target.value)}
+              style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 6, padding: '7px 4px', fontSize: 12, textAlign: 'center', fontFamily: 'inherit', outline: 'none' }} />
+            <div style={{ fontSize: 7.5, fontWeight: 700, color: '#b6c0cd', textAlign: 'center', marginTop: 3, letterSpacing: '0.04em' }}>{l}</div>
+          </div>
+        ))}
+        <button onClick={() => setKette(k => !k)} title="Werte verknüpfen (alle vier gleich)" style={{ height: 30, border: `1px solid ${kette ? primary : '#e5e5e5'}`, borderRadius: 6, background: kette ? primary + '14' : '#fff', color: kette ? primary : '#94a3b8', cursor: 'pointer', fontSize: 11 }}><i className="fa-solid fa-link" /></button>
+      </div>
+    </div>
+  )
+}
+
+// ── Panel für gewählte Sektion / Container (pinke Elementor-Auswahl) ──
+function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern }) {
+  const istSek = contSel.kind === 'sektion'
+  const eintrag = (content?._layout || {})[contSel.pfad ?? ''] || {}
+  const werte = { ...(contSel.stil || {}), ...eintrag }
+  const br = content?._breite || null
+  const [zIdx, setZIdx] = useState(eintrag.zIndex ?? '')
+  const [boxBreite, setBoxBreite] = useState(br?.wert || 1160)
+  useEffect(() => { setZIdx(eintrag.zIndex ?? ''); setBoxBreite((content?._breite?.wert) || 1160) }, [contSel.block, contSel.pfad]) // eslint-disable-line
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 12, fontWeight: 800, color: '#e6007e', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+          <i className={`fa-solid fa-${istSek ? 'table-cells-large' : 'square-full'}`} style={{ fontSize: 11 }} />{contSel.name || (istSek ? 'Sektion' : 'Container')}
+        </span>
+        <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 26, height: 26, borderRadius: 7, cursor: 'pointer', fontSize: 12 }}><i className="fa-solid fa-xmark" /></button>
+      </div>
+      <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 12 }}>{contSel.stil?.breite} × {contSel.stil?.hoehe} px {istSek ? '· Sektion' : '· innerhalb der Sektion'}</div>
+
+      {istSek && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Name der Sektion</div>
+          <input defaultValue={content?._name || contSel.name} key={contSel.block}
+            onBlur={e => onFeld({ _name: e.target.value.trim() })}
+            onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+            style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+        </div>
+      )}
+
+      {!istSek && (
+        <button onClick={onEltern} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: '7px 0', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#475569', marginBottom: 12 }}><i className="fa-solid fa-turn-up" style={{ marginRight: 6 }} />Übergeordnetes Element wählen</button>
+      )}
+
+      {contSel.bind && (
+        <div style={{ marginBottom: 14, padding: 10, border: '1px solid #fbcfe8', background: '#fdf2f8', borderRadius: 9 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#be185d', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Karte {contSel.bind.index + 1} · Liste „{contSel.bind.feld}“</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[['hoch', 'arrow-left', 'Vor'], ['runter', 'arrow-right', 'Zurück'], ['dup', 'clone', 'Klonen'], ['del', 'xmark', 'Löschen']].map(([op, ic, l]) => (
+              <button key={op} onClick={() => onArrayOp(op)} style={{ flex: 1, border: '1px solid #f9a8d4', borderRadius: 6, background: '#fff', padding: '7px 0', fontSize: 10, fontWeight: 700, cursor: 'pointer', color: op === 'del' ? '#dc2626' : '#9d174d' }}><i className={`fa-solid fa-${ic}`} style={{ marginRight: 3 }} />{l}</button>
+            ))}
+          </div>
+          <div style={{ fontSize: 9.5, color: '#be185d', marginTop: 6, lineHeight: 1.4 }}>Klonen/Löschen ändert die Inhalts-Liste – die anderen Karten bleiben unangetastet.</div>
+        </div>
+      )}
+
+      <AbstandGruppe titel="Außenabstand (Margin)" praefix="margin" werte={werte} onAendern={onLayout} primary={primary} />
+      <AbstandGruppe titel="Innenabstand (Padding)" praefix="padding" werte={werte} onAendern={onLayout} primary={primary} />
+
+      {istSek && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Inhaltsbreite</div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+            {[[null, 'Standard'], ['boxed', 'Boxed'], ['voll', 'Volle Breite']].map(([m, l]) => (
+              <button key={l} onClick={() => onBreite(m, m === 'boxed' ? boxBreite : undefined)} style={{ flex: 1, border: `1px solid ${(br?.modus ?? null) === m ? primary : '#e5e5e5'}`, borderRadius: 6, background: (br?.modus ?? null) === m ? primary + '12' : '#fff', padding: '7px 0', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', color: (br?.modus ?? null) === m ? primary : '#475569' }}>{l}</button>
+            ))}
+          </div>
+          {br?.modus === 'boxed' && (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input type="number" value={boxBreite} onChange={e => { const w = parseInt(e.target.value) || 1160; setBoxBreite(w); onBreite('boxed', w) }} style={{ flex: 1, border: '1px solid #e5e5e5', borderRadius: 6, padding: '7px 8px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>px</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Z-Index</div>
+        <input type="number" value={zIdx} placeholder="automatisch" onChange={e => { setZIdx(e.target.value); onLayout({ zIndex: e.target.value }) }} style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+      </div>
+
+      {istSek && (
+        <>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>CSS-ID</div>
+            <input defaultValue={content?._cssId || ''} key={'id' + contSel.block} onBlur={e => onFeld({ _cssId: e.target.value.trim() })} placeholder="z. B. angebot" style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'monospace', outline: 'none' }} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>CSS-Klassen</div>
+            <input defaultValue={content?._cssKlassen || ''} key={'kl' + contSel.block} onBlur={e => onFeld({ _cssKlassen: e.target.value.trim() })} placeholder="meine-klasse andere" style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'monospace', outline: 'none' }} />
+          </div>
+          <button onClick={onStilOeffnen} style={{ width: '100%', border: 'none', background: primary, color: '#fff', padding: '9px 0', borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}><i className="fa-solid fa-palette" style={{ marginRight: 6 }} />Hintergrund &amp; Stil bearbeiten</button>
+        </>
+      )}
+      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 12, lineHeight: 1.5 }}><i className="fa-solid fa-lightbulb" style={{ marginRight: 5 }} />Kanten der pinken Auswahl ziehen = Innenabstand. Trennlinien zwischen Spalten ziehen = Spaltenbreite.</div>
+    </div>
+  )
+}
+
+// ── Navigator: Strukturbaum der Seite (wie Elementor) ──
+function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, onDup, onDel, aktiv }) {
+  const [offen, setOffen] = useState({})
+  const [editiert, setEditiert] = useState(null)
+  const ICONS = { container: 'square-full', text: 'font', bild: 'image', icon: 'star', sterne: 'star' }
+  const Zeile = ({ knoten, bi, tiefe }) => (
+    <div>
+      <div onMouseEnter={() => onHover(bi, knoten.pfad)} onMouseLeave={() => onHover(bi, null)} onClick={() => onGehe(bi, knoten.pfad, knoten.art)}
+        style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', paddingLeft: 8 + tiefe * 14, borderRadius: 6, cursor: 'pointer', fontSize: 11, color: '#475569' }}
+        onMouseOver={e => { e.currentTarget.style.background = '#fdf2f8' }} onMouseOut={e => { e.currentTarget.style.background = 'transparent' }}>
+        <i className={`fa-solid fa-${ICONS[knoten.art] || 'square-full'}`} style={{ fontSize: 9, color: '#e6007e', width: 12, textAlign: 'center' }} />
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{knoten.label}</span>
+      </div>
+      {(knoten.kinder || []).map((k, i) => <Zeile key={i} knoten={k} bi={bi} tiefe={tiefe + 1} />)}
+    </div>
+  )
+  return (
+    <div style={{ position: 'absolute', top: 10, right: 10, bottom: 10, width: 250, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.18)', zIndex: 30, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+      <div style={{ padding: '10px 12px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}><i className="fa-solid fa-layer-group" style={{ marginRight: 7, color: '#e6007e' }} />Navigator</span>
+        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 22, height: 22, borderRadius: 6, cursor: 'pointer', fontSize: 11 }}><i className="fa-solid fa-xmark" /></button>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 6 }}>
+        {baum.map((sek) => {
+          const auf = offen[sek.bi] !== false
+          const istAktiv = aktiv === sek.bi
+          return (
+            <div key={sek.bi} style={{ marginBottom: 2 }}>
+              <div onMouseEnter={() => onHover(sek.bi, '')} onMouseLeave={() => onHover(sek.bi, null)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 7, background: istAktiv ? '#fdf2f8' : '#f8fafc', border: `1px solid ${istAktiv ? '#f9a8d4' : '#f1f5f9'}`, cursor: 'pointer' }}>
+                <button onClick={() => setOffen(o => ({ ...o, [sek.bi]: !auf }))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 9, width: 14 }}><i className={`fa-solid fa-chevron-${auf ? 'down' : 'right'}`} /></button>
+                {editiert === sek.bi ? (
+                  <input autoFocus defaultValue={sek.label} onBlur={e => { onName(sek.bi, e.target.value.trim()); setEditiert(null) }} onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditiert(null) }}
+                    style={{ flex: 1, border: '1px solid #e6007e', borderRadius: 5, padding: '2px 6px', fontSize: 11, fontFamily: 'inherit', outline: 'none' }} />
+                ) : (
+                  <span onClick={() => onGehe(sek.bi, '', 'sektion')} onDoubleClick={() => setEditiert(sek.bi)} title="Doppelklick: umbenennen" style={{ flex: 1, fontSize: 11.5, fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sek.label}</span>
+                )}
+                <span style={{ display: 'flex', gap: 1 }}>
+                  {[['up', 'arrow-up', () => onMove(sek.bi, -1)], ['down', 'arrow-down', () => onMove(sek.bi, 1)], ['dup', 'clone', () => onDup(sek.bi)], ['del', 'xmark', () => onDel(sek.bi)]].map(([k, ic, fn]) => (
+                    <button key={k} onClick={e => { e.stopPropagation(); fn() }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: k === 'del' ? '#f87171' : '#94a3b8', fontSize: 10, width: 17, height: 17 }}><i className={`fa-solid fa-${ic}`} /></button>
+                  ))}
+                </span>
+              </div>
+              {auf && (sek.kinder || []).map((k, i) => <Zeile key={i} knoten={k} bi={sek.bi} tiefe={1} />)}
+            </div>
+          )
+        })}
+        {!baum.length && <div style={{ fontSize: 11, color: '#94a3b8', padding: 12, textAlign: 'center' }}>Struktur wird geladen…</div>}
+      </div>
+      <div style={{ padding: '8px 12px', borderTop: '1px solid #f1f5f9', fontSize: 9.5, color: '#94a3b8', lineHeight: 1.4 }}>Klick wählt das Element in der Vorschau. Doppelklick auf einen Sektionsnamen benennt ihn um.</div>
+    </div>
+  )
+}
+
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
   const pp = palette?.primary || {}
   const ac = palette?.accent?.base || primary
@@ -1365,16 +2046,16 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #f0f0f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: primary + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{selected.isImg ? '🖼️' : 'T'}</div>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: primary + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{selected.isImg ? <i className="fa-solid fa-image" /> : 'T'}</div>
           <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>{label}</span>
         </div>
-        <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 26, height: 26, borderRadius: 6, cursor: 'pointer', fontSize: 13, color: '#666' }}>✕</button>
+        <button onClick={onClose} style={{ background: '#f5f5f5', border: 'none', width: 26, height: 26, borderRadius: 6, cursor: 'pointer', fontSize: 13, color: '#666' }}><i className="fa-solid fa-xmark" /></button>
       </div>
 
       {/* Element-Aktionen */}
       <div style={{ display: 'flex', gap: 5, marginBottom: 16 }}>
-        <button onClick={() => sendCmd('dupEl')} title="Duplizieren" style={{ flex: 1, padding: '8px 0', border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#475569' }}>⧉ Klonen</button>
-        <button onClick={() => sendCmd('delEl')} title="Löschen" style={{ flex: 1, padding: '8px 0', border: '1px solid #fecaca', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#dc2626' }}>✕ Löschen</button>
+        <button onClick={() => sendCmd('dupEl')} title="Duplizieren" style={{ flex: 1, padding: '8px 0', border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#475569' }}><i className="fa-solid fa-clone" style={{ marginRight: 5 }} />Klonen</button>
+        <button onClick={() => sendCmd('delEl')} title="Löschen" style={{ flex: 1, padding: '8px 0', border: '1px solid #fecaca', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#dc2626' }}><i className="fa-solid fa-xmark" style={{ marginRight: 5 }} />Löschen</button>
       </div>
 
       {selected.isText && (
@@ -1475,7 +2156,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
                 })}
               </div>
               <div onClick={() => onParallax(!sectionContent?.bgParallax, sectionContent?.bgParallaxSpeed ?? 0.3)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: `2px solid ${sectionContent?.bgParallax ? primary : '#e5e5e5'}`, borderRadius: 8, cursor: 'pointer', background: sectionContent?.bgParallax ? primary + '0d' : '#fff', marginBottom: 10 }}>
-                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${sectionContent?.bgParallax ? primary : '#ccc'}`, background: sectionContent?.bgParallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{sectionContent?.bgParallax ? '✓' : ''}</div>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${sectionContent?.bgParallax ? primary : '#ccc'}`, background: sectionContent?.bgParallax ? primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11 }}>{sectionContent?.bgParallax ? <i className="fa-solid fa-check" /> : ''}</div>
                 <div><div style={{ fontSize: 13, fontWeight: 600 }}>Parallax-Effekt</div><div style={{ fontSize: 11, color: '#94a3b8' }}>Bild bewegt sich beim Scrollen</div></div>
               </div>
               {sectionContent?.bgParallax && (
@@ -1487,7 +2168,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
               )}
             </Section>
           )}
-          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Klick auf einzelne Elemente (Text, Icons, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}><i className="fa-solid fa-lightbulb" style={{ marginRight: 6 }} />Klick auf einzelne Elemente (Text, Icons, Buttons) im Bereich, um sie separat zu bearbeiten.</div>
         </>
       ) : selected.isStars ? (
         <Section title="Sterne-Bewertung">
@@ -1518,8 +2199,8 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
         <>
           <Section title="Ausrichtung">
             <div style={{ display: 'flex', gap: 4 }}>
-              {[['left', '⬅', 'Links'], ['center', '⬛', 'Mitte'], ['right', '➡', 'Rechts'], ['justify', '☰', 'Blocksatz']].map(([val, ic, t]) => (
-                <button key={val} title={t} onClick={() => sendCmd('align', val)} style={{ flex: 1, padding: '9px 0', border: `1px solid ${selected.align === val ? primary : '#e5e5e5'}`, borderRadius: 7, background: selected.align === val ? primary + '0d' : '#fff', cursor: 'pointer', fontSize: 13 }}>{ic}</button>
+              {[['left', 'align-left', 'Links'], ['center', 'align-center', 'Mitte'], ['right', 'align-right', 'Rechts'], ['justify', 'align-justify', 'Blocksatz']].map(([val, ic, t]) => (
+                <button key={val} title={t} onClick={() => sendCmd('align', val)} style={{ flex: 1, padding: '9px 0', border: `1px solid ${selected.align === val ? primary : '#e5e5e5'}`, borderRadius: 7, background: selected.align === val ? primary + '0d' : '#fff', cursor: 'pointer', fontSize: 13, color: selected.align === val ? primary : '#475569' }}><i className={`fa-solid fa-${ic}`} /></button>
               ))}
             </div>
           </Section>
@@ -1556,7 +2237,14 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
             </div>
           </Section>
 
-          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>💡 Doppelklick auf den Text in der Vorschau, um ihn direkt zu bearbeiten.</div>
+          {onLayout && (
+            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4 }}>
+              <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Erweitert – Abstände</div>
+              <AbstandGruppe titel="Außenabstand (Margin)" praefix="margin" werte={selected.stil || {}} onAendern={onLayout} primary={primary} />
+              <AbstandGruppe titel="Innenabstand (Padding)" praefix="padding" werte={selected.stil || {}} onAendern={onLayout} primary={primary} />
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}><i className="fa-solid fa-lightbulb" style={{ marginRight: 6 }} />Einfacher Klick auf den Text in der Vorschau – dann direkt tippen oder das Feld oben im Panel benutzen.</div>
         </>
       )}
     </div>
@@ -1566,7 +2254,7 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
 function SeoRow({ ok, label, val }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: 12 }}>
-      <span style={{ color: ok ? '#22c55e' : '#f59e0b' }}>{ok ? '✓' : '!'}</span>
+      <span style={{ color: ok ? '#22c55e' : '#f59e0b' }}><i className={`fa-solid fa-${ok ? 'check' : 'triangle-exclamation'}`} /></span>
       <span style={{ flex: 1, color: 'rgba(255,255,255,0.8)' }}>{label}</span>
       <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{val}</span>
     </div>
@@ -1631,7 +2319,7 @@ function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, for
         <div>
           <img src={preview} alt="Vorschau" style={{ width: '100%', borderRadius: 8, marginBottom: 10 }} />
           <div style={{ display: 'flex', gap: 6 }}>
-            <button onClick={einsetzen} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✓ Einsetzen</button>
+            <button onClick={einsetzen} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Einsetzen</button>
             <button onClick={() => setPreview(null)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 7, padding: '9px 12px', fontSize: 12, cursor: 'pointer' }}>Verwerfen</button>
           </div>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 8 }}>Klick vorher in der Vorschau auf den Bildbereich, wo das Bild hin soll.</div>
@@ -1656,7 +2344,7 @@ function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, for
           {error && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 8 }}>{error}</div>}
 
           <button onClick={generate} disabled={loading || rest <= 0} style={{ width: '100%', background: rest <= 0 ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 13, fontWeight: 700, cursor: loading || rest <= 0 ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-            {loading ? '✨ Wird generiert...' : rest <= 0 ? 'Kontingent aufgebraucht' : '✨ Bild generieren'}
+            {loading ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 6 }} />Wird generiert…</> : rest <= 0 ? 'Kontingent aufgebraucht' : <><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />Bild generieren</>}
           </button>
         </>
       )}
@@ -1665,27 +2353,11 @@ function ImageGenerator({ primary, onImageGenerated, imageQuota, imagesUsed, for
 }
 
 function buildDefaultContent(type) {
-  const d = {
-    ...ALLE_DEFAULTS,
-    'hero-full': { tag: 'Willkommen', headline: 'Deine Überschrift', subline: 'Beschreibe dein Angebot.', cta1: 'Kontakt', cta2: 'Mehr', stats: [{ num: '10+', label: 'Jahre' }, { num: '200+', label: 'Kunden' }, { num: '100%', label: 'Qualität' }] },
-    'header-slim': { tag: 'Seite', headline: 'Seitentitel', subline: 'Beschreibung.' },
-    services: { tag: 'Leistungen', title: 'Was wir bieten', subtitle: 'Überblick.', items: [{ icon: '⚡', title: 'Leistung 1', text: 'Beschreibung.' }, { icon: '🎯', title: 'Leistung 2', text: 'Beschreibung.' }, { icon: '🤝', title: 'Leistung 3', text: 'Beschreibung.' }] },
-    steps: { tag: 'Ablauf', title: 'So funktioniert es', subtitle: 'In wenigen Schritten zum Ziel.', steps: [{ icon: 'phone', title: 'Kontakt', text: 'Du meldest dich bei uns.' }, { icon: 'comments', title: 'Beratung', text: 'Wir besprechen dein Anliegen.' }, { icon: 'circle-check', title: 'Umsetzung', text: 'Wir erledigen den Rest.' }] },
-    pricing: { tag: 'Preise', title: 'Unsere Pakete', subtitle: 'Transparent und fair.', plans: [{ name: 'Basis', price: '49 €', period: '/ Monat', features: ['Leistung A', 'Leistung B', 'E-Mail Support'], cta: 'Auswählen', featured: false }, { name: 'Profi', price: '99 €', period: '/ Monat', badge: 'Beliebt', features: ['Alles aus Basis', 'Leistung C', 'Priorisierter Support', 'Monatlicher Report'], cta: 'Auswählen', featured: true }, { name: 'Premium', price: '199 €', period: '/ Monat', features: ['Alles aus Profi', 'Persönlicher Ansprechpartner', '24/7 Support'], cta: 'Auswählen', featured: false }] },
-    logos: { title: 'Vertraut von führenden Unternehmen', logos: ['Firma Eins', 'Beispiel GmbH', 'Muster AG', 'Partner Co', 'Acme'] },
-    about: { tag: 'Über uns', title: 'Wer wir sind', text1: 'Absatz 1.', text2: 'Absatz 2.', stats: [{ num: '15+', label: 'Jahre' }, { num: '500+', label: 'Kunden' }, { num: '98%', label: 'Zufrieden' }, { num: '24/7', label: 'Support' }] },
-    team: { tag: 'Team', title: 'Unser Team', members: [{ name: 'Max Mustermann', role: 'Geschäftsführer', bio: 'Bio.', img: '' }, { name: 'Lisa Schmidt', role: 'Beraterin', bio: 'Bio.', img: '' }, { name: 'Tom Berg', role: 'Experte', bio: 'Bio.', img: '' }] },
-    testimonials: { title: 'Was Kunden sagen', items: [{ quote: 'Top!', name: 'Anna K.', role: 'Kundin' }, { quote: 'Sehr gut.', name: 'Peter M.', role: 'Kunde' }, { quote: 'Empfehlung.', name: 'Sara L.', role: 'Kundin' }] },
-    stats: { items: [{ num: '15+', label: 'Jahre' }, { num: '500+', label: 'Kunden' }, { num: '98%', label: 'Zufrieden' }, { num: '24/7', label: 'Support' }] },
-    cta: { title: 'Bereit loszulegen?', subtitle: 'Kontaktiere uns.', cta1: 'Jetzt anfragen', telefon: '+49 30 1234567' },
-    gallery: { title: 'Galerie', images: ['', '', '', '', '', ''] },
-    image: { image: '', image2: '', caption: '' },
-    faq: { title: 'Häufige Fragen', items: [{ q: 'Frage 1?', a: 'Antwort.' }, { q: 'Frage 2?', a: 'Antwort.' }, { q: 'Frage 3?', a: 'Antwort.' }] },
-    contact: { tag: 'Kontakt', title: 'Sprich uns an', subtitle: 'Wir freuen uns.', adresse: 'Musterstr. 1, Berlin', telefon: '+49 30 1234567', email: 'info@beispiel.de', oeffnung: 'Mo-Fr: 9-18 Uhr' },
-    menu: { tag: 'Speisekarte', title: 'Unsere Speisekarte', kategorien: [{ name: 'Vorspeisen', items: [{ name: 'Bruschetta', desc: 'Geröstetes Brot mit Tomaten', preis: '6,90 €' }, { name: 'Caprese', desc: 'Tomate, Mozzarella, Basilikum', preis: '8,50 €' }] }, { name: 'Hauptgerichte', items: [{ name: 'Pasta Carbonara', desc: 'Mit Speck und Ei', preis: '12,90 €' }, { name: 'Pizza Margherita', desc: 'Klassisch italienisch', preis: '9,90 €' }] }] },
-    custom: { html: '' },
-  }
-  return d[type] || {}
+  // Die Standardinhalte stehen an EINER Stelle: lib/blocks.js (ALLE_DEFAULTS).
+  // Früher gab es hier eine zweite Liste mit Emojis und Platzhaltern wie
+  // "Absatz 1." – die hat die guten Vorgaben überschrieben.
+  const d = ALLE_DEFAULTS[type]
+  return d ? JSON.parse(JSON.stringify(d)) : {}
 }
 
 
@@ -1712,7 +2384,7 @@ function CodeFeld({ label, wert, sprache, primary, onSpeichern }) {
             style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: 11.5, fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', lineHeight: 1.55, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
             <button onClick={() => { onSpeichern(text); setGespeichert(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {gespeichert ? '✓ Übernommen' : 'Übernehmen'}
+              {gespeichert ? <><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernommen</> : 'Übernehmen'}
             </button>
             {!!text && <button onClick={() => { setText(''); onSpeichern('') }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 7, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}>Leeren</button>}
           </div>
@@ -1749,7 +2421,7 @@ function TextFeld({ wert, primary, onSpeichern }) {
         style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: htmlModus ? 11.5 : 13, fontFamily: htmlModus ? 'ui-monospace,SFMono-Regular,Menlo,monospace' : 'inherit', lineHeight: 1.6, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
       <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
         <button onClick={() => { onSpeichern(text); setOk(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-          {ok ? '✓ Übernommen' : 'Übernehmen'}
+          {ok ? <><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernommen</> : 'Übernehmen'}
         </button>
       </div>
       <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 7, lineHeight: 1.5 }}>

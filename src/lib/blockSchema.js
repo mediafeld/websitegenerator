@@ -409,3 +409,37 @@ export function pfadSetzen(content, pfad, wert) {
   aufraeumen(wurzel)
   return wurzel
 }
+
+// ── Listen-Einträge klonen / löschen (Elementor-artig) ─────────────────────
+// Der Editor erkennt, dass eine Karte im Baustein zu content[feld][index]
+// gehört (weil alle Pfade darin mit z. B. "items.2." beginnen). Klonen und
+// Löschen ändern dann DIE LISTE – nie das HTML. So bleibt alles konsistent.
+export function listeAendern(content, feld, index, op) {
+  const alt = Array.isArray(content?.[feld]) ? content[feld] : null
+  if (!alt) return null
+  const neu = alt.map((e) => (e && typeof e === 'object' ? JSON.parse(JSON.stringify(e)) : e))
+  const i = Math.max(0, Math.min(index, neu.length - 1))
+  if (op === 'dup') {
+    neu.splice(i + 1, 0, neu[i] && typeof neu[i] === 'object' ? JSON.parse(JSON.stringify(neu[i])) : neu[i])
+  } else if (op === 'del') {
+    if (neu.length <= 1) return null // die letzte Karte bleibt – sonst kippt das Layout
+    neu.splice(i, 1)
+  } else if (op === 'hoch' || op === 'runter') {
+    const j = op === 'hoch' ? i - 1 : i + 1
+    if (j < 0 || j >= neu.length) return null
+    ;[neu[i], neu[j]] = [neu[j], neu[i]]
+  } else return null
+  return { ...content, [feld]: neu }
+}
+
+// Wenn sich die Struktur einer Sektion ändert (Karte geklont/gelöscht,
+// Variante gewechselt), stimmen tiefe Kindpfade der Layout-Overrides nicht
+// mehr. Sektion ("") und erste Ebene bleiben, tiefere werden verworfen.
+export function layoutNachStruktur(content) {
+  if (!content?._layout) return content
+  const flach = {}
+  for (const [pfad, stile] of Object.entries(content._layout)) {
+    if (pfad === '' || !String(pfad).includes('.')) flach[pfad] = stile
+  }
+  return { ...content, _layout: flach }
+}

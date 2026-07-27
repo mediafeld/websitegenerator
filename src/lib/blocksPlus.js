@@ -14,8 +14,47 @@
 
 const esc = (s) => String(s ?? '')
 
-const ed = (key, val, tag = 'span') =>
-  `<${tag} data-edit="${key}" style="outline:none;">${esc(val)}</${tag}>`
+// Bearbeitbarer Text.
+// WICHTIG: Enthält der Wert Block-Elemente (h1, p, ul, table …), muss der
+// Rahmen ein <div> sein. In einem <span> wirft der Browser solche Tags
+// beim Einlesen heraus – dadurch verschwand eingegebenes HTML.
+const BLOCK_TAGS = /<\s*(h[1-6]|p|div|ul|ol|li|table|blockquote|section|figure|pre|hr)\b/i
+const ed = (key, val, tag) => {
+  const s = String(val ?? '')
+  // Block-Elemente (h1, p, ul, table …) dürfen NIE in einem <span> oder in
+  // einer Überschrift stecken – der Browser wirft sie beim Einlesen heraus.
+  // Deshalb entscheidet der Inhalt, nicht der Aufrufer.
+  const t = BLOCK_TAGS.test(s) ? 'div' : (tag || 'span')
+  return `<${t} data-edit="${key}" style="outline:none;${t === 'div' ? 'display:block;' : ''}">${s}</${t}>`
+}
+
+// ── Standardwerte elementweise mischen ─────────────────────────────────────
+// Ohne das hier verschwinden beim Bearbeiten eines Eintrags alle anderen:
+// der Editor schickt nur den geänderten Pfad zurück, die restlichen Einträge
+// wären dann leer. misch() legt den echten Inhalt über die Standardliste.
+const mischObj = (standard, ist) => {
+  const out = { ...standard }
+  for (const k of Object.keys(ist || {})) {
+    const s = standard[k], v = ist[k]
+    if (Array.isArray(s) && Array.isArray(v)) out[k] = misch(v, s)
+    else if (v === undefined || v === null || v === '') out[k] = s
+    else if (s && typeof s === 'object' && !Array.isArray(s) && v && typeof v === 'object') out[k] = mischObj(s, v)
+    else out[k] = v
+  }
+  return out
+}
+const misch = (ist, standard) => {
+  const a = Array.isArray(ist) ? ist : []
+  const out = standard.map((s, i) => {
+    const v = a[i]
+    if (v === undefined || v === null || v === '') return s
+    if (s && typeof s === 'object' && !Array.isArray(s) && v && typeof v === 'object') return mischObj(s, v)
+    return v
+  })
+  if (a.length > standard.length) out.push(...a.slice(standard.length))
+  return out
+}
+
 
 // Font-Awesome-Icon (editierbar)
 const fa = (v) => {
@@ -55,7 +94,7 @@ const bild = (key, src, stil = '', n = 1) =>
   `<img data-img="${key}" src="${esc(src || platzhalterBild(n))}" alt="" style="${stil}">`
 
 // Text mit Blindtext-Fallback
-const txt = (key, val, fallback, tag = 'span') => ed(key, (val && String(val).trim()) ? val : fallback, tag)
+const txt = (key, val, fallback, tag) => ed(key, (val && String(val).trim()) ? val : fallback, tag)
 
 // Section-Hintergrund (Bild/Verlauf/Farbe/Muster) – gleiche Logik wie blocks.js
 function bg(c = {}, fallback = '') {
@@ -86,7 +125,7 @@ export const MEDIA = {
         <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
         <h2 class="wg-t2" style="margin-top:14px;">${txt('title', c.title, 'Handwerk, das man sieht')}</h2>
         <span class="wg-strichlinie"></span>
-        <p class="wg-lead" style="margin-bottom:26px;">${txt('text', c.text, LOREM.absatz, 'span')}</p>
+        <div class="wg-lead" style="margin-bottom:26px;">${txt('text', c.text, LOREM.absatz, 'span')}</div>
         ${(c.punkte || []).length ? `<ul style="list-style:none;padding:0;margin:0 0 28px;display:grid;gap:11px;">
           ${(c.punkte || []).map((p, i) => `<li style="display:flex;align-items:flex-start;gap:11px;font-size:15px;color:#334155;">
             <span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;"><i class="fa-solid fa-check"></i></span>
@@ -108,7 +147,7 @@ export const MEDIA = {
         <span class="wg-eyebrow">${txt('tag', c.tag, 'Unser Versprechen')}</span>
         <h2 class="wg-t2" style="margin-top:14px;">${txt('title', c.title, 'Persönlich statt anonym')}</h2>
         <span class="wg-strichlinie"></span>
-        <p class="wg-lead" style="margin-bottom:26px;">${txt('text', c.text, LOREM.absatz, 'span')}</p>
+        <div class="wg-lead" style="margin-bottom:26px;">${txt('text', c.text, LOREM.absatz, 'span')}</div>
         <a href="kontakt.html" class="wg-btn">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
       </div>
       <div class="wg-reveal re wg-bildbox" style="height:clamp(300px,44vw,520px);transition-delay:.1s;">${bild('mediaImg', c.image, '', 2)}</div>
@@ -119,11 +158,11 @@ export const MEDIA = {
     {
       id: 'media-zickzack', name: 'Zickzack (mehrere)',
       render: (c) => {
-        const eintraege = (c.eintraege && c.eintraege.length) ? c.eintraege : [
+        const eintraege = misch(c.eintraege, [
           { title: 'Beratung, die weiterhilft', text: LOREM.satz },
           { title: 'Umsetzung ohne Überraschungen', text: LOREM.satz },
           { title: 'Betreuung auch danach', text: LOREM.satz },
-        ]
+        ])
         return `
 <section data-block="media" data-variant="media-zickzack" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -138,7 +177,7 @@ export const MEDIA = {
         <div class="wg-reveal ${i % 2 ? 'li' : 're'}" style="order:${i % 2 ? 1 : 2};transition-delay:.1s;">
           <div style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:15px;margin-bottom:14px;">${i + 1}</div>
           <h3 class="wg-t3" style="margin-bottom:10px;">${ed(`eintraege.${i}.title`, e.title)}</h3>
-          <p class="wg-lead" style="font-size:16px;">${ed(`eintraege.${i}.text`, e.text)}</p>
+          <div class="wg-lead" style="font-size:16px;">${ed(`eintraege.${i}.text`, e.text)}</div>
         </div>
       </div>`).join('')}
   </div>
@@ -157,7 +196,7 @@ export const MEDIA = {
         <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Ein Blick hinter die Kulissen')}</h2>
         <span class="wg-strichlinie"></span>
       </div>
-      <p class="wg-reveal re wg-lead" style="transition-delay:.1s;">${txt('text', c.text, LOREM.lang, 'span')}</p>
+      <div class="wg-reveal re wg-lead" style="transition-delay:.1s;">${txt('text', c.text, LOREM.lang, 'span')}</div>
     </div>
   </div>
 </section>`
@@ -172,7 +211,7 @@ export const MEDIA = {
       <div class="wg-reveal pop wg-karte" style="max-width:520px;margin:-90px 0 0 auto;position:relative;z-index:2;box-shadow:0 30px 70px rgba(15,23,42,.16);transition-delay:.15s;">
         <span class="wg-eyebrow">${txt('tag', c.tag, 'Qualität')}</span>
         <h2 class="wg-t3" style="margin:12px 0 10px;">${txt('title', c.title, 'Sorgfalt in jedem Detail')}</h2>
-        <p class="wg-lead" style="font-size:15.5px;margin-bottom:20px;">${txt('text', c.text, LOREM.absatz, 'span')}</p>
+        <div class="wg-lead" style="font-size:15.5px;margin-bottom:20px;">${txt('text', c.text, LOREM.absatz, 'span')}</div>
         <a href="kontakt.html" class="wg-btn">${txt('cta', c.cta, 'Kontakt aufnehmen')}</a>
       </div>
     </div>
@@ -198,7 +237,7 @@ export const TEXT = {
       <span class="wg-eyebrow">${txt('tag', c.tag, 'Was uns antreibt')}</span>
       <h2 class="wg-t2" style="margin-top:14px;">${txt('title', c.title, 'Gute Arbeit spricht für sich')}</h2>
       <span class="wg-strichlinie mitte"></span>
-      <p class="wg-lead">${txt('text', c.text, LOREM.lang, 'span')}</p>
+      <div class="wg-lead">${txt('text', c.text, LOREM.lang, 'span')}</div>
     </div>
   </div>
 </section>`
@@ -215,7 +254,7 @@ export const TEXT = {
         <span class="wg-strichlinie"></span>
       </div>
       <div class="wg-reveal re" style="transition-delay:.1s;columns:2;column-gap:34px;">
-        <p class="wg-lead" style="font-size:16px;margin:0;">${txt('text', c.text, LOREM.lang + ' ' + LOREM.absatz, 'span')}</p>
+        <div class="wg-lead" style="font-size:16px;margin:0;">${txt('text', c.text, LOREM.lang + ' ' + LOREM.absatz, 'span')}</div>
       </div>
     </div>
   </div>
@@ -229,7 +268,7 @@ export const TEXT = {
   <div class="wg-wrap" style="max-width:900px;text-align:center;position:relative;z-index:1;">
     <div class="wg-reveal">
       <i class="fa-solid fa-quote-left" style="font-size:34px;color:var(--accent);margin-bottom:22px;display:block;"></i>
-      <p class="wg-t2" style="color:#fff;font-weight:300;line-height:1.3;margin-bottom:22px;">${txt('zitat', c.zitat, 'Wir behandeln jedes Projekt so, als wäre es unser eigenes.')}</p>
+      <div class="wg-t2" style="color:#fff;font-weight:300;line-height:1.3;margin-bottom:22px;">${txt('zitat', c.zitat, 'Wir behandeln jedes Projekt so, als wäre es unser eigenes.')}</div>
       <div style="font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;">${txt('autor', c.autor, 'Die Geschäftsführung')}</div>
     </div>
   </div>
@@ -242,7 +281,7 @@ export const TEXT = {
   <div class="wg-wrap" style="max-width:920px;">
     <div class="wg-reveal" style="border-left:4px solid var(--accent);padding-left:clamp(20px,3vw,34px);">
       <h2 class="wg-t2" style="margin-bottom:16px;">${txt('title', c.title, 'Worauf Sie sich verlassen können')}</h2>
-      <p class="wg-lead">${txt('text', c.text, LOREM.lang, 'span')}</p>
+      <div class="wg-lead">${txt('text', c.text, LOREM.lang, 'span')}</div>
     </div>
   </div>
 </section>`
@@ -250,11 +289,11 @@ export const TEXT = {
     {
       id: 'text-highlights', name: 'Text + Highlights',
       render: (c) => {
-        const hl = (c.highlights && c.highlights.length) ? c.highlights : [
+        const hl = misch(c.highlights, [
           { num: '15+', label: 'Jahre Erfahrung' },
           { num: '500+', label: 'Zufriedene Kunden' },
           { num: '100%', label: 'Termintreue' },
-        ]
+        ])
         return `
 <section data-block="text" data-variant="text-highlights" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -263,12 +302,12 @@ export const TEXT = {
         <span class="wg-eyebrow">${txt('tag', c.tag, 'In Zahlen')}</span>
         <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Erfahrung, die sich zeigt')}</h2>
         <span class="wg-strichlinie"></span>
-        <p class="wg-lead">${txt('text', c.text, LOREM.absatz, 'span')}</p>
+        <div class="wg-lead">${txt('text', c.text, LOREM.absatz, 'span')}</div>
       </div>
       <div class="wg-reveal re" style="display:grid;gap:14px;transition-delay:.1s;">
         ${hl.map((h, i) => `<div class="wg-karte wg-karte-hover" style="display:flex;align-items:center;gap:18px;padding:20px 22px;">
-          <div class="wg-stat-num" data-edit="stat${i}" style="min-width:96px;">${esc(h.num)}</div>
-          <div style="font-size:14.5px;color:#64748b;">${ed(`stats.${i}.label`, h.label)}</div>
+          <div class="wg-stat-num" style="min-width:96px;">${ed(`highlights.${i}.num`, h.num)}</div>
+          <div style="font-size:14.5px;color:#64748b;">${ed(`highlights.${i}.label`, h.label)}</div>
         </div>`).join('')}
       </div>
     </div>
@@ -289,11 +328,11 @@ export const FEATURES = {
     {
       id: 'feat-karten', name: 'Karten mit Icon',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'bolt', title: 'Schnell vor Ort', text: LOREM.kurz },
           { icon: 'shield-halved', title: 'Sauber gearbeitet', text: LOREM.kurz },
           { icon: 'handshake', title: 'Fair beraten', text: LOREM.kurz },
-        ]
+        ])
         return `
 <section data-block="features" data-variant="feat-karten" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -306,7 +345,7 @@ export const FEATURES = {
       ${items.map((it, i) => `<div class="wg-reveal wg-karte wg-karte-hover" style="transition-delay:${i * 80}ms;">
         <div class="wg-iconchip" style="margin-bottom:16px;">${icon(`items.${i}.icon`, it.icon)}</div>
         <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:9px;">${ed(`items.${i}.title`, it.title)}</h3>
-        <p style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</p>
+        <div style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -316,12 +355,12 @@ export const FEATURES = {
     {
       id: 'feat-liste-gross', name: 'Große nummerierte Liste',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { title: 'Beratung', text: LOREM.satz },
           { title: 'Planung', text: LOREM.satz },
           { title: 'Umsetzung', text: LOREM.satz },
           { title: 'Abnahme', text: LOREM.satz },
-        ]
+        ])
         return `
 <section data-block="features" data-variant="feat-liste-gross" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -335,7 +374,7 @@ export const FEATURES = {
         <div style="font-size:clamp(34px,4vw,52px);font-weight:200;color:var(--accent);line-height:1;">${String(i + 1).padStart(2, '0')}</div>
         <div>
           <h3 class="wg-t3" style="margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
-          <p class="wg-lead" style="font-size:15.5px;max-width:680px;">${ed(`items.${i}.text`, it.text)}</p>
+          <div class="wg-lead" style="font-size:15.5px;max-width:680px;">${ed(`items.${i}.text`, it.text)}</div>
         </div>
       </div>`).join('')}
     </div>
@@ -346,12 +385,12 @@ export const FEATURES = {
     {
       id: 'feat-dunkel', name: 'Dunkles Raster',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'clock', title: 'Rund um die Uhr', text: LOREM.kurz },
           { icon: 'medal', title: 'Geprüfte Qualität', text: LOREM.kurz },
           { icon: 'euro-sign', title: 'Faire Preise', text: LOREM.kurz },
           { icon: 'headset', title: 'Persönlicher Kontakt', text: LOREM.kurz },
-        ]
+        ])
         return `
 <section data-block="features" data-variant="feat-dunkel" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a 70%);')}position:relative;overflow:hidden;">
   <div class="wg-mesh"><span class="wg-blob wg-blob-b"></span></div>
@@ -365,7 +404,7 @@ export const FEATURES = {
       ${items.map((it, i) => `<div class="wg-reveal" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:26px;transition-delay:${i * 70}ms;">
         <div style="width:46px;height:46px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:15px;">${icon(`items.${i}.icon`, it.icon)}</div>
         <h3 style="font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;">${ed(`items.${i}.title`, it.title)}</h3>
-        <p style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.65;">${ed(`items.${i}.text`, it.text)}</p>
+        <div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -375,11 +414,11 @@ export const FEATURES = {
     {
       id: 'feat-split-bild', name: 'Liste neben Bild',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { icon: 'check', title: 'Festpreis-Garantie', text: LOREM.kurz },
           { icon: 'check', title: 'Termine, die halten', text: LOREM.kurz },
           { icon: 'check', title: 'Saubere Übergabe', text: LOREM.kurz },
-        ]
+        ])
         return `
 <section data-block="features" data-variant="feat-split-bild" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -394,7 +433,7 @@ export const FEATURES = {
             <div style="width:40px;height:40px;border-radius:11px;background:var(--p100);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</div>
             <div>
               <h3 style="font-size:16.5px;font-weight:700;color:#0f172a;margin-bottom:4px;">${ed(`items.${i}.title`, it.title)}</h3>
-              <p style="font-size:14.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</p>
+              <div style="font-size:14.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
             </div>
           </div>`).join('')}
         </div>
@@ -417,7 +456,7 @@ export const GALERIE = {
     {
       id: 'gal-masonry', name: 'Versetztes Raster',
       render: (c) => {
-        const imgs = (c.images && c.images.length) ? c.images : [0, 1, 2, 3, 4, 5].map(() => '')
+        const imgs = misch(c.images, [0, 1, 2, 3, 4, 5]).map(() => '')
         return `
 <section data-block="galerie" data-variant="gal-masonry" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
   <div class="wg-wrap">
@@ -437,7 +476,7 @@ export const GALERIE = {
     {
       id: 'gal-raster', name: 'Gleichmäßiges Raster',
       render: (c) => {
-        const imgs = (c.images && c.images.length) ? c.images : [0, 1, 2, 3, 4, 5].map(() => '')
+        const imgs = misch(c.images, [0, 1, 2, 3, 4, 5]).map(() => '')
         return `
 <section data-block="galerie" data-variant="gal-raster" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -456,7 +495,7 @@ export const GALERIE = {
     {
       id: 'gal-breit', name: 'Breite Streifen',
       render: (c) => {
-        const imgs = (c.images && c.images.length) ? c.images.slice(0, 3) : ['', '', '']
+        const imgs = misch(c.images, ['', '', '']).slice(0, 3)
         return `
 <section data-block="galerie" data-variant="gal-breit" class="wg-sekt" style="${bg(c, 'background:#fff;')}padding-left:0;padding-right:0;">
   <div class="wg-wrap" style="margin-bottom:clamp(24px,4vw,40px);text-align:center;">
@@ -485,10 +524,10 @@ export const STIMMEN = {
     {
       id: 'stimmen-gross', name: 'Große Zitatkarten',
       render: (c) => {
-        const items = (c.items && c.items.length) ? c.items : [
+        const items = misch(c.items, [
           { text: 'Schnell, sauber und wirklich freundlich. Wir haben uns von Anfang an gut aufgehoben gefühlt.', name: 'M. Schneider', rolle: 'Privatkundin' },
           { text: 'Termin gehalten, Preis gehalten, Ergebnis top. Mehr kann man nicht verlangen.', name: 'T. Bergmann', rolle: 'Hausverwaltung' },
-        ]
+        ])
         return `
 <section data-block="stimmen" data-variant="stimmen-gross" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}">
   <div class="wg-wrap">
@@ -548,7 +587,7 @@ export const CTA_PLUS = {
     <div class="wg-reveal">
       <h2 class="wg-t2" style="color:#fff;">${txt('title', c.title, 'Reden wir über Ihr Vorhaben')}</h2>
       <span class="wg-strichlinie mitte"></span>
-      <p class="wg-lead" style="color:rgba(255,255,255,.78);margin-bottom:32px;">${txt('text', c.text, 'Ein kurzes Gespräch genügt – wir melden uns innerhalb von 24 Stunden bei Ihnen zurück.', 'span')}</p>
+      <div class="wg-lead" style="color:rgba(255,255,255,.78);margin-bottom:32px;">${txt('text', c.text, 'Ein kurzes Gespräch genügt – wir melden uns innerhalb von 24 Stunden bei Ihnen zurück.', 'span')}</div>
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
         <a href="kontakt.html" class="wg-btn">${txt('cta1', c.cta1, 'Jetzt anfragen')}</a>
         <a href="tel:" class="wg-btn-leer hell">${txt('cta2', c.cta2, 'Anrufen')}</a>
@@ -580,7 +619,7 @@ export const CTA_PLUS = {
     <div class="wg-reveal wg-karte" style="text-align:center;padding:clamp(34px,5vw,58px);box-shadow:0 26px 60px rgba(15,23,42,.1);">
       <div class="wg-iconchip" style="margin:0 auto 20px;"><i class="fa-solid fa-comments"></i></div>
       <h2 class="wg-t2" style="margin-bottom:12px;">${txt('title', c.title, 'Lassen Sie uns starten')}</h2>
-      <p class="wg-lead" style="max-width:520px;margin:0 auto 28px;">${txt('text', c.text, 'Schildern Sie uns kurz Ihr Anliegen – den Rest übernehmen wir.', 'span')}</p>
+      <div class="wg-lead" style="max-width:520px;margin:0 auto 28px;">${txt('text', c.text, 'Schildern Sie uns kurz Ihr Anliegen – den Rest übernehmen wir.', 'span')}</div>
       <a href="kontakt.html" class="wg-btn">${txt('cta1', c.cta1, 'Unverbindlich anfragen')}</a>
     </div>
   </div>
@@ -656,7 +695,7 @@ export const BANNER = {
     {
       id: 'banner-laufband', name: 'Laufband',
       render: (c) => {
-        const punkte = (c.punkte && c.punkte.length) ? c.punkte : ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden', 'Persönliche Beratung']
+        const punkte = misch(c.punkte, ['Meisterbetrieb', 'Festpreis-Garantie', 'Termintreue', 'Über 500 Kunden', 'Persönliche Beratung'])
         const zeile = (p, i, bearbeitbar) => `<span style="display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>${bearbeitbar ? ed(`punkte.${i}`, p) : esc(p)}</span>`
         const reihe = punkte.map((p, i) => zeile(p, i, true)).join('')
         const reiheKopie = punkte.map((p, i) => zeile(p, i, false)).join('')
@@ -685,7 +724,7 @@ export const KONTAKT_PLUS = {
       <span class="wg-eyebrow">${txt('tag', c.tag, 'Kontakt')}</span>
       <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'So erreichen Sie uns')}</h2>
       <span class="wg-strichlinie"></span>
-      <p class="wg-lead">${txt('text', c.text, 'Rufen Sie an oder schreiben Sie uns – wir melden uns zeitnah zurück.', 'span')}</p>
+      <div class="wg-lead">${txt('text', c.text, 'Rufen Sie an oder schreiben Sie uns – wir melden uns zeitnah zurück.', 'span')}</div>
     </div>
     <div class="wg-split" style="display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(22px,4vw,44px);align-items:start;">
       <form class="wg-reveal li" data-contact-form style="display:grid;gap:14px;">
@@ -698,15 +737,15 @@ export const KONTAKT_PLUS = {
         <button type="submit" class="wg-btn" style="justify-content:center;">${txt('cta', c.cta, 'Nachricht senden')}</button>
       </form>
       <div class="wg-reveal re" style="display:grid;gap:12px;transition-delay:.1s;">
-        ${[['location-dot', 'Adresse', c.adresse || 'Musterstraße 1, 10115 Berlin'],
-           ['phone', 'Telefon', c.telefon || '+49 30 1234567'],
-           ['envelope', 'E-Mail', c.email || 'info@beispiel.de'],
-           ['clock', 'Öffnungszeiten', c.oeffnung || 'Mo–Fr 9–18 Uhr']]
-          .map(([ic, label, wert], i) => `<div class="wg-karte" style="display:flex;align-items:center;gap:15px;padding:18px 20px;">
+        ${[['location-dot', 'Adresse', 'adresse', c.adresse || 'Musterstraße 1, 10115 Berlin'],
+           ['phone', 'Telefon', 'telefon', c.telefon || '+49 30 1234567'],
+           ['envelope', 'E-Mail', 'email', c.email || 'info@beispiel.de'],
+           ['clock', 'Öffnungszeiten', 'oeffnung', c.oeffnung || 'Mo–Fr 9–18 Uhr']]
+          .map(([ic, label, feld, wert], i) => `<div class="wg-karte" style="display:flex;align-items:center;gap:15px;padding:18px 20px;">
             <div style="width:42px;height:42px;border-radius:11px;background:var(--p100);color:var(--p700);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;"><i class="fa-solid fa-${ic}"></i></div>
             <div style="min-width:0;">
               <div style="font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;">${label}</div>
-              <div style="font-size:15px;font-weight:600;color:#0f172a;">${ed(`kontaktfelder.${i}`, wert)}</div>
+              <div style="font-size:15px;font-weight:600;color:#0f172a;">${ed(feld, wert)}</div>
             </div>
           </div>`).join('')}
       </div>
