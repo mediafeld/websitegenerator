@@ -477,6 +477,8 @@ export default function EditorPage() {
           fontWeight:cs.fontWeight,
           block:bIdx(el),
           pfad:kindPfad(el),
+          linkHref:(function(){var a=el.closest('a');return a?(a.getAttribute('href')||''):null})(),
+          linkPfad:(function(){var a=el.closest('a');return a?kindPfad(a):null})(),
           stil:{marginTop:cs.marginTop,marginRight:cs.marginRight,marginBottom:cs.marginBottom,marginLeft:cs.marginLeft,
                 paddingTop:cs.paddingTop,paddingRight:cs.paddingRight,paddingBottom:cs.paddingBottom,paddingLeft:cs.paddingLeft,
                 zIndex:cs.zIndex},
@@ -1181,6 +1183,19 @@ export default function EditorPage() {
           if(el4&&el4!==selC)el4.classList.add('wg-c-hov');
         }
         if(d.cmd==='deselect'){contAbwaehlen(false);}
+        // Live-Text aus dem Panel: direkt am Element, kein Neuaufbau nötig
+        if(d.cmd==='setzeText'){
+          var sT=secs[d.block];if(!sT)return;
+          var eT=sT.querySelector('[data-edit="'+d.key+'"]');
+          if(eT&&!eT.isContentEditable)eT.innerHTML=d.val;
+          sT.querySelectorAll('[data-kopie="'+d.key+'"]').forEach(function(k){k.innerHTML=d.val;});
+        }
+        // Verlinkung live setzen (Button-/Link-Ziel)
+        if(d.cmd==='setzeHref'){
+          var sH=secs[d.block];if(!sH)return;
+          var eH=vonPfad(sH,d.pfad);
+          if(eH&&eH.tagName==='A')eH.setAttribute('href',d.href||'#');
+        }
       });
       document.addEventListener('keydown',function(e){
         if(e.key==='Escape'&&selC){contAbwaehlen(true);}
@@ -1261,14 +1276,35 @@ export default function EditorPage() {
     const next = { ...pages }; next[activePage] = arr
     applyPages(next, true, false)
   }
-  // Name / CSS-ID / CSS-Klassen einer Sektion
-  function contFeld(blockIdx, fields) {
+  // Name / CSS-ID / CSS-Klassen / beliebige Felder einer Sektion
+  function contFeld(blockIdx, fields, neuAufbau = false) {
     const arr = [...(pages[activePage] || [])]
     const b = arr[blockIdx]; if (!b) return
     arr[blockIdx] = { ...b, content: { ...(b.content || {}), ...fields } }
     const next = { ...pages }; next[activePage] = arr
-    applyPages(next, true, false)
+    applyPages(next, true, neuAufbau)
     if (fields._name !== undefined) sendeAnVorschau({ cmd: 'contName', block: blockIdx, name: fields._name })
+  }
+
+  // Live-Text aus dem Panel: sofort in der Vorschau sichtbar (ohne Neuaufbau,
+  // also ohne Scroll-Sprung) UND persistiert. Ersetzt das alte „Übernehmen".
+  function textLive(blockIdx, key, val) {
+    sendeAnVorschau({ cmd: 'setzeText', block: blockIdx, key, val })
+    updateContent(blockIdx, key, val, false, false)
+  }
+  // Verlinkung (Button-/Link-Ziel): live setzen + in content._links persistieren;
+  // die fertige Seite bekommt die Ziele über einen kleinen Läufer gebacken.
+  function linkAendern(blockIdx, pfad, href) {
+    if (pfad == null) return
+    sendeAnVorschau({ cmd: 'setzeHref', block: blockIdx, pfad, href })
+    const arr = [...(pages[activePage] || [])]
+    const b = arr[blockIdx]; if (!b) return
+    const links = { ...(b.content?._links || {}) }
+    if (href && href.trim()) links[pfad] = href.trim()
+    else delete links[pfad]
+    arr[blockIdx] = { ...b, content: { ...(b.content || {}), _links: links } }
+    const next = { ...pages }; next[activePage] = arr
+    applyPages(next, true, false)
   }
   // Element frei in einen Container einfügen (per Drag & Drop).
   // Einzel-Elemente werden echte Bearbeitungs-Elemente; ganze Bausteine
@@ -1714,6 +1750,8 @@ export default function EditorPage() {
         <div style={{ width: breiteRechts, borderLeft: '1px solid #e5e5e5', background: '#fff', overflowY: 'auto', flexShrink: 0, padding: 14 }}>
           {contSel ? (
             <LayoutPanel contSel={contSel} primary={primary} content={pages[activePage]?.[contSel.block]?.content}
+              blockTyp={pages[activePage]?.[contSel.block]?.type}
+              onFelder={(f) => contFeld(contSel.block, f, true)}
               onLayout={(patch) => layoutAendern(contSel.block, contSel.pfad ?? '', patch)}
               onBreite={(m, w) => breiteAendern(contSel.block, m, w)}
               onFeld={(f) => contFeld(contSel.block, f)}
@@ -1724,7 +1762,7 @@ export default function EditorPage() {
               onEltern={() => { const p = String(contSel.pfad || '').split('.').slice(0, -1).join('.'); sendeAnVorschau({ cmd: 'gehePfad', block: contSel.block, pfad: contSel.pfad ? p : '' }) }}
             />
           ) : selected ? (
-            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onTextChange={(v) => { updateContent(selected.block, selected.key, v, false, true); setSelected(sx => sx ? { ...sx, text: v } : sx) }} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
+            <PropsPanel selected={selected} primary={primary} onLayout={selected.pfad != null ? (patch) => layoutAendern(selected.block, selected.pfad, patch) : null} onTextChange={(v) => { textLive(selected.block, selected.key, v); setSelected(sx => sx ? { ...sx, text: v } : sx) }} onLink={selected.linkPfad != null ? (href) => linkAendern(selected.block, selected.linkPfad, href) : null} palette={palette} sendCmd={sendCmd} onClose={() => { sendCmd('deselect'); setSelected(null) }} onImageClick={() => { setImgTarget({ blockIdx: selected.block, key: selected.key }); setLastImgClick({ blockIdx: selected.block, key: selected.key }); fileRef.current?.click() }} onAIImage={() => { setAiPanel(true); setAiTab('images') }} onSectionBg={(opts) => setSectionBg(selected.block, opts)} sectionContent={selected.isSection ? pages[activePage]?.[selected.block]?.content : null} onSectionImageUpload={() => { setImgTarget({ blockIdx: selected.block, key: '__sectionBg' }); fileRef.current?.click() }} onSectionField={(fields) => setSectionField(selected.block, fields)} onParallax={(on, speed) => applySectionParallax(selected.block, on, speed)} onIconClick={() => setIconPicker({ blockIdx: selected.block, key: selected.key })} onSetRating={(r) => updateContent(selected.block, selected.key, r, true)} imageQuota={imageQuota} imagesUsed={imagesUsed} />
           ) : (
           <div>
           <div style={{ fontSize: 9, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Logo</div>
@@ -2088,11 +2126,71 @@ function AbstandGruppe({ titel, praefix, werte, onAendern, primary }) {
   )
 }
 
+// ── Karten-Adresse LIVE suchen (OpenStreetMap / Nominatim, ohne Schlüssel) ──
+// Tippen → Vorschläge → Klick setzt Adresse + GPS → Karte erscheint sofort.
+function KartenSuche({ content, onFelder, primary }) {
+  const [suche, setSuche] = useState(content?.adresse || '')
+  const [treffer, setTreffer] = useState([])
+  const [laedt, setLaedt] = useState(false)
+  const [fehler, setFehler] = useState('')
+  const timer = useRef(null)
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  const suchen = (q) => {
+    setSuche(q); setFehler('')
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(async () => {
+      if (!q || q.trim().length < 3) { setTreffer([]); return }
+      setLaedt(true)
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=de&q=${encodeURIComponent(q)}`)
+        const js = await r.json()
+        setTreffer(Array.isArray(js) ? js : [])
+        if (Array.isArray(js) && !js.length) setFehler('Keine Treffer – Adresse anders formulieren.')
+      } catch { setTreffer([]); setFehler('Suche gerade nicht erreichbar.') }
+      setLaedt(false)
+    }, 450)
+  }
+  const waehlen = (t) => {
+    setSuche(t.display_name); setTreffer([])
+    onFelder({ adresse: t.display_name, lat: parseFloat(t.lat), lon: parseFloat(t.lon) })
+  }
+  return (
+    <div style={{ marginBottom: 14, padding: 10, border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: 9 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}><i className="fa-solid fa-map-location-dot" style={{ marginRight: 5 }} />Karte – Adresse live suchen</div>
+      <div style={{ position: 'relative' }}>
+        <input value={suche} onChange={e => suchen(e.target.value)} placeholder="Straße Hausnummer, Ort …"
+          style={{ width: '100%', border: '1px solid #86efac', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        {laedt && <i className="fa-solid fa-spinner fa-spin" style={{ position: 'absolute', right: 9, top: 9, fontSize: 12, color: '#16a34a' }} />}
+      </div>
+      {!!treffer.length && (
+        <div style={{ marginTop: 5, border: '1px solid #bbf7d0', borderRadius: 7, background: '#fff', overflow: 'hidden' }}>
+          {treffer.map((t, i) => (
+            <div key={i} onClick={() => waehlen(t)} style={{ padding: '7px 9px', fontSize: 11, color: '#334155', cursor: 'pointer', borderBottom: i < treffer.length - 1 ? '1px solid #f0fdf4' : 'none', lineHeight: 1.4 }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf4' }} onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}>
+              <i className="fa-solid fa-location-dot" style={{ marginRight: 6, color: '#16a34a' }} />{t.display_name}
+            </div>
+          ))}
+        </div>
+      )}
+      {!!fehler && <div style={{ fontSize: 10.5, color: '#b45309', marginTop: 5 }}>{fehler}</div>}
+      <div style={{ display: 'flex', gap: 5, marginTop: 8, alignItems: 'center' }}>
+        <input type="number" step="0.00001" defaultValue={content?.lat ?? ''} key={'lat' + (content?.lat ?? '')} placeholder="Breite (lat)" onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) onFelder({ lat: v }) }}
+          style={{ flex: 1, border: '1px solid #d1fae5', borderRadius: 6, padding: '6px 7px', fontSize: 10.5, fontFamily: 'monospace', outline: 'none', minWidth: 0 }} />
+        <input type="number" step="0.00001" defaultValue={content?.lon ?? ''} key={'lon' + (content?.lon ?? '')} placeholder="Länge (lon)" onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) onFelder({ lon: v }) }}
+          style={{ flex: 1, border: '1px solid #d1fae5', borderRadius: 6, padding: '6px 7px', fontSize: 10.5, fontFamily: 'monospace', outline: 'none', minWidth: 0 }} />
+      </div>
+      <div style={{ fontSize: 9.5, color: '#15803d', marginTop: 6, lineHeight: 1.4 }}>Treffer anklicken → Karte springt sofort auf den Ort. GPS-Felder für Feinjustierung. Daten: OpenStreetMap/Nominatim.</div>
+    </div>
+  )
+}
+
 // ── Panel für gewählte Sektion / Container (pinke Elementor-Auswahl) ──
-function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern, onWert }) {
+function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, onArrayOp, onClose, onStilOeffnen, onEltern, onWert, blockTyp, onFelder }) {
   const einbau = contSel.bind?.feld === '_einbau' ? (content?._einbau || [])[contSel.bind.index] : null
   const [codeText, setCodeText] = useState(einbau?.art === 'html' ? (einbau.html || '') : '')
+  const codeTimer = useRef(null)
   useEffect(() => { setCodeText(einbau?.art === 'html' ? (einbau.html || '') : '') }, [contSel.block, contSel.pfad]) // eslint-disable-line
+  useEffect(() => () => { if (codeTimer.current) clearTimeout(codeTimer.current) }, [])
   const istSek = contSel.kind === 'sektion'
   const eintrag = (content?._layout || {})[contSel.pfad ?? ''] || {}
   const werte = { ...(contSel.stil || {}), ...eintrag }
@@ -2124,6 +2222,10 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
         <button onClick={onEltern} style={{ width: '100%', border: '1px solid #e5e5e5', background: '#fff', padding: '7px 0', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#475569', marginBottom: 12 }}><i className="fa-solid fa-turn-up" style={{ marginRight: 6 }} />Übergeordnetes Element wählen</button>
       )}
 
+      {blockTyp === 'karte' && onFelder && (
+        <KartenSuche content={content} onFelder={onFelder} primary={primary} />
+      )}
+
       {contSel.bind && (
         <div style={{ marginBottom: 14, padding: 10, border: '1px solid #fbcfe8', background: '#fdf2f8', borderRadius: 9 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: '#be185d', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Karte {contSel.bind.index + 1} · Liste „{contSel.bind.feld}“</div>
@@ -2139,9 +2241,9 @@ function LayoutPanel({ contSel, primary, content, onLayout, onBreite, onFeld, on
       {einbau?.art === 'html' && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>Eigener HTML-Code</div>
-          <textarea value={codeText} onChange={e => setCodeText(e.target.value)} rows={7} spellCheck={false}
+          <textarea value={codeText} onChange={e => { const v = e.target.value; setCodeText(v); if (codeTimer.current) clearTimeout(codeTimer.current); codeTimer.current = setTimeout(() => onWert(`_einbau.${contSel.bind.index}.html`, v), 900) }} rows={7} spellCheck={false}
             style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 8, padding: 9, fontSize: 11.5, fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
-          <button onClick={() => onWert(`_einbau.${contSel.bind.index}.html`, codeText)} style={{ width: '100%', marginTop: 6, border: 'none', background: primary, color: '#fff', padding: '8px 0', borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernehmen</button>
+          <div style={{ fontSize: 10, color: '#16a34a', marginTop: 5, fontWeight: 600 }}><i className="fa-solid fa-bolt" style={{ marginRight: 5 }} />Wird beim Tippen automatisch übernommen.</div>
         </div>
       )}
       {einbau?.art === 'abstand' && (
@@ -2277,7 +2379,7 @@ function Navigator({ baum, primary, onClose, onHover, onGehe, onName, onMove, on
   )
 }
 
-function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout }) {
+function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange, onLink, onImageClick, onAIImage, onSectionBg, sectionContent, onSectionImageUpload, onSectionField, onParallax, onIconClick, onSetRating, imageQuota = 8, imagesUsed = 0, onLayout }) {
   const imgRest = Math.max(0, imageQuota - imagesUsed)
   const pp = palette?.primary || {}
   const ac = palette?.accent?.base || primary
@@ -2350,8 +2452,19 @@ function PropsPanel({ selected, primary, palette, sendCmd, onClose, onTextChange
           <TextFeld
             wert={selected.text || ''}
             primary={primary}
-            onSpeichern={v => onTextChange(v)}
+            imLink={selected.linkPfad != null}
+            onLive={v => onTextChange(v)}
           />
+        </Section>
+      )}
+
+      {onLink && (
+        <Section title="Verlinkung (Ziel)">
+          <input defaultValue={selected.linkHref || ''} key={'lnk' + selected.block + (selected.linkPfad || '')}
+            placeholder="kontakt.html, #bereich oder https://…"
+            onChange={e => onLink(e.target.value)}
+            style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: '8px 10px', fontSize: 12, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }} />
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 5, lineHeight: 1.45 }}>Setzt das Ziel des Buttons/Links – Design und Text bleiben unangetastet. Gilt live und auf der fertigen Seite.</div>
         </Section>
       )}
 
@@ -2653,8 +2766,17 @@ function buildDefaultContent(type) {
 function CodeFeld({ label, wert, sprache, primary, onSpeichern }) {
   const [text, setText] = useState(wert || '')
   const [offen, setOffen] = useState(false)
-  const [gespeichert, setGespeichert] = useState(false)
-  useEffect(() => { setText(wert || '') }, [wert])
+  const timerRef = useRef(null)
+  const eigenRef = useRef(wert || '')
+  useEffect(() => { if ((wert || '') !== eigenRef.current) { eigenRef.current = wert || ''; setText(wert || '') } }, [wert])
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+  // Live: Code fließt entprellt (Neuaufbau der Vorschau ist hier nötig)
+  const live = (v) => {
+    eigenRef.current = v
+    setText(v)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => onSpeichern(v), 900)
+  }
   const farbe = { html: '#e11d48', css: '#2563eb', js: '#ca8a04' }[sprache] || '#475569'
   return (
     <div style={{ marginBottom: 10, border: '1px solid #e5e5e5', borderRadius: 9, overflow: 'hidden' }}>
@@ -2666,14 +2788,12 @@ function CodeFeld({ label, wert, sprache, primary, onSpeichern }) {
       </button>
       {offen && (
         <div style={{ padding: 10, borderTop: '1px solid #eef2f6' }}>
-          <textarea value={text} onChange={e => { setText(e.target.value); setGespeichert(false) }} rows={8} spellCheck={false}
+          <textarea value={text} onChange={e => live(e.target.value)} rows={8} spellCheck={false}
             placeholder={sprache === 'html' ? '<div>Eigenes HTML …</div>' : sprache === 'css' ? '& { background: #111; }\n& h2 { color: gold; }' : "block.querySelector('h2').style.opacity = .9"}
             style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: 11.5, fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', lineHeight: 1.55, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
-          <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
-            <button onClick={() => { onSpeichern(text); setGespeichert(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {gespeichert ? <><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernommen</> : 'Übernehmen'}
-            </button>
-            {!!text && <button onClick={() => { setText(''); onSpeichern('') }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 7, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}>Leeren</button>}
+          <div style={{ display: 'flex', gap: 7, marginTop: 8, alignItems: 'center' }}>
+            <span style={{ flex: 1, fontSize: 10.5, color: '#16a34a', fontWeight: 600 }}><i className="fa-solid fa-bolt" style={{ marginRight: 5 }} />Wird beim Tippen automatisch übernommen.</span>
+            {!!text && <button onClick={() => { setText(''); eigenRef.current = ''; onSpeichern('') }} style={{ border: '1px solid #e5e5e5', background: '#fff', borderRadius: 7, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}>Leeren</button>}
           </div>
         </div>
       )}
@@ -2693,26 +2813,51 @@ const FA_MARKEN = 'facebook-f instagram linkedin-in x-twitter youtube tiktok wha
 // ── Text-Editor im Panel: echtes Bearbeiten wie in WordPress ──
 // „Editor“ = visuelles Bearbeiten mit Werkzeugleiste + Font-Awesome-Icons,
 // „HTML“ = Roh-Ansicht. Beides schreibt denselben Wert.
-function TextFeld({ wert, primary, onSpeichern }) {
+function TextFeld({ wert, primary, onLive, imLink = false }) {
   const [htmlModus, setHtmlModus] = useState(false)
   const [text, setText] = useState(wert || '')
-  const [ok, setOk] = useState(false)
   const [iconOffen, setIconOffen] = useState(false)
   const [iconSuche, setIconSuche] = useState('')
   const [linkOffen, setLinkOffen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const editRef = useRef(null)
   const rangeRef = useRef(null)
+  const timerRef = useRef(null)
+  const wertRef = useRef(wert || '')
   useEffect(() => {
-    setText(wert || ''); setOk(false); setIconOffen(false); setLinkOffen(false)
+    if ((wert || '') === wertRef.current) return   // eigenes Live-Update kam zurück
+    wertRef.current = wert || ''
+    setText(wert || ''); setIconOffen(false); setLinkOffen(false)
     if (editRef.current) editRef.current.innerHTML = wert || ''
   }, [wert])
   useEffect(() => { if (!htmlModus && editRef.current) editRef.current.innerHTML = text }, [htmlModus]) // eslint-disable-line
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+  // ALLES LIVE: Änderungen fließen entprellt sofort in Vorschau + Inhalt.
+  const live = (v) => {
+    wertRef.current = v
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => onLive(v), 280)
+  }
   const merken = () => { const s = window.getSelection(); if (s && s.rangeCount && editRef.current && editRef.current.contains(s.anchorNode)) rangeRef.current = s.getRangeAt(0).cloneRange() }
   const herstellen = () => { const r = rangeRef.current; if (!r) return; try { const s = window.getSelection(); s.removeAllRanges(); s.addRange(r) } catch {} }
-  const uebernehmen = () => { if (editRef.current) setText(editRef.current.innerHTML); setOk(false) }
+  const uebernehmen = () => { if (editRef.current) { setText(editRef.current.innerHTML); live(editRef.current.innerHTML) } }
   const cmd = (c, v) => { editRef.current?.focus(); herstellen(); document.execCommand(c, false, v); uebernehmen(); merken() }
   const einfuegen = (html) => { editRef.current?.focus(); herstellen(); document.execCommand('insertHTML', false, html); uebernehmen(); merken() }
+  // Link setzen: ohne Auswahl wird der GANZE Text verlinkt – so geht der
+  // Link nie „verloren“, und im HTML-Tab steht sichtbar das <a href="…">.
+  const linkSetzen = () => {
+    if (!editRef.current) return
+    editRef.current.focus()
+    herstellen()
+    const s = window.getSelection()
+    if (!s || !s.rangeCount || s.isCollapsed || !editRef.current.contains(s.anchorNode)) {
+      const r = document.createRange(); r.selectNodeContents(editRef.current)
+      s.removeAllRanges(); s.addRange(r)
+    }
+    document.execCommand('createLink', false, linkUrl || '#')
+    uebernehmen(); merken()
+    setLinkOffen(false)
+  }
   const KNOPF = { minWidth: 26, height: 26, border: '1px solid #e5e5e5', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 11, color: '#475569', padding: '0 5px' }
   const treffer = (iconSuche
     ? FA_SOLID.filter(n => n.includes(iconSuche.toLowerCase())).map(n => [n, 'solid']).concat(FA_MARKEN.filter(n => n.includes(iconSuche.toLowerCase())).map(n => [n, 'brands']))
@@ -2727,7 +2872,7 @@ function TextFeld({ wert, primary, onSpeichern }) {
       </div>
 
       {htmlModus ? (
-        <textarea value={text} onChange={e => { setText(e.target.value); setOk(false) }} rows={8} spellCheck={false}
+        <textarea value={text} onChange={e => { setText(e.target.value); live(e.target.value) }} rows={8} spellCheck={false}
           placeholder='<h2>Überschrift</h2> <b>fett</b> <i class="fa-solid fa-star"></i>'
           style={{ width: '100%', border: '1px solid #e5e5e5', borderRadius: 7, padding: 9, fontSize: 11.5, fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', lineHeight: 1.6, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
       ) : (
@@ -2749,17 +2894,20 @@ function TextFeld({ wert, primary, onSpeichern }) {
             <button title="Durchgestrichen" onClick={() => cmd('strikeThrough')} style={{ ...KNOPF, textDecoration: 'line-through' }}>S</button>
             <button title="Aufzählung" onClick={() => cmd('insertUnorderedList')} style={KNOPF}><i className="fa-solid fa-list" /></button>
             <button title="Nummerierte Liste" onClick={() => cmd('insertOrderedList')} style={KNOPF}><i className="fa-solid fa-list-ol" /></button>
-            <button title="Link" onClick={() => { merken(); setLinkOffen(o => !o); setIconOffen(false) }} style={{ ...KNOPF, borderColor: linkOffen ? primary : '#e5e5e5', color: linkOffen ? primary : '#475569' }}><i className="fa-solid fa-link" /></button>
+            {!imLink && <button title="Link" onClick={() => { merken(); setLinkOffen(o => !o); setIconOffen(false) }} style={{ ...KNOPF, borderColor: linkOffen ? primary : '#e5e5e5', color: linkOffen ? primary : '#475569' }}><i className="fa-solid fa-link" /></button>}
             <button title="Font-Awesome-Icon einfügen" onClick={() => { merken(); setIconOffen(o => !o); setLinkOffen(false) }} style={{ ...KNOPF, borderColor: iconOffen ? primary : '#e5e5e5', color: iconOffen ? primary : '#475569' }}><i className="fa-solid fa-star" /></button>
             <button title="Formatierung entfernen" onClick={() => { cmd('removeFormat'); cmd('unlink') }} style={KNOPF}><i className="fa-solid fa-eraser" /></button>
           </div>
 
-          {linkOffen && (
+          {linkOffen && !imLink && (
             <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
-              <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://… oder kontakt.html" onKeyDown={e => { if (e.key === 'Enter') { cmd('createLink', linkUrl || '#'); setLinkOffen(false) } }}
+              <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://… oder kontakt.html" onKeyDown={e => { if (e.key === 'Enter') linkSetzen() }}
                 style={{ flex: 1, border: `1px solid ${primary}`, borderRadius: 6, padding: '6px 8px', fontSize: 11.5, fontFamily: 'monospace', outline: 'none' }} />
-              <button onClick={() => { cmd('createLink', linkUrl || '#'); setLinkOffen(false) }} style={{ ...KNOPF, background: primary, color: '#fff', borderColor: primary }}>OK</button>
+              <button onClick={linkSetzen} style={{ ...KNOPF, background: primary, color: '#fff', borderColor: primary }}>OK</button>
             </div>
+          )}
+          {imLink && (
+            <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 6, lineHeight: 1.4 }}><i className="fa-solid fa-link" style={{ marginRight: 5 }} />Dieses Element ist ein Button/Link – das Ziel setzt du unten im Feld „Verlinkung“.</div>
           )}
 
           {iconOffen && (
@@ -2784,19 +2932,17 @@ function TextFeld({ wert, primary, onSpeichern }) {
             </div>
           )}
 
-          {/* Visueller Bearbeitungsbereich */}
+          {/* Visueller Bearbeitungsbereich – schreibt LIVE in die Vorschau */}
           <div ref={editRef} contentEditable suppressContentEditableWarning spellCheck={false}
-            onInput={() => { setOk(false) }} onKeyUp={merken} onMouseUp={merken} onBlur={() => { merken(); uebernehmen() }}
+            onInput={() => { if (editRef.current) { setText(editRef.current.innerHTML); live(editRef.current.innerHTML) } }} onKeyUp={merken} onMouseUp={merken} onBlur={() => { merken(); uebernehmen() }}
             style={{ width: '100%', minHeight: 110, maxHeight: 300, overflowY: 'auto', border: '1px solid #e5e5e5', borderRadius: 7, padding: 10, fontSize: 13, lineHeight: 1.6, outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
         </>
       )}
 
-      <div style={{ display: 'flex', gap: 7, marginTop: 8 }}>
-        <button onClick={() => { const v = htmlModus ? text : (editRef.current ? editRef.current.innerHTML : text); setText(v); onSpeichern(v); setOk(true) }} style={{ flex: 1, background: primary, color: '#fff', border: 'none', borderRadius: 7, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-          {ok ? <><i className="fa-solid fa-check" style={{ marginRight: 5 }} />Übernommen</> : 'Übernehmen'}
-        </button>
+      <div style={{ fontSize: 10.5, color: '#16a34a', marginTop: 7, lineHeight: 1.5, fontWeight: 600 }}>
+        <i className="fa-solid fa-bolt" style={{ marginRight: 5 }} />Änderungen werden sofort live übernommen – kein Extra-Klick nötig.
       </div>
-      <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 7, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 4, lineHeight: 1.5 }}>
         Editor: markieren und formatieren wie in Word – Icons über den Stern. HTML: voller Zugriff auf den Code.
       </div>
     </div>

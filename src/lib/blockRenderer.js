@@ -211,6 +211,30 @@ function einbauDaten(blocks) {
   return teile.join('\n') + '\n' + EINBAU_JS
 }
 
+// ── Link-Overrides ─────────────────────────────────────────────────────────
+// content._links = { "<kindpfad-des-a>": "https://…" }
+// Der Nutzer setzt Button-/Link-Ziele im Panel; auf der fertigen Seite
+// schreibt ein kleiner Läufer die href-Werte an die richtigen <a>-Elemente.
+function linkDaten(blocks) {
+  const teile = []
+  ;(blocks || []).forEach((b, i) => {
+    const links = b.content?._links
+    if (!links || typeof links !== 'object' || !Object.keys(links).length) return
+    teile.push(`<script type="application/json" data-links-json="${i}">${JSON.stringify(links).replace(/<\/script/gi, '<\\/script')}</script>`)
+  })
+  if (!teile.length) return ''
+  return teile.join('\n') + `\n<script>
+(function(){
+  function kind(el,p){ if(p===''||p==null)return el; var n=el,t=String(p).split('.'); for(var i=0;i<t.length&&n;i++){ n=n.children[parseInt(t[i],10)]; } return n||null; }
+  document.querySelectorAll('script[type="application/json"][data-links-json]').forEach(function(sc){
+    var sec=document.querySelector('[data-bi="'+sc.getAttribute('data-links-json')+'"]'); if(!sec)return;
+    var m={}; try{ m=JSON.parse(sc.textContent) }catch(e){}
+    Object.keys(m).forEach(function(p){ var el=kind(sec,p); if(el&&el.tagName==='A')el.setAttribute('href',m[p]); });
+  });
+})();
+</script>`
+}
+
 // ── Freie Bearbeitung für JEDEN Baustein ───────────────────────────────────
 // Jeder Block kann zusätzlich mitbringen:
 //   content.customHTML → ersetzt den Baustein komplett durch eigenen Code
@@ -271,7 +295,7 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline
   const alleLayoutRegeln = (blocks || []).flatMap((b, i) => layoutRegeln(b.content, i))
   const layoutCSS = !forEditor && alleLayoutRegeln.length ? `<style data-wg-layout>${alleLayoutRegeln.join('\n')}</style>` : ''
   const layoutDaten = forEditor
-    ? `<script>window.__wgLayout=${JSON.stringify(Object.fromEntries((blocks || []).map((b, i) => [i, { layout: b.content?._layout || {}, breite: b.content?._breite || null, name: b.content?._name || '' }])))};</script>`
+    ? `<script>window.__wgLayout=${JSON.stringify(Object.fromEntries((blocks || []).map((b, i) => [i, { layout: b.content?._layout || {}, breite: b.content?._breite || null, name: b.content?._name || '', links: b.content?._links || {} }])))};</script>`
     : ''
 
   return `<!DOCTYPE html>
@@ -302,6 +326,7 @@ ${layoutDaten}
 <body>
 ${blocksHtml}
 ${einbauDaten(blocks)}
+${linkDaten(blocks)}
 ${PARALLAX_JS}
 ${forEditor ? '' : GENERATOR_REVEAL_JS}
 ${forEditor ? '' : ANIM_INIT}
