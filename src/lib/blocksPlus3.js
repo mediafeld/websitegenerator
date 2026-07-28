@@ -558,15 +558,487 @@ neu('ko-abschluss', 'Abschluss-Aufruf', (c) => `
   </div>
 </section>`)
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STEP BOX — ABLÄUFE & SCHRITTE (30 Varianten)
+// Gleiche Regeln wie oben: alles bearbeitbar, Nummern kommen automatisch aus
+// der Reihenfolge (Klonen/Löschen im pinken Panel nummeriert sauber um).
+// ═══════════════════════════════════════════════════════════════════════════
+
+const D_SCHRITT_TEXT = 'Beschreiben Sie hier diesen Schritt in ein bis zwei Sätzen.'
+const D_SCHRITTE3 = [
+  { icon: 'comments', titel: 'Schritt 1', text: D_SCHRITT_TEXT },
+  { icon: 'clipboard-list', titel: 'Schritt 2', text: D_SCHRITT_TEXT },
+  { icon: 'flag-checkered', titel: 'Schritt 3', text: D_SCHRITT_TEXT },
+]
+const D_SCHRITTE4 = [
+  { icon: 'comments', titel: 'Schritt 1', text: D_SCHRITT_TEXT },
+  { icon: 'clipboard-list', titel: 'Schritt 2', text: D_SCHRITT_TEXT },
+  { icon: 'gears', titel: 'Schritt 3', text: D_SCHRITT_TEXT },
+  { icon: 'flag-checkered', titel: 'Schritt 4', text: D_SCHRITT_TEXT },
+]
+const nn = (i) => String(i + 1).padStart(2, '0')
+
+// Kopf (zentriert) für Ablauf-Sektionen
+const sbKopf = (c, dTitle = 'So läuft es Schritt für Schritt') => `
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto clamp(28px,4.5vw,54px);">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'Ablauf')}</span>
+      <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, dTitle)}</h2>
+      <span class="wg-strichlinie mitte"></span>
+      ${c.subtitle ? `<div class="wg-lead">${ed('subtitle', c.subtitle)}</div>` : ''}
+    </div>`
+
+const sbSchritte = (c, n = 4) => misch(c.schritte, n === 3 ? D_SCHRITTE3 : D_SCHRITTE4)
+
+const SB = []
+const sbNeu = (id, name, render) => SB.push({ id, name, render })
+const sbSekt = (id, c, innen, fallback = 'background:#fff;') =>
+  `<section data-block="ablauf" data-variant="${id}" class="wg-sekt" style="${bg(c, fallback)}">
+  <div class="wg-wrap">
+${innen}
+  </div>
+</section>`
+
+// 1 — Drei Karten mit Nummern-Kreis
+sbNeu('sb-drei-karten', 'Drei Karten', (c) => sbSekt('sb-drei-karten', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,28px);">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:18px;padding:clamp(22px,3vw,32px);text-align:center;">
+        <span style="width:52px;height:52px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;">${i + 1}</span>
+        <h3 style="font-size:18px;font-weight:800;margin:16px 0 8px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 2 — Vier Spalten mit Verbindungslinie
+sbNeu('sb-vier-linie', 'Vier Spalten, verbunden', (c) => sbSekt('sb-vier-linie', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.2vw,26px);position:relative;">
+      <div style="position:absolute;top:24px;left:12%;right:12%;height:2px;background:var(--p100);" class="wg-hide-mob"></div>
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal" style="text-align:center;position:relative;">
+        <span style="width:48px;height:48px;border-radius:50%;background:#fff;border:2px solid var(--p600);color:var(--p600);display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;position:relative;">${i + 1}</span>
+        <h3 style="font-size:16px;font-weight:800;margin:14px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 3 — Vertikaler Zeitstrahl
+sbNeu('sb-zeitstrahl', 'Vertikaler Zeitstrahl', (c) => sbSekt('sb-zeitstrahl', c, `${sbKopf(c)}
+    <div style="max-width:680px;margin:0 auto;position:relative;padding-left:34px;">
+      <div style="position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:var(--p100);"></div>
+      <div style="display:grid;gap:clamp(20px,3vw,32px);">
+        ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal" style="position:relative;">
+          <span style="position:absolute;left:-34px;top:2px;width:24px;height:24px;border-radius:50%;background:var(--p600);border:5px solid var(--p50);"></span>
+          <h3 style="font-size:17px;font-weight:800;margin:0 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+          <div style="font-size:14.5px;color:#64748b;line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+// 4 — Zickzack (alternierend)
+sbNeu('sb-zickzack', 'Zickzack-Zeitstrahl', (c) => sbSekt('sb-zickzack', c, `${sbKopf(c)}
+    <div style="position:relative;max-width:860px;margin:0 auto;">
+      <div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--p100);transform:translateX(-50%);" class="wg-hide-mob"></div>
+      <div style="display:grid;gap:clamp(18px,3vw,30px);">
+        ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal ${i % 2 ? 're' : 'li'}" style="display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;">
+          <div style="${i % 2 ? 'order:2;text-align:left;' : 'text-align:right;'}">
+            <div class="wg-karte" style="display:inline-block;background:#fff;border:1px solid var(--p100);border-radius:16px;padding:20px 24px;max-width:360px;text-align:left;box-shadow:0 12px 34px rgba(15,23,42,.07);">
+              <h3 style="font-size:16.5px;font-weight:800;margin:0 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+              <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+            </div>
+          </div>
+          <div style="${i % 2 ? 'order:1;text-align:right;' : ''}">
+            <span style="width:44px;height:44px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;">${i + 1}</span>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 5 — Spalten mit Pfeilen
+sbNeu('sb-pfeile', 'Mit Pfeilen', (c) => {
+  const liste = sbSchritte(c, 3)
+  return sbSekt('sb-pfeile', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:${liste.map(() => '1fr').join(' auto ')};gap:clamp(10px,2vw,22px);align-items:center;">
+      ${liste.map((s, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="width:50px;height:50px;border-radius:14px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:19px;">${icon(`schritte.${i}.icon`, s.icon)}</span>
+        <h3 style="font-size:16.5px;font-weight:800;margin:13px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>${i < liste.length - 1 ? '<i class="fa-solid fa-chevron-right wg-hide-mob" style="color:var(--p200);font-size:20px;"></i>' : ''}`).join('')}
+    </div>`)
+})
+
+// 6 — Icon-Kreise
+sbNeu('sb-icons', 'Icon-Kreise', (c) => sbSekt('sb-icons', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="width:70px;height:70px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 14px 34px rgba(15,23,42,.16);">${icon(`schritte.${i}.icon`, s.icon)}</span>
+        <div style="font-size:12px;font-weight:900;letter-spacing:.1em;color:var(--accent);margin-top:14px;">${nn(i)}</div>
+        <h3 style="font-size:16.5px;font-weight:800;margin:5px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 7 — Dunkle Fläche
+sbNeu('sb-dunkel', 'Dunkle Fläche', (c) => `
+<section data-block="ablauf" data-variant="sb-dunkel" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a 75%);')}">
+  <div class="wg-wrap">
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto clamp(28px,4.5vw,54px);color:#fff;">
+      <span class="wg-chip glas">${txt('tag', c.tag, 'Ablauf')}</span>
+      <h2 class="wg-t2" style="color:#fff;margin-top:14px;">${txt('title', c.title, 'So läuft es Schritt für Schritt')}</h2>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-karte wg-reveal" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:clamp(18px,2.6vw,28px);color:#fff;">
+        <div style="font-size:30px;font-weight:900;color:var(--accent);">${nn(i)}</div>
+        <h3 style="font-size:16px;font-weight:800;margin:10px 0 6px;color:#fff;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+</section>`)
+
+// 8 — Bild links, Schritte rechts
+sbNeu('sb-bild-links', 'Bild links', (c) => sbSekt('sb-bild-links', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(300px,40vw,480px)', '', 27)}</div>
+      <div class="wg-reveal re">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Ablauf')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'So läuft es Schritt für Schritt')}</h2>
+        <span class="wg-strichlinie"></span>
+        <div style="display:grid;gap:18px;margin-top:6px;">
+          ${sbSchritte(c, 4).map((s, i) => `<div style="display:flex;gap:15px;align-items:flex-start;">
+            <span style="width:36px;height:36px;border-radius:11px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0;">${i + 1}</span>
+            <div>
+              <h3 style="font-size:15.5px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+              <div style="font-size:13.5px;color:#64748b;line-height:1.65;margin-top:3px;">${ed(`schritte.${i}.text`, s.text)}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`))
+
+// 9 — Schritte links, Bild rechts
+sbNeu('sb-bild-rechts', 'Bild rechts', (c) => sbSekt('sb-bild-rechts', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Ablauf')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'So läuft es Schritt für Schritt')}</h2>
+        <span class="wg-strichlinie"></span>
+        <div style="display:grid;gap:16px;margin-top:6px;">
+          ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte" style="display:flex;gap:15px;align-items:flex-start;background:var(--p50);border-radius:14px;padding:16px 18px;">
+            <span style="font-size:24px;font-weight:900;color:var(--p300);line-height:1;">${nn(i)}</span>
+            <div>
+              <h3 style="font-size:15.5px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+              <div style="font-size:13.5px;color:#64748b;line-height:1.65;margin-top:3px;">${ed(`schritte.${i}.text`, s.text)}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="wg-reveal re">${bildBox('bildHaupt', c.bildHaupt, 'clamp(300px,40vw,480px)', '', 28)}</div>
+    </div>`))
+
+// 10 — Riesige Nummern hinter dem Text
+sbNeu('sb-grosse-nummern', 'Riesige Nummern', (c) => sbSekt('sb-grosse-nummern', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,3vw,34px);">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-reveal" style="position:relative;padding-top:34px;">
+        <div style="position:absolute;top:-6px;left:-4px;font-size:96px;font-weight:900;color:var(--p50);line-height:1;user-select:none;">${nn(i)}</div>
+        <div style="position:relative;">
+          <h3 style="font-size:18px;font-weight:800;margin:0 0 8px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+          <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`))
+
+// 11 — Fortschrittsbalken
+sbNeu('sb-fortschritt', 'Fortschrittsbalken', (c) => {
+  const liste = sbSchritte(c, 4)
+  return sbSekt('sb-fortschritt', c, `${sbKopf(c)}
+    <div style="position:relative;margin:0 auto;max-width:980px;">
+      <div style="height:6px;background:var(--p100);border-radius:99px;position:relative;margin:0 6% 30px;">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,var(--p600),var(--accent));border-radius:99px;opacity:.85;"></div>
+        ${liste.map((_, i) => `<span style="position:absolute;left:${liste.length > 1 ? (i / (liste.length - 1)) * 100 : 0}%;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:#fff;border:5px solid var(--p600);"></span>`).join('')}
+      </div>
+      <div class="wg-split" style="display:grid;grid-template-columns:repeat(${liste.length},1fr);gap:clamp(12px,2vw,24px);">
+        ${liste.map((s, i) => `<div class="wg-reveal" style="text-align:center;">
+          <h3 style="font-size:15.5px;font-weight:800;margin:0 0 5px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+          <div style="font-size:13px;color:#64748b;line-height:1.6;">${ed(`schritte.${i}.text`, s.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`)
+})
+
+// 12 — Karten mit farbigem Oberrand
+sbNeu('sb-oberrand', 'Karten mit Akzentrand', (c) => sbSekt('sb-oberrand', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-top:4px solid var(--accent);border-radius:14px;padding:clamp(18px,2.6vw,26px);">
+        <span style="display:inline-flex;background:var(--p50);color:var(--p700);font-weight:900;font-size:12px;border-radius:99px;padding:4px 12px;">${nn(i)}</span>
+        <h3 style="font-size:16px;font-weight:800;margin:12px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 13 — Schmale zentrierte Liste
+sbNeu('sb-liste-schmal', 'Schmale Liste', (c) => sbSekt('sb-liste-schmal', c, `${sbKopf(c)}
+    <div style="max-width:620px;margin:0 auto;display:grid;gap:14px;">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="display:flex;gap:16px;align-items:center;background:#fff;border:1px solid var(--p100);border-radius:14px;padding:16px 20px;">
+        <span style="width:40px;height:40px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;">${i + 1}</span>
+        <div style="flex:1;">
+          <h3 style="font-size:15.5px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.6;margin-top:2px;">${ed(`schritte.${i}.text`, s.text)}</div>
+        </div>
+        <i class="fa-solid fa-arrow-down" style="color:var(--p200);font-size:14px;"></i>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 14 — Punkte auf horizontaler Linie
+sbNeu('sb-punkte-linie', 'Punkte auf Linie', (c) => {
+  const liste = sbSchritte(c, 4)
+  return sbSekt('sb-punkte-linie', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(${liste.length},1fr);gap:clamp(12px,2vw,24px);position:relative;">
+      <div style="position:absolute;top:8px;left:10%;right:10%;height:2px;background:repeating-linear-gradient(90deg,var(--p200) 0 10px,transparent 10px 20px);" class="wg-hide-mob"></div>
+      ${liste.map((s, i) => `<div class="wg-reveal" style="text-align:center;position:relative;">
+        <span style="width:18px;height:18px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 0 6px var(--p50);"></span>
+        <div style="font-size:12px;font-weight:900;letter-spacing:.08em;color:#94a3b8;margin-top:14px;">${nn(i)}</div>
+        <h3 style="font-size:16px;font-weight:800;margin:4px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`)
+})
+
+// 15 — Checkliste
+sbNeu('sb-checkliste', 'Als Checkliste', (c) => sbSekt('sb-checkliste', c, `${sbKopf(c)}
+    <div style="max-width:680px;margin:0 auto;display:grid;gap:0;">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal" style="display:flex;gap:16px;align-items:flex-start;padding:18px 4px;border-bottom:1px solid var(--p50);">
+        <span style="width:30px;height:30px;border-radius:50%;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px;"><i class="fa-solid fa-check"></i></span>
+        <div>
+          <h3 style="font-size:16px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+          <div style="font-size:14px;color:#64748b;line-height:1.7;margin-top:3px;">${ed(`schritte.${i}.text`, s.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`))
+
+// 16 — Pillen-Kopfzeile über Karten
+sbNeu('sb-pillen', 'Pillen + Karten', (c) => {
+  const liste = sbSchritte(c, 3)
+  return sbSekt('sb-pillen', c, `${sbKopf(c)}
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:clamp(20px,3vw,32px);">
+      ${liste.map((s, i) => `<span style="background:${i === 0 ? 'var(--p600)' : 'var(--p50)'};color:${i === 0 ? '#fff' : 'var(--p700)'};font-weight:800;font-size:13px;border-radius:99px;padding:9px 18px;">${i + 1}. ${ed(`schritte.${i}.titel`, s.titel)}</span>`).join('')}
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${liste.map((s, i) => `<div class="wg-karte wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(18px,2.6vw,28px);">
+        <div style="font-size:26px;font-weight:900;color:var(--p200);">${nn(i)}</div>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.7;margin-top:8px;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);')
+})
+
+// 17 — Treppenartig versetzt
+sbNeu('sb-versetzt', 'Treppen-Versatz', (c) => sbSekt('sb-versetzt', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);align-items:start;">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border-radius:18px;padding:clamp(20px,3vw,30px);box-shadow:0 16px 44px rgba(15,23,42,.09);margin-top:${i * 26}px;">
+        <span style="width:46px;height:46px;border-radius:13px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;">${i + 1}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:14px 0 7px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 18 — 2×2 Raster mit Nummern-Ecke
+sbNeu('sb-raster', '2×2 Raster', (c) => sbSekt('sb-raster', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2.4vw,26px);max-width:900px;margin:0 auto;">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="position:relative;background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(20px,3vw,30px);overflow:hidden;">
+        <span style="position:absolute;top:-12px;right:-4px;font-size:64px;font-weight:900;color:var(--p50);line-height:1;">${nn(i)}</span>
+        <h3 style="position:relative;font-size:16.5px;font-weight:800;margin:0 0 7px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="position:relative;font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 19 — Outline-Kreise mittig
+sbNeu('sb-outline', 'Outline-Kreise', (c) => sbSekt('sb-outline', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,3vw,36px);">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="width:84px;height:84px;border-radius:50%;border:3px solid var(--p600);color:var(--p600);display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;">${i + 1}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:16px 0 7px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;max-width:280px;margin:0 auto;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 20 — Dunkle Einzelkarten
+sbNeu('sb-dunkle-karten', 'Dunkle Karten', (c) => sbSekt('sb-dunkle-karten', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte wg-dunkelzone wg-karte-hover wg-reveal" style="background:var(--p900);border-radius:18px;padding:clamp(22px,3vw,32px);color:#fff;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.1);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:17px;">${icon(`schritte.${i}.icon`, s.icon)}</span>
+          <span style="font-size:26px;font-weight:900;color:rgba(255,255,255,.16);">${nn(i)}</span>
+        </div>
+        <h3 style="font-size:17px;font-weight:800;margin:16px 0 7px;color:#fff;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 21 — Mit Abschluss-Karte (CTA)
+sbNeu('sb-mit-cta', 'Mit Abschluss-Karte', (c) => sbSekt('sb-mit-cta', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);align-items:stretch;">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(18px,2.6vw,26px);">
+        <span style="width:40px;height:40px;border-radius:50%;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-weight:900;">${i + 1}</span>
+        <h3 style="font-size:16px;font-weight:800;margin:12px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+      <div class="wg-karte wg-dunkelzone wg-reveal" style="background:var(--p700);border-radius:16px;padding:clamp(18px,2.6vw,26px);color:#fff;display:flex;flex-direction:column;justify-content:center;text-align:center;">
+        <div style="font-size:17px;font-weight:800;">${txt('ctaTitel', c.ctaTitel, 'Bereit loszulegen?')}</div>
+        <a href="kontakt.html" class="wg-btn" style="margin:16px auto 0;">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 22 — Gestrichelte Roadmap
+sbNeu('sb-roadmap', 'Roadmap', (c) => {
+  const liste = sbSchritte(c, 4)
+  return sbSekt('sb-roadmap', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(${liste.length},1fr);gap:clamp(12px,2vw,24px);">
+      ${liste.map((s, i) => `<div class="wg-reveal" style="text-align:center;position:relative;">
+        ${i < liste.length - 1 ? '<div class="wg-hide-mob" style="position:absolute;top:33px;left:calc(50% + 40px);right:calc(-50% + 40px);border-top:2px dashed var(--p200);"></div>' : ''}
+        <span style="width:66px;height:66px;border-radius:50%;background:${i === 0 ? 'var(--p600)' : 'var(--p50)'};color:${i === 0 ? '#fff' : 'var(--p700)'};display:inline-flex;align-items:center;justify-content:center;font-size:22px;position:relative;">${icon(`schritte.${i}.icon`, s.icon)}</span>
+        <h3 style="font-size:15.5px;font-weight:800;margin:13px 0 5px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13px;color:#64748b;line-height:1.6;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`)
+})
+
+// 23 — Akzentbalken links
+sbNeu('sb-akzent', 'Akzentbalken', (c) => sbSekt('sb-akzent', c, `${sbKopf(c)}
+    <div style="max-width:760px;margin:0 auto;display:grid;gap:14px;">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-karte wg-reveal" style="border-left:5px solid var(--accent);background:var(--p50);border-radius:0 14px 14px 0;padding:18px 22px;">
+        <div style="display:flex;align-items:baseline;gap:12px;">
+          <span style="font-size:13px;font-weight:900;color:var(--accent);">${nn(i)}</span>
+          <h3 style="font-size:16px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        </div>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;margin-top:5px;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 24 — Icon oben, Nummer klein
+sbNeu('sb-icon-nummer', 'Icon + kleine Nummer', (c) => sbSekt('sb-icon-nummer', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(18px,2.6vw,26px);text-align:center;position:relative;">
+        <span style="position:absolute;top:12px;right:14px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;">${i + 1}</span>
+        <span style="width:54px;height:54px;border-radius:15px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:21px;">${icon(`schritte.${i}.icon`, s.icon)}</span>
+        <h3 style="font-size:15.5px;font-weight:800;margin:13px 0 6px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13px;color:#64748b;line-height:1.6;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 25 — Panorama-Bild oben
+sbNeu('sb-panorama', 'Mit Panorama-Bild', (c) => sbSekt('sb-panorama', c, `${sbKopf(c)}
+    <div class="wg-reveal" style="margin-bottom:clamp(24px,4vw,42px);">${bildBox('bildHaupt', c.bildHaupt, 'clamp(200px,26vw,320px)', '', 29)}</div>
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:34px;height:34px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0;">${i + 1}</span>
+          <h3 style="font-size:15.5px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        </div>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;margin-top:8px;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 26 — Nummern rechts (magazinartig)
+sbNeu('sb-magazin', 'Magazin-Liste', (c) => sbSekt('sb-magazin', c, `${sbKopf(c)}
+    <div style="max-width:820px;margin:0 auto;">
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal" style="display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center;padding:clamp(18px,3vw,28px) 4px;border-bottom:1px solid var(--p50);">
+        <div>
+          <h3 style="font-size:clamp(17px,2.2vw,22px);font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+          <div style="font-size:14px;color:#64748b;line-height:1.7;margin-top:5px;">${ed(`schritte.${i}.text`, s.text)}</div>
+        </div>
+        <span style="font-size:clamp(34px,5vw,54px);font-weight:900;color:var(--p100);line-height:1;">${nn(i)}</span>
+      </div>`).join('')}
+    </div>`))
+
+// 27 — Farbverlaufskarten
+sbNeu('sb-verlauf', 'Verlaufskarten', (c) => sbSekt('sb-verlauf', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte wg-dunkelzone wg-karte-hover wg-reveal" style="background:linear-gradient(150deg,var(--p${[600, 700, 800][i % 3]}),var(--p900));border-radius:18px;padding:clamp(22px,3vw,32px);color:#fff;">
+        <span style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;">${i + 1}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:15px 0 7px;color:#fff;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.78);line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 28 — Kompakter Streifen
+sbNeu('sb-kompakt', 'Kompakter Streifen', (c) => sbSekt('sb-kompakt', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:auto repeat(4,1fr);gap:clamp(14px,2.4vw,30px);align-items:center;">
+      <div class="wg-reveal" style="max-width:220px;">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Ablauf')}</span>
+        <h2 style="font-size:clamp(19px,2.4vw,25px);font-weight:900;letter-spacing:-.02em;margin:8px 0 0;line-height:1.25;">${txt('title', c.title, 'So läuft es bei uns')}</h2>
+      </div>
+      ${sbSchritte(c, 4).map((s, i) => `<div class="wg-reveal" style="display:flex;gap:11px;align-items:center;">
+        <span style="width:32px;height:32px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0;">${i + 1}</span>
+        <div style="font-size:14px;font-weight:800;line-height:1.35;">${ed(`schritte.${i}.titel`, s.titel)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 29 — Vertikal mit Icons und Linie
+sbNeu('sb-vertikal-icons', 'Vertikal mit Icons', (c) => sbSekt('sb-vertikal-icons', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.15fr;gap:clamp(26px,4.5vw,60px);align-items:start;">
+      <div class="wg-reveal li" style="position:sticky;top:90px;">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Ablauf')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'So läuft es Schritt für Schritt')}</h2>
+        <span class="wg-strichlinie"></span>
+        <div class="wg-lead">${txt('text', c.text, 'Beschreiben Sie hier in zwei Sätzen, wie die Zusammenarbeit grundsätzlich abläuft.')}</div>
+        <a href="kontakt.html" class="wg-btn" style="margin-top:22px;">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+      </div>
+      <div class="wg-reveal re" style="position:relative;padding-left:38px;">
+        <div style="position:absolute;left:17px;top:12px;bottom:12px;width:2px;background:var(--p100);"></div>
+        <div style="display:grid;gap:clamp(20px,3vw,32px);">
+          ${sbSchritte(c, 4).map((s, i) => `<div style="position:relative;">
+            <span style="position:absolute;left:-38px;top:0;width:36px;height:36px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;">${icon(`schritte.${i}.icon`, s.icon)}</span>
+            <h3 style="font-size:16.5px;font-weight:800;margin:0 0 5px;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+            <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`schritte.${i}.text`, s.text)}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`))
+
+// 30 — Abschluss mit Bild-Karte
+sbNeu('sb-bild-abschluss', 'Schritte + Bild-Karte', (c) => sbSekt('sb-bild-abschluss', c, `${sbKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(18px,3vw,32px);align-items:stretch;">
+      <div style="display:grid;gap:14px;">
+        ${sbSchritte(c, 3).map((s, i) => `<div class="wg-karte wg-reveal" style="display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid var(--p100);border-radius:14px;padding:18px 20px;">
+          <span style="width:38px;height:38px;border-radius:11px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;">${i + 1}</span>
+          <div>
+            <h3 style="font-size:15.5px;font-weight:800;margin:0;">${ed(`schritte.${i}.titel`, s.titel)}</h3>
+            <div style="font-size:13.5px;color:#64748b;line-height:1.65;margin-top:3px;">${ed(`schritte.${i}.text`, s.text)}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="wg-reveal re" style="position:relative;border-radius:18px;overflow:hidden;min-height:280px;display:flex;align-items:flex-end;">
+        <div class="wg-bildbox" style="position:absolute;inset:0;">${bild('bildHaupt', c.bildHaupt, COVER, 30)}</div>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,15,28,.78),transparent 60%);"></div>
+        <div class="wg-dunkelzone" style="position:relative;color:#fff;padding:24px;">
+          <div style="font-size:17px;font-weight:800;">${txt('ctaTitel', c.ctaTitel, 'Bereit loszulegen?')}</div>
+          <a href="kontakt.html" class="wg-btn" style="margin-top:12px;">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+        </div>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+export const ABLAUF = { type: 'ablauf', label: 'Step Box / Abläufe', variants: SB }
+
 export const KOMBI = { type: 'kombi', label: 'Bild + Text Kombis', variants: V }
 
-export const ZUSATZ3_BLOECKE = { kombi: KOMBI }
+export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF }
 
 export const ZUSATZ3_ADDABLE = [
   { type: 'kombi', label: 'Bild + Text Kombis', fa: 'object-group', cat: 'Inhalt' },
+  { type: 'ablauf', label: 'Step Box / Abläufe', fa: 'stairs', cat: 'Inhalt' },
 ]
 
 export const ZUSATZ3_DEFAULTS = {
+  ablauf: {
+    tag: 'Ablauf',
+    title: 'So läuft es Schritt für Schritt',
+    text: 'Beschreiben Sie hier in zwei Sätzen, wie die Zusammenarbeit grundsätzlich abläuft.',
+    cta: 'Jetzt anfragen',
+    ctaTitel: 'Bereit loszulegen?',
+    schritte: [
+      { icon: 'comments', titel: 'Schritt 1', text: 'Beschreiben Sie hier diesen Schritt in ein bis zwei Sätzen.' },
+      { icon: 'clipboard-list', titel: 'Schritt 2', text: 'Beschreiben Sie hier diesen Schritt in ein bis zwei Sätzen.' },
+      { icon: 'gears', titel: 'Schritt 3', text: 'Beschreiben Sie hier diesen Schritt in ein bis zwei Sätzen.' },
+      { icon: 'flag-checkered', titel: 'Schritt 4', text: 'Beschreiben Sie hier diesen Schritt in ein bis zwei Sätzen.' },
+    ],
+  },
   kombi: {
     tag: 'Über uns',
     title: 'Ihre Überschrift für diesen Bereich',
