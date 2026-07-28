@@ -580,6 +580,7 @@ export default function EditorPage() {
         sel=el;
         el.classList.add('wg-on');
         el.setAttribute('data-label',labelFor(el));
+        if(typeof griffChipZeigen==='function')griffChipZeigen(el);
         var cs=window.getComputedStyle(el);
         var r=el.getBoundingClientRect();
         parent.postMessage({t:'select',
@@ -826,7 +827,7 @@ export default function EditorPage() {
         if(d.cmd==='dupEl'){var cl=sel.cloneNode(true);cl.classList.remove('wg-on');sel.parentNode.insertBefore(cl,sel.nextSibling);}
         if(d.cmd==='delEl'){var pn=sel.parentNode;sel.remove();sel=null;parent.postMessage({t:'deselect'},'*');}
         if(d.cmd==='bewegung'){document.body.classList.toggle('wg-stopp',!!d.stopp);return;}
-        if(d.cmd==='deselect'){if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}}
+        if(d.cmd==='deselect'){if(sel){sel.classList.remove('wg-on');sel.contentEditable=false;sel=null;}if(typeof griffChipZeigen==='function')griffChipZeigen(null);}
       });
       function toggleStyle(el,prop,on,off){
         var cur=window.getComputedStyle(el)[prop];
@@ -954,6 +955,196 @@ export default function EditorPage() {
         if(z){ parent.postMessage({t:'moveEinbau', vonBlock:mm.block, index:mm.index, zielBlock:bIdx(z), zielPfad:kindPfad(z)},'*'); }
       },true);
       document.addEventListener('keydown',function(e){ if(einbauMove&&e.key==='Escape')einbauMoveEnde(); });
+
+      // ═══════════════════════════════════════════════════════════════
+      // UNIVERSELLES DRAG & DROP
+      // Greif-Knopf im pinken Werkzeug (Sektionen, Karten, Container,
+      // freie Elemente) und Greif-Chip an einzelnen Texten/Bildern/Buttons.
+      // Ein Geist folgt dem Zeiger; Ziele leuchten; Esc bricht ab.
+      //   • Sektion  -> zwischen den Sektionen neu einsortieren
+      //   • Karte    -> innerhalb ihrer Liste an neue Position ziehen,
+      //                 oder in fremden Container (wird freies Element)
+      //   • Einbau   -> in anderen Container umziehen
+      //   • Element  -> am Ziel als freies Element eingefügt, Original
+      //                 wird ausgeblendet (über den Navigator zurückholbar)
+      // ═══════════════════════════════════════════════════════════════
+      var uniDrag=null;
+
+      function elementAlsWidget(el){
+        if(el.tagName==='IMG'||el.hasAttribute('data-img')){
+          var im=el.tagName==='IMG'?el:el.querySelector('img');
+          var src=im?(im.getAttribute('src')||''):'';
+          return {art:'bild', bild:src};
+        }
+        var t=el.tagName.toLowerCase();
+        var knopf=(t==='a'||t==='button')?el:el.closest('a,button');
+        if(knopf){
+          return {art:'button', text:el.textContent.replace(/\\s+/g,' ').trim()||'Mehr erfahren', href:knopf.getAttribute('href')||'#'};
+        }
+        var kopf=/^h[1-6]$/.test(t)?el:el.closest('h1,h2,h3,h4,h5,h6');
+        if(kopf) return {art:'ueberschrift', text:el.textContent.replace(/\\s+/g,' ').trim()};
+        if(el.hasAttribute('data-edit')&&!el.querySelector('img,iframe,a,button')) return {art:'text', text:el.innerHTML};
+        var kl=el.cloneNode(true);
+        var attrs=['data-edit','data-img','data-icon','data-stars','data-kopie','data-einbau','data-einbau-art','data-label','contenteditable'];
+        attrs.forEach(function(at){kl.removeAttribute(at);});
+        kl.querySelectorAll('[data-edit],[data-img],[data-icon],[data-stars],[data-kopie],[data-einbau]').forEach(function(n){attrs.forEach(function(at){n.removeAttribute(at);});});
+        kl.classList.remove('wg-on');
+        return {art:'html', html:kl.outerHTML};
+      }
+
+      function uniStart(e,el){
+        if(!el)return;
+        e.preventDefault();e.stopPropagation();
+        var art;
+        if(el.hasAttribute('data-block'))art='sektion';
+        else if(el.hasAttribute('data-einbau'))art='einbau';
+        else{
+          var inEinbau=el.closest('[data-einbau]');
+          if(inEinbau&&inEinbau!==el&&['text','ueberschrift','button','bild'].indexOf(inEinbau.getAttribute('data-einbau-art'))>=0){
+            el=inEinbau;art='einbau'; // Teil eines freien Elements -> das ganze Element umziehen
+          } else {
+            var b=bindung(el);
+            art=(b&&b.feld!=='_einbau')?'bind':'element';
+            if(art==='element'){
+              // Span im Button/in der Überschrift? Dann den ganzen Rahmen nehmen
+              var rahmen=el.closest('a,button,h1,h2,h3,h4,h5,h6');
+              if(rahmen&&rahmen!==el&&!rahmen.hasAttribute('data-block'))el=rahmen;
+            }
+          }
+        }
+        var info={art:art, el:el, block:bIdx(el), pfad:kindPfad(el)};
+        if(art==='einbau')info.index=parseInt(el.getAttribute('data-einbau'),10);
+        if(art==='bind'){info.bind=bindung(el);info.elter=el.parentElement;}
+        // Geist
+        var g=document.createElement('div');
+        g.setAttribute('data-wg-chrome','1');
+        g.style.cssText='position:fixed;z-index:2147483200;pointer-events:none;opacity:.8;max-width:380px;max-height:220px;overflow:hidden;border:2px solid #e6007e;border-radius:12px;background:#fff;box-shadow:0 22px 60px rgba(15,23,42,.3);padding:6px;';
+        try{var kl=el.cloneNode(true);kl.style.margin='0';kl.style.transform='scale(.55)';kl.style.transformOrigin='top left';kl.style.width=Math.min(el.offsetWidth,660)+'px';g.appendChild(kl);}catch(x){}
+        document.body.appendChild(g);
+        info.ghost=g;
+        uniDrag=info;
+        contAbwaehlen(true);
+        griffChipZeigen(null);
+        document.body.style.cursor='grabbing';
+        tip.style.display='block';
+        tip.textContent=art==='sektion'?'Zwischen den Bereichen ablegen – Esc bricht ab'
+          :art==='bind'?'In der Liste neu einsortieren oder in einen Container ziehen – Esc bricht ab'
+          :'In einen Container ziehen – Esc bricht ab';
+        uniMove(e);
+      }
+
+      var uniMarker=null;
+      function uniMarkerSetzen(elter,index,waagerecht,vorRect){
+        if(!uniMarker){uniMarker=document.createElement('div');uniMarker.setAttribute('data-wg-chrome','1');uniMarker.style.cssText='position:fixed;z-index:2147483150;background:#e6007e;border-radius:99px;pointer-events:none;box-shadow:0 0 0 3px rgba(230,0,126,.25);';document.body.appendChild(uniMarker);}
+        uniMarker.style.display='block';
+        if(waagerecht){uniMarker.style.width='4px';uniMarker.style.height=Math.max(30,vorRect.height)+'px';uniMarker.style.left=(vorRect.x-2)+'px';uniMarker.style.top=vorRect.top+'px';}
+        else{uniMarker.style.height='4px';uniMarker.style.width=Math.max(40,vorRect.width)+'px';uniMarker.style.top=(vorRect.x-2)+'px';uniMarker.style.left=vorRect.left+'px';}
+      }
+      function uniMarkerWeg(){ if(uniMarker)uniMarker.style.display='none'; }
+
+      function bindGeschwister(info){
+        if(!info.elter)return [];
+        return echteKinder(info.elter).filter(function(k){
+          var b=bindung(k);return b&&info.bind&&b.feld===info.bind.feld;
+        });
+      }
+
+      function uniMove(e){
+        if(!uniDrag)return;
+        var g=uniDrag.ghost;
+        if(g){g.style.left=(e.clientX+16)+'px';g.style.top=(e.clientY+14)+'px';}
+        tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-26)+'px';
+        // Am Rand automatisch scrollen
+        var vh=window.innerHeight;
+        if(e.clientY<70)window.scrollBy(0,-14);else if(e.clientY>vh-70)window.scrollBy(0,14);
+        uniDrag.zielIndex=null;uniMarkerWeg();
+        if(uniDrag.art==='sektion'){
+          dropZielSetzen(null);
+          wgPlaceAt(e.clientY);
+          return;
+        }
+        // Karten: zuerst prüfen, ob wir über der EIGENEN Liste sind
+        if(uniDrag.art==='bind'){
+          var geschw=bindGeschwister(uniDrag);
+          for(var i=0;i<geschw.length;i++){
+            var r=geschw[i].getBoundingClientRect();
+            if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+              var cs=getComputedStyle(uniDrag.elter);
+              var reihe=(cs.display.indexOf('grid')>=0&&cs.gridTemplateColumns.split(' ').length>1)||cs.display.indexOf('flex')>=0&&cs.flexDirection.indexOf('column')<0;
+              var b=bindung(geschw[i]);
+              var danach=reihe?(e.clientX>r.left+r.width/2):(e.clientY>r.top+r.height/2);
+              uniDrag.zielIndex=(b?b.index:i)+(danach?1:0);
+              uniMarkerSetzen(uniDrag.elter,uniDrag.zielIndex,reihe,
+                reihe?{x:danach?r.right:r.left,top:r.top,height:r.height}
+                     :{x:danach?r.bottom:r.top,left:r.left,width:r.width});
+              dropZielSetzen(null);
+              return;
+            }
+          }
+        }
+        var z=containerUnterPunkt(e.clientX,e.clientY);
+        if(z&&(z===uniDrag.el||uniDrag.el.contains(z)))z=null;
+        dropZielSetzen(z);
+      }
+
+      function uniEnde(abbruch){
+        var d=uniDrag;uniDrag=null;
+        if(!d)return;
+        if(d.ghost)d.ghost.remove();
+        uniMarkerWeg();wgRemovePlace();
+        document.body.style.cursor='';tip.style.display='none';
+        var z=dropZiel;dropZielSetzen(null);
+        if(abbruch)return;
+        if(d.art==='sektion'){
+          var idx=window.__wgDropIndex;
+          if(idx!=null)parent.postMessage({t:'moveBlockTo', von:d.block, nach:idx},'*');
+          return;
+        }
+        if(d.art==='bind'&&d.zielIndex!=null){
+          parent.postMessage({t:'arrayOp', block:d.block, feld:d.bind.feld, index:d.bind.index, op:'zu', ziel:d.zielIndex},'*');
+          return;
+        }
+        if(!z)return;
+        var zielPfad=kindPfad(z),zielBlock=bIdx(z);
+        if(zielPfad==null||zielBlock<0)return;
+        if(d.art==='einbau'){
+          parent.postMessage({t:'moveEinbau', vonBlock:d.block, index:d.index, zielBlock:zielBlock, zielPfad:zielPfad},'*');
+          return;
+        }
+        // Element (oder Karte in fremden Container): als freies Element ans Ziel,
+        // Original ausblenden
+        parent.postMessage({t:'elementVerlegen', vonBlock:d.block, pfad:d.pfad,
+          zielBlock:zielBlock, zielPfad:zielPfad, widget:elementAlsWidget(d.el)},'*');
+      }
+
+      document.addEventListener('pointermove',function(e){ if(uniDrag)uniMove(e); });
+      var uniKlickSperre=0;
+      document.addEventListener('pointerup',function(e){ if(uniDrag){e.preventDefault();uniKlickSperre=Date.now();uniEnde(false);} });
+      document.addEventListener('keydown',function(e){ if(uniDrag&&e.key==='Escape'){uniKlickSperre=Date.now();uniEnde(true);} });
+      // Klicks während des Ziehens und direkt nach dem Ablegen schlucken
+      document.addEventListener('click',function(e){ if(uniDrag||Date.now()-uniKlickSperre<350){e.preventDefault();e.stopImmediatePropagation();} },true);
+
+      // Greif-Chip an einzeln gewählten Elementen (Text, Bild, Button …)
+      var griffChip=null;
+      function griffChipZeigen(el){
+        if(!griffChip){
+          griffChip=document.createElement('button');
+          griffChip.setAttribute('data-wg-chrome','1');
+          griffChip.title='Verschieben: greifen und in einen anderen Bereich ziehen';
+          griffChip.innerHTML='<i class="fa-solid fa-up-down-left-right"></i>';
+          griffChip.style.cssText='position:fixed;z-index:2147483100;width:26px;height:26px;border-radius:50%;border:none;background:#e6007e;color:#fff;font-size:11px;cursor:grab;display:none;box-shadow:0 4px 14px rgba(0,0,0,.3);padding:0;';
+          document.body.appendChild(griffChip);
+          griffChip.addEventListener('pointerdown',function(e){ if(sel)uniStart(e,sel); });
+          window.addEventListener('scroll',function(){ if(griffChip)griffChip.style.display='none'; },{passive:true});
+        }
+        if(!el){griffChip.style.display='none';return;}
+        var r=el.getBoundingClientRect();
+        griffChip.style.display='flex';
+        griffChip.style.alignItems='center';
+        griffChip.style.justifyContent='center';
+        griffChip.style.left=Math.min(window.innerWidth-32,Math.max(4,r.right-10))+'px';
+        griffChip.style.top=Math.max(4,r.top-12)+'px';
+      }
       window.addEventListener('message',function(e){ var dd=e.data; if(!dd)return; if(dd.cmd==='wgDragEnd'){wgRemovePlace();dropZielSetzen(null);} if(dd.cmd==='setParallax'){ var bs=document.querySelectorAll('[data-block]'); var el=bs[dd.block]; if(el){ if(dd.on){el.setAttribute('data-parallax',dd.speed);}else{el.removeAttribute('data-parallax');el.style.backgroundPositionY='';} if(typeof window.wgRunParallax==='function')window.wgRunParallax(); } } if(dd.cmd==='gotoBlock'){ var bs2=document.querySelectorAll('[data-block]'); var el2=bs2[dd.index]; if(el2){ el2.scrollIntoView({behavior:'smooth',block:'start'}); el2.style.transition='outline 0.2s'; el2.style.outline='3px solid ${primary}'; setTimeout(function(){el2.style.outline='';},900); } } });
 
       // ═══════════════════════════════════════════════════════════════
@@ -1087,6 +1278,7 @@ export default function EditorPage() {
         var seine=el.closest('[data-block]');if(seine)seine.classList.add('wg-aktiv');
         // Werkzeuge
         var tools=ov.querySelector('.wg-tools');var h='';
+        h+='<button data-w="greifen" title="Verschieben: greifen und ziehen" style="cursor:grab;"><i class="fa-solid fa-grip-vertical"></i></button>';
         if(!istSek){
           h+='<button data-w="eltern" title="Übergeordnetes Element wählen"><i class="fa-solid fa-turn-up"></i></button>';
           h+='<button data-w="verstecken" title="Ausblenden (über den Navigator wieder einblendbar)"><i class="fa-solid fa-eye-slash"></i></button>';
@@ -1103,6 +1295,11 @@ export default function EditorPage() {
         }
         tools.innerHTML=h;
         tools.querySelectorAll('button').forEach(function(btn){
+          if(btn.getAttribute('data-w')==='greifen'){
+            btn.addEventListener('pointerdown',function(ev){ if(selC)uniStart(ev,selC); });
+            btn.onclick=function(ev){ev.stopPropagation();};
+            return;
+          }
           btn.onclick=function(ev){ev.stopPropagation();
             var w=btn.getAttribute('data-w');
             if(w==='eltern'){
@@ -1407,7 +1604,7 @@ export default function EditorPage() {
       if (d.t === 'contSel') { setSelected(null); setContSel(d) }
       if (d.t === 'contWeg') setContSel(null)
       if (d.t === 'layout') applyLayoutPatch(d.block, d.pfad, d.stil)
-      if (d.t === 'arrayOp') doArrayOp(d.block, d.feld, d.index, d.op)
+      if (d.t === 'arrayOp') doArrayOp(d.block, d.feld, d.index, d.op, d.ziel)
       if (d.t === 'baum') setBaum(d.baum || [])
       if (d.t === 'bereit') {
         if (springeZuRef.current) { sendeAnVorschau({ cmd: 'springe', ...springeZuRef.current }); springeZuRef.current = null }
@@ -1423,6 +1620,8 @@ export default function EditorPage() {
       if (d.t === 'dropBlock') addBlockAt(d.index, d.blockType)
       if (d.t === 'dropInContainer') widgetEinfuegen(d.block, d.pfad, d.blockType)
       if (d.t === 'moveEinbau') moveEinbau(d.vonBlock, d.index, d.zielBlock, d.zielPfad)
+      if (d.t === 'moveBlockTo') moveBlockTo(d.von, d.nach)
+      if (d.t === 'elementVerlegen') elementVerlegen(d.vonBlock, d.pfad, d.zielBlock, d.zielPfad, d.widget)
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
@@ -1544,6 +1743,46 @@ export default function EditorPage() {
 
   // Karten klonen / löschen / verschieben – ändert die LISTE im Inhalt,
   // damit nichts auseinanderlaufen kann.
+  // Ganze Sektion per Drag an eine neue Position (nav/footer bleiben fest)
+  function moveBlockTo(von, nach) {
+    const arr = [...(pages[activePage] || [])]
+    if (von == null || von <= 0 || von >= arr.length - 1) return
+    let z = Math.max(1, Math.min(parseInt(nach, 10) || 0, arr.length - 1))
+    if (z === von || z === von + 1) return
+    const [b] = arr.splice(von, 1)
+    if (z > von) z -= 1
+    z = Math.max(1, Math.min(z, arr.length - 1))
+    arr.splice(z, 0, b)
+    const next = { ...pages }; next[activePage] = arr
+    springeZuRef.current = { art: 'block', index: z }
+    applyPages(next, true, true)
+    setContSel(null)
+  }
+
+  // Beliebiges Vorlagen-Element per Drag verlegen: am Ziel entsteht ein
+  // freies Element (bearbeitbar), das Original wird ausgeblendet und kann
+  // über den Navigator jederzeit wieder eingeblendet werden.
+  function elementVerlegen(vonBlock, pfad, zielBlock, zielPfad, widget) {
+    if (pfad == null || pfad === '' || zielPfad == null) return
+    const arr = [...(pages[activePage] || [])]
+    const von = arr[vonBlock]; if (!von || !arr[zielBlock]) return
+    const layout = { ...(von.content?._layout || {}) }
+    layout[pfad] = { ...(layout[pfad] || {}), display: 'none' }
+    arr[vonBlock] = { ...von, content: { ...(von.content || {}), _layout: layout } }
+    const w = { ziel: zielPfad, art: widget?.art || 'text' }
+    if (w.art === 'bild') w.bild = widget.bild || ''
+    if (w.art === 'ueberschrift' || w.art === 'text') w.text = widget.text || ''
+    if (w.art === 'button') { w.text = widget.text || 'Mehr erfahren'; w.href = widget.href || '#' }
+    if (w.art === 'html') w.html = widget.html || ''
+    const zielAlt = arr[zielBlock]
+    const liste = [...(zielAlt.content?._einbau || []), w]
+    arr[zielBlock] = { ...zielAlt, content: { ...(zielAlt.content || {}), _einbau: liste } }
+    const next = { ...pages }; next[activePage] = arr
+    springeZuRef.current = { art: 'einbau', block: zielBlock, index: liste.length - 1 }
+    applyPages(next, true, true)
+    setContSel(null); setSelected(null)
+  }
+
   // Frei eingefügtes Element (content._einbau) in einen anderen Container
   // oder eine andere Sektion umziehen – Inhalt bleibt 1:1 erhalten.
   function moveEinbau(vonBlock, index, zielBlock, zielPfad) {
@@ -1571,10 +1810,10 @@ export default function EditorPage() {
     setContSel(null)
   }
 
-  function doArrayOp(blockIdx, feld, index, op) {
+  function doArrayOp(blockIdx, feld, index, op, ziel) {
     const arr = [...(pages[activePage] || [])]
     const b = arr[blockIdx]; if (!b) return
-    const neu = listeAendern(b.content || {}, feld, index, op)
+    const neu = listeAendern(b.content || {}, feld, index, op, ziel)
     if (!neu) return
     arr[blockIdx] = { ...b, content: layoutNachStruktur(neu) }
     const next = { ...pages }; next[activePage] = arr

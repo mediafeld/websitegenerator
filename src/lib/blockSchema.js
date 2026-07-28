@@ -414,12 +414,19 @@ export function pfadSetzen(content, pfad, wert) {
 // Der Editor erkennt, dass eine Karte im Baustein zu content[feld][index]
 // gehört (weil alle Pfade darin mit z. B. "items.2." beginnen). Klonen und
 // Löschen ändern dann DIE LISTE – nie das HTML. So bleibt alles konsistent.
-export function listeAendern(content, feld, index, op) {
+export function listeAendern(content, feld, index, op, ziel) {
   const alt = Array.isArray(content?.[feld]) ? content[feld] : null
   if (!alt) return null
   const neu = alt.map((e) => (e && typeof e === 'object' ? JSON.parse(JSON.stringify(e)) : e))
   const i = Math.max(0, Math.min(index, neu.length - 1))
-  if (op === 'dup') {
+  if (op === 'zu') {
+    // Per Drag an eine bestimmte Position (ziel = Einfüge-Index VOR Entnahme)
+    let z = Math.max(0, Math.min(parseInt(ziel, 10) || 0, neu.length))
+    if (z === i || z === i + 1) return null
+    const [it] = neu.splice(i, 1)
+    if (z > i) z -= 1
+    neu.splice(z, 0, it)
+  } else if (op === 'dup') {
     neu.splice(i + 1, 0, neu[i] && typeof neu[i] === 'object' ? JSON.parse(JSON.stringify(neu[i])) : neu[i])
   } else if (op === 'del') {
     if (neu.length <= 1) return null // die letzte Karte bleibt – sonst kippt das Layout
