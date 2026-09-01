@@ -39,6 +39,7 @@ function DashboardInnen() {
   const [reOffen, setReOffen] = useState(null)        // Projekt-ID, deren Rechnungsdaten offen sind
   const [reWerte, setReWerte] = useState({})          // Formularwerte der re_*-Felder
   const [reStatus, setReStatus] = useState('')        // '', 'laedt', 'speichert', 'ok'
+  const [reFehler, setReFehler] = useState('')       // Fehler direkt im Formular anzeigen
 
   const laden = useCallback(async () => {
     if (!supabaseBereit) return
@@ -99,9 +100,14 @@ function DashboardInnen() {
     for (const k of ['re_firma', 're_vorname', 're_nachname', 're_strasse', 're_plz', 're_ort', 're_ust_id', 're_handelsregister']) {
       sauber[k] = (reWerte[k] || '').trim() || null
     }
-    const { error } = await supabase.from('projekte').update(sauber).eq('id', id)
-    if (error) { setFehler(fehlerText(error)); setReStatus('') }
-    else { setReStatus('ok'); setTimeout(() => setReStatus(''), 2200) }
+    const { data, error } = await supabase.from('projekte').update(sauber).eq('id', id).select()
+    if (error) { setFehler(fehlerText(error)); setReFehler(fehlerText(error)); setReStatus(''); return }
+    // Gegenprobe: kam wirklich etwas an? (0 Zeilen = still nicht gespeichert)
+    if (!data || !data.length) {
+      const hinweis = 'Die Rechnungsdaten konnten nicht gespeichert werden. Bitte beim Support melden.'
+      setFehler(hinweis); setReFehler(hinweis); setReStatus(''); return
+    }
+    setReFehler(''); setReStatus('ok'); setTimeout(() => setReStatus(''), 2200)
   }
 
   async function loeschen(id, name) {
@@ -282,6 +288,11 @@ function DashboardInnen() {
                                 </button>
                                 {reStatus === 'ok' && <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}><i className="fa-solid fa-circle-check" style={{ marginRight: 6 }} aria-hidden="true" />Gespeichert</span>}
                               </div>
+                              {reFehler && (
+                                <div style={{ marginTop: 10, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#B91C1C', lineHeight: 1.55 }}>
+                                  <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 7 }} aria-hidden="true" />{reFehler}
+                                </div>
+                              )}
                             </>
                           )}
                         </div>

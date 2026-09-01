@@ -27,8 +27,18 @@ export default function Konto() {
     if (!nutzer) return
     setStatus('speichert'); setFehler('')
     const { error } = await supabase.from('profile').upsert({ id: nutzer.id, ...f })
-    if (error) { setFehler(fehlerText(error)); setStatus('') }
-    else { setStatus('gespeichert'); setTimeout(() => setStatus(''), 2600) }
+    if (error) { setFehler(fehlerText(error)); setStatus(''); return }
+    // Gegenprobe: wirklich in der Datenbank angekommen? Sonst meldet die Seite
+    // faelschlich Erfolg, obwohl still nichts geschrieben wurde.
+    const { data: p, error: leseFehler } = await supabase
+      .from('profile').select('*').eq('id', nutzer.id).maybeSingle()
+    if (leseFehler) { setFehler(fehlerText(leseFehler)); setStatus(''); return }
+    if (!p) {
+      setFehler('Die Angaben konnten nicht gespeichert werden. Bitte melde dich beim Support.')
+      setStatus(''); return
+    }
+    setF({ ...LEER, ...Object.fromEntries(Object.entries(p).filter(([k]) => k in LEER)) })
+    setStatus('gespeichert'); setTimeout(() => setStatus(''), 2600)
   }
 
   const vollstaendig = f.nachname && f.strasse && f.plz && f.ort
@@ -102,6 +112,13 @@ export default function Konto() {
               {status === 'speichert' ? 'Speichert…' : 'Daten speichern'}
             </button>
             {status === 'gespeichert' && <span style={{ fontSize: 14, color: '#15803D', fontWeight: 700 }}><i className="fa-solid fa-circle-check" style={{ marginRight: 6 }} aria-hidden="true" />Gespeichert</span>}
+            {/* Fehler NEBEN dem Knopf: oben am Seitenanfang sieht man ihn beim
+                Speichern nicht, weil das Formular lang ist. */}
+            {fehler && (
+              <span style={{ fontSize: 13.5, color: '#B91C1C', fontWeight: 600, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '9px 14px', lineHeight: 1.5 }}>
+                <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 7 }} aria-hidden="true" />{fehler}
+              </span>
+            )}
           </div>
 
           <div className="kkarte">
