@@ -1,4 +1,5 @@
 import { renderBlock } from './blocks'
+import { RECHTS_SEITEN } from './rechtsseiten'
 import { generatorDesignCSS, GENERATOR_REVEAL_JS, GENERATOR_EDITOR_CSS } from './generatorDesign'
 import { FREITEXT_CSS } from './blocksPlus2'
 import { BILDLEER_CSS } from './heroes'
@@ -180,6 +181,60 @@ export function layoutRegeln(c, index) {
     else if (c._breite.modus === 'boxed' && parseInt(c._breite.wert, 10)) regeln.push(`${basis} .wg-wrap{max-width:${parseInt(c._breite.wert, 10)}px !important;}`)
   }
   return regeln
+}
+
+// ── Sprungmarken & interne Links ───────────────────────────────────────────
+// Beim Onepager liegt alles auf EINER Seite — „Kontakt", „Leistungen" usw.
+// müssen dort Sprungmarken sein statt Verweise auf Dateien, die es nicht gibt.
+// Viele Bausteine verlinken intern fest auf kontakt.html; deshalb wird beim
+// Rendern repariert: Zielseite vorhanden → Link bleibt, sonst wird daraus ein
+// Sprung zum passenden Abschnitt derselben Seite.
+const BLOCK_ANKER = {
+  services: 'leistungen', leistungen: 'leistungen',
+  about: 'about', team: 'team',
+  gallery: 'galerie', galerie: 'galerie',
+  pricing: 'preise', preise: 'preise',
+  menu: 'speisekarte', contact: 'kontakt', kontakt: 'kontakt',
+  faq: 'faq', fragen: 'faq',
+}
+const DATEI_ANKER = {
+  kontakt: 'kontakt', leistungen: 'leistungen', 'ueber-uns': 'about', ueber: 'about',
+  about: 'about', team: 'team', galerie: 'galerie', portfolio: 'galerie',
+  preise: 'preise', speisekarte: 'speisekarte', faq: 'faq',
+}
+
+// Seitenname → Dateiname (gleiche Regel wie ZIP-Export und Generierung)
+export function seitenDatei(s) {
+  if (s === 'Startseite' || s === 'Start' || s === 'index') return 'index.html'
+  return String(s).toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.html'
+}
+
+// Fehlt dem Abschnitt eine id, bekommt er die zum Block-Typ passende —
+// erst dadurch funktionieren Sprungmarken zuverlässig.
+function mitAnker(html, typ) {
+  const id = BLOCK_ANKER[typ]
+  if (!id || / id="/i.test(html.slice(0, 400))) return html
+  return html.replace(/^(\s*<(?:section|div|header|nav|footer)\b)/i, `$1 id="${id}"`)
+}
+
+// Verweise auf Seiten, die es in diesem Entwurf nicht gibt, werden zu
+// Sprungmarken — gibt es auch den Abschnitt nicht, zum Seitenanfang.
+function interneLinksReparieren(html, seiten) {
+  if (!Array.isArray(seiten) || !seiten.length) return html
+  const dateien = new Set(seiten.map(seitenDatei))
+  const anker = new Set(
+    Array.from(html.matchAll(/\sid="([a-z0-9_-]+)"/gi)).map(m => m[1].toLowerCase())
+  )
+  return html.replace(/href="([a-z0-9][a-z0-9-]*\.html)(#[^"]*)?"/gi, (voll, datei) => {
+    const d = datei.toLowerCase()
+    if (dateien.has(d)) return voll
+    const basis = d.replace(/\.html$/, '')
+    if (basis === 'index') return 'href="#"'
+    const ziel = DATEI_ANKER[basis] || basis
+    return anker.has(ziel) ? `href="#${ziel}"` : 'href="#"'
+  })
 }
 
 // Kennzeichnet die Sektion (data-bi) und hängt CSS-ID/-Klassen des Nutzers an.
@@ -429,7 +484,10 @@ function mitEigenemCode(html, c, index) {
 //   (Kauf-ZIP – keine Google-/CDN-Aufrufe, wichtig für den Datenschutz).
 // seo: { titel, beschreibung, ogBild, favicon, url } für Meta-Angaben.
 // formular: { art:'php'|'server', projekt, basis, email } steuert das Kontaktformular-Ziel.
-export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false, assetsLokal = false, seo = null, formular = null }) {
+// seiten: Namen ALLER Seiten dieser Website. Damit weiß die Ausgabe, welche
+// internen Links es wirklich gibt — fehlende werden zu Sprungmarken, und der
+// Fußbereich verlinkt Impressum/Datenschutz nur, wenn es sie gibt.
+export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false, assetsLokal = false, seo = null, formular = null, seiten = null }) {
   const fontParam = font.replace(/ /g, '+')
   const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@200;300;400;500;600;700;800;900` : ''
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -448,9 +506,19 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline
     seo?.url ? `<link rel="canonical" href="${esc(seo.url)}">` : '',
     seo?.favicon ? `<link rel="icon" href="${esc(seo.favicon)}">` : '',
   ].filter(Boolean).join('\n')
-  const blocksHtml = (blocks || [])
-    .map((b, i) => mitIndexAttr(mitEigenemCode(applyParallaxAttr(renderBlock(b.type, b.variant, b.content), b.content), b.content, i), b.content, i))
-    .join('\n')
+  // Fußbereich: Impressum/Datenschutz nur verlinken, wenn es die Seiten gibt.
+  const bloeckeGeprueft = Array.isArray(seiten) && seiten.length
+    ? (blocks || []).map(b => b?.type === 'footer'
+      ? { ...b, content: { ...(b.content || {}), rechtsLinks: RECHTS_SEITEN.filter(d => seiten.includes(d.seite)).map(d => ({ label: d.linkLabel, href: d.datei })) } }
+      : b)
+    : (blocks || [])
+
+  const blocksHtml = interneLinksReparieren(
+    bloeckeGeprueft
+      .map((b, i) => mitIndexAttr(mitEigenemCode(applyParallaxAttr(mitAnker(renderBlock(b.type, b.variant, b.content), b.type), b.content), b.content, i), b.content, i))
+      .join('\n'),
+    seiten,
+  )
 
   // Layout-Overrides (Abstände, Breiten, Z-Index) des Nutzers:
   //  - fertige Seite: als pures CSS gebacken (funktioniert ohne Editor/JS)

@@ -27,7 +27,7 @@ export async function GET(req) {
     </div>`
     const seoDaten = p.form_data?.seo || {}
     let html = renderPage({
-      blocks: pages[seite], palette: p.palette, font: p.font || 'Inter Tight',
+      blocks: pages[seite], seiten, palette: p.palette, font: p.font || 'Inter Tight',
       fontHeadline: p.form_data?.fontHeadline || p.font || 'Inter Tight',
       title: `ADMIN – ${seite}`, forEditor: false,
       seo: { titel: seoDaten.seiten?.[seite]?.titel ? `ADMIN – ${seoDaten.seiten[seite].titel}` : '', beschreibung: seoDaten.seiten?.[seite]?.beschreibung || '', favicon: seoDaten.global?.favicon || '' },

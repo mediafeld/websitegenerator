@@ -78,6 +78,7 @@ function Vorschau() {
     const seo = projekt.form_data?.seo || {}
     return renderPage({
       blocks: projekt.pages[seite],
+      seiten,
       palette: projekt.palette,
       font: projekt.font || 'Inter Tight',
       fontHeadline: projekt.form_data?.fontHeadline || projekt.font || 'Inter Tight',

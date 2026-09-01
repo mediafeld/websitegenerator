@@ -445,7 +445,7 @@ export default function EditorPage() {
     let sy = 0
     try { sy = iframe.contentWindow?.scrollY || 0 } catch { sy = 0 }
     iframe.onload = () => { try { iframe.contentWindow?.scrollTo(0, sy) } catch {} }
-    const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true })
+    const html = renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: true, seiten: pageList })
     iframe.srcdoc = injectEditor(injectPattern(html))
   }, [renderKey, activePage, palette, font, fontHeadline, pagePattern])
 
@@ -2472,7 +2472,7 @@ export default function EditorPage() {
       {/* VOLLBILD-VORSCHAU: Seite wie live, responsiv testbar */}
       {vorschau && (
         <VorschauVollbild
-          html={injectPattern(renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: false }))}
+          html={injectPattern(renderPage({ blocks, palette, font, fontHeadline, title: activePage, forEditor: false, seiten: pageList }))}
           seiten={pageList} aktiveSeite={activePage} onSeite={setActivePage}
           onSchliessen={() => setVorschau(false)}
         />

@@ -317,10 +317,35 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
         }
         return { ...b, content: c }
       })
+      // ONEPAGER: alles liegt auf EINER Seite — die Navigation muss deshalb
+      // zu den Abschnitten springen statt auf Unterseiten zu verweisen, die es
+      // gar nicht gibt (sonst landet „Kontakt" auf einem 404).
+      const einseiter = seiten.length <= 1
+      const ANKER_ZU_BLOCK = {
+        leistungen: ['services', 'leistungen'], about: ['about'], team: ['team'],
+        galerie: ['gallery', 'galerie'], preise: ['pricing', 'preise'],
+        speisekarte: ['menu'], kontakt: ['contact', 'kontakt'], faq: ['faq', 'fragen'],
+      }
+      const ANKER_LABEL = {
+        leistungen: 'Leistungen', about: 'Über uns', team: 'Team', galerie: 'Galerie',
+        preise: 'Preise', speisekarte: 'Speisekarte', kontakt: 'Kontakt', faq: 'Fragen',
+      }
+      let seitenNav = navLinks
+      if (einseiter) {
+        const vorhanden = Object.entries(ANKER_ZU_BLOCK)
+          .filter(([, typen]) => blocks.some(b => typen.includes(b.type)))
+          .map(([anker]) => ({ label: ANKER_LABEL[anker], href: `#${anker}` }))
+        seitenNav = [{ label: 'Start', href: '#' }, ...vorhanden]
+      }
+      // Der Kontakt-Knopf in der Navigation: beim Onepager Sprungmarke,
+      // ohne Kontaktabschnitt gar nicht erst anzeigen.
+      const hatKontakt = blocks.some(b => b.type === 'contact' || b.type === 'kontakt')
+      const navCtaHref = einseiter ? (hatKontakt ? '#kontakt' : '') : 'kontakt.html'
+
       pages[seite] = [
-        { type: 'nav', variant: 'nav-modern', content: { ...globalContent } },
+        { type: 'nav', variant: 'nav-modern', content: { ...globalContent, navLinks: seitenNav, navCtaHref } },
         ...blocks,
-        { type: 'footer', variant: 'footer-modern', content: { ...globalContent, footerDesc: formData.beschreibung } },
+        { type: 'footer', variant: 'footer-modern', content: { ...globalContent, navLinks: seitenNav, footerDesc: formData.beschreibung } },
       ]
     })
 

@@ -121,7 +121,7 @@ export const NAV = {
     </a>
     <div style="display:flex;align-items:center;gap:4px;" class="nav-desktop">
       ${(c.navLinks || []).map((l, i) => `<a href="${l.href}" style="font-size:14px;font-weight:500;color:#475569;text-decoration:none;padding:8px 14px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='var(--p50)';this.style.color='var(--p700)'" onmouseout="this.style.background='transparent';this.style.color='#475569'">${ed(`navLinks.${i}.label`, l.label)}</a>`).join('')}
-      <a href="kontakt.html" style="background:var(--p500);color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-weight:600;font-size:14px;margin-left:8px;">${ed('navCta', c.navCta || 'Kontakt')}</a>
+      ${c.navCtaHref === '' ? '' : `<a href="${esc(c.navCtaHref || 'kontakt.html')}" style="background:var(--p500);color:#fff;text-decoration:none;padding:9px 20px;border-radius:8px;font-weight:600;font-size:14px;margin-left:8px;">${ed('navCta', c.navCta || 'Kontakt')}</a>`}
     </div>
     <button class="nav-burger" onclick="this.nextElementSibling?this.parentElement.parentElement.querySelector('.nav-mobile').classList.toggle('hidden'):0" style="display:none;background:none;border:none;cursor:pointer;font-size:22px;color:var(--p700);"><i class="fa-solid fa-bars"></i></button>
   </div>

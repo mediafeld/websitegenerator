@@ -148,6 +148,7 @@ export async function websiteAlsZip(projekt) {
     const seiteSeo = seoDaten.seiten?.[seite] || {}
     const html = renderPage({
       blocks: pages[seite],
+      seiten,
       palette: projekt.palette,
       font, fontHeadline,
       title: `${projekt.firma || projekt.name || 'Website'} – ${seite}`,
