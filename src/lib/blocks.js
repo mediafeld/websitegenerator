@@ -704,6 +704,45 @@ export const IMAGE = {
   ]
 }
 
+// ═══════════════════════════════════════════════════════════════
+// RECHTSTEXT (Impressum / Datenschutz als eigene Unterseite)
+// Der lange Text bleibt EIN editierbares Feld mit erhaltenen
+// Zeilenumbrüchen (white-space:pre-wrap) — so ist er im Editor
+// bearbeitbar, ohne dass die Absätze verloren gehen.
+// ═══════════════════════════════════════════════════════════════
+export const RECHTSTEXT = {
+  type: 'rechtstext',
+  label: 'Rechtstext',
+  variants: [
+    {
+      id: 'rt-schlicht', name: 'Schlicht',
+      render: (c) => `
+<section data-block="rechtstext" data-variant="rt-schlicht" data-section="1" style="${sectionBgStyle(c, 'background:#fff;')}padding:clamp(60px,7vw,100px) 0;">
+  <div style="max-width:840px;margin:0 auto;padding:0 24px;">
+    <div data-reveal style="display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--p600);background:var(--p100);padding:6px 14px;border-radius:99px;margin-bottom:18px;">${ed('tag', c.tag || 'Rechtliches', 'span')}</div>
+    <h1 data-reveal style="font-size:clamp(28px,3.6vw,42px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:10px;">${ed('title', c.title || 'Impressum', 'span')}</h1>
+    <div data-reveal style="font-size:15px;color:#64748b;line-height:1.7;margin-bottom:28px;">${ed('untertitel', c.untertitel || 'Angaben gemäß den gesetzlichen Vorgaben.', 'span')}</div>
+    <div style="height:3px;width:64px;background:var(--p500);border-radius:99px;margin-bottom:30px;"></div>
+    <div data-edit="text" style="white-space:pre-wrap;font-size:16px;line-height:1.85;color:#334155;outline:none;">${esc(c.text || '')}</div>
+  </div>
+</section>`
+    },
+    {
+      id: 'rt-karte', name: 'Karte',
+      render: (c) => `
+<section data-block="rechtstext" data-variant="rt-karte" data-section="1" style="${sectionBgStyle(c, 'background:var(--p50);')}padding:clamp(60px,7vw,100px) 0;">
+  <div style="max-width:900px;margin:0 auto;padding:0 24px;">
+    <div data-reveal style="background:#fff;border:1px solid #e2e8f0;border-radius:22px;padding:clamp(28px,4vw,52px);box-shadow:0 18px 50px rgba(15,23,42,.06);">
+      <h1 style="font-size:clamp(26px,3.2vw,38px);font-weight:800;letter-spacing:-0.03em;color:#0f172a;margin-bottom:8px;">${ed('title', c.title || 'Impressum', 'span')}</h1>
+      <div style="font-size:15px;color:#64748b;line-height:1.7;margin-bottom:26px;">${ed('untertitel', c.untertitel || 'Angaben gemäß den gesetzlichen Vorgaben.', 'span')}</div>
+      <div data-edit="text" style="white-space:pre-wrap;font-size:15.5px;line-height:1.85;color:#334155;outline:none;">${esc(c.text || '')}</div>
+    </div>
+  </div>
+</section>`
+    },
+  ],
+}
+
 // ─────────────────────────────────────────────────────────────
 // REGISTRY
 // ─────────────────────────────────────────────────────────────
@@ -735,6 +774,7 @@ export const BLOCK_REGISTRY = {
   contact: CONTACT,
   footer: FOOTER,
   menu: MENU,
+  rechtstext: RECHTSTEXT,
   custom: CUSTOM,
 }
 
@@ -761,6 +801,7 @@ export const ADDABLE_BLOCKS = [
   { type: 'cta', label: 'Call to Action', fa: 'bullhorn', cat: 'Konversion' },
   { type: 'contact', label: 'Kontakt', fa: 'envelope', cat: 'Konversion' },
   { type: 'menu', label: 'Speisekarte', fa: 'utensils', cat: 'Sonstiges', nurBranche: ['restaurant'] },
+  { type: 'rechtstext', label: 'Rechtstext', fa: 'scale-balanced', cat: 'Sonstiges' },
   { type: 'custom', label: 'Eigener Code', fa: 'code', cat: 'Sonstiges' },
 ]
 
@@ -850,6 +891,10 @@ export const BASIS_DEFAULTS = {
     ],
   },
   custom: { html: '<div style="padding:40px;text-align:center;">Hier steht Ihr eigener HTML-Code.</div>' },
+  rechtstext: {
+    tag: 'Rechtliches', title: 'Impressum', untertitel: 'Angaben gemäß den gesetzlichen Vorgaben.',
+    text: 'Diesen Text im Kundenkonto unter „Rechtstexte" erzeugen lassen oder hier direkt einfügen.',
+  },
 }
 
 // Standard-Inhalte für neu eingefügte Bausteine

@@ -4,8 +4,8 @@
 // nächstes dran ist. Dashboard, Editor, Rechnungen und Admin lesen alle hier —
 // damit nirgends mehr „Online schalten" bei einer gekauften Website auftaucht.
 //
-// Merksatz für die Oberfläche:
-//   FARBE  = Produktart   (Blau = Miete, Violett = Kauf)
+// Merksatz für die Oberfläche (alles in der CI: Signalblau + Navy):
+//   FARBE  = Produktart   (Signalblau = Miete, Navy = Kauf)
 //   PUNKT  = Zustand      (Gelb = offen, Grün = aktiv, Rot = Problem, Grau = ruhend)
 //
 // Bewusst OHNE 'use client', damit auch Server-Routen importieren können.
@@ -28,7 +28,8 @@ export const ARTEN = {
     name: 'Website mieten',
     kurz: 'Miete',
     icon: 'fa-cloud',
-    farbe: '#1D4ED8', bg: '#EFF6FF', rand: '#BFDBFE',
+    // CI: Signalblau
+    farbe: '#1B93D2', bg: '#E7F4FC', rand: '#BBE0F4',
     satz: 'Domain, Hosting, SSL und Sicherungen laufen bei uns. Monatlich zahlbar, wir schalten die Website online.',
     enthalten: ['Domain inklusive', 'Hosting & SSL', 'Wir schalten online', 'Laufende Sicherungen'],
     hauptAktion: 'Online schalten',
@@ -43,7 +44,8 @@ export const ARTEN = {
     name: 'Website kaufen',
     kurz: 'Kauf',
     icon: 'fa-download',
-    farbe: '#7C3AED', bg: '#F5F3FF', rand: '#DDD6FE',
+    // CI: Navy (mediafeld-Petrol) — bewusst KEIN Fremdfarbton
+    farbe: '#0A1824', bg: '#EEF2F5', rand: '#D5DEE5',
     satz: 'Einmal zahlen, fertige Website als ZIP herunterladen. Domain und Hosting bringst du selbst mit — keine laufenden Kosten.',
     enthalten: ['Kompletter Quellcode', 'ZIP-Download (HTML/CSS)', 'Keine laufenden Kosten', 'Domain & Hosting selbst'],
     hauptAktion: 'Jetzt kaufen',
@@ -58,7 +60,7 @@ export const ARTEN = {
 // ── Zustands-Farben (unabhängig von der Produktart) ─────────────────────────
 export const ZUSTAND = {
   offen:   { farbe: '#92400E', bg: '#FFFBEB', rand: '#FDE68A', punkt: '#F59E0B' },
-  aktiv:   { farbe: '#15803D', bg: '#F0FDF4', rand: '#BBF7D0', punkt: '#16A34A' },
+  aktiv:   { farbe: '#1F9D55', bg: '#EAF6EF', rand: '#BFE3CD', punkt: '#1F9D55' },
   problem: { farbe: '#B91C1C', bg: '#FEF2F2', rand: '#FECACA', punkt: '#DC2626' },
   ruhend:  { farbe: '#57657E', bg: '#F1F4F6', rand: '#E1E7EB', punkt: '#94A3B8' },
 }

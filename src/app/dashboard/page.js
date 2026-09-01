@@ -5,9 +5,9 @@ import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
 import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
 import { MIETE, KAUF, eur } from '@/lib/preise'
-import { ARTEN, produktStand, UMFANG_NAME, UMFANG_KURZ, GROESSE } from '@/lib/produkt'
+import { produktStand, UMFANG_NAME, UMFANG_KURZ, GROESSE } from '@/lib/produkt'
 import { starteCheckout } from '@/lib/checkout'
-import { aktuellerNutzer, profilLuecken, projektLaden, produktSetzen, lokalenStandUebernehmen } from '@/lib/projekte'
+import { aktuellerNutzer, profilLuecken, projektLaden, lokalenStandUebernehmen } from '@/lib/projekte'
 import { websiteAlsZip } from '@/lib/exportZip'
 
 // Spalten, die für die Produkt-Anzeige gebraucht werden. bezahlt_am kommt aus
@@ -53,7 +53,6 @@ function DashboardInnen() {
   const [laedtZip, setLaedtZip] = useState(null)       // Projekt-ID, deren ZIP gepackt wird
   const [luecken, setLuecken] = useState(null)          // null = noch nicht geladen, [] = vollständig
   const [aktivId, setAktivId] = useState(null)         // welcher Tab ist offen
-  const [wechselOffen, setWechselOffen] = useState(null) // Projekt-ID, für die die Produktwahl offen ist
   const [umbenennen, setUmbenennen] = useState(null)   // {id, name} während des Umbenennens
   const [reOffen, setReOffen] = useState(null)         // Projekt-ID, deren Rechnungsdaten offen sind
   const [reWerte, setReWerte] = useState({})           // Formularwerte der re_*-Felder
@@ -98,15 +97,6 @@ function DashboardInnen() {
       domain: art === 'mieten' ? projekt.domain : '',
     })
     if (error) { setFehler(error); setBucht(null) }
-  }
-
-  async function produktWaehlen(projekt, art) {
-    setFehler('')
-    const r = await produktSetzen(projekt.id, art)
-    if (r?.error) { setFehler(r.error); return }
-    setProjekte(ps => ps.map(p => p.id === projekt.id ? { ...p, zahlungsart: r.zahlungsart, paket_id: r.paket_id } : p))
-    setWechselOffen(null)
-    setPaketOffen(projekt.id)
   }
 
   async function zipLaden(projekt) {
@@ -163,6 +153,8 @@ function DashboardInnen() {
   }
 
   const aktiv = projekte.find(p => p.id === aktivId) || projekte[0] || null
+  // Domain und E-Mail-Postfach gibt es NUR im Mietpaket.
+  const hatMiete = projekte.some(p => p.zahlungsart === 'mieten')
 
   return (
     <KontoLayout aktiv="dashboard" titel="Übersicht" css={DASH_CSS}
@@ -199,7 +191,7 @@ function DashboardInnen() {
                   const s = produktStand(p)
                   const an = p.id === aktiv?.id
                   return (
-                    <button key={p.id} onClick={() => { setAktivId(p.id); setPaketOffen(null); setWechselOffen(null); setReOffen(null) }}
+                    <button key={p.id} onClick={() => { setAktivId(p.id); setPaketOffen(null); setReOffen(null) }}
                       className={`wgtab ${an ? 'wgtab-an' : ''}`}
                       style={{ '--tabfarbe': s.info?.farbe || D.hellGrau }}
                       title={`${s.zeile} · ${s.text}`}>
@@ -222,7 +214,6 @@ function DashboardInnen() {
               {aktiv && (() => {
                 const s = produktStand(aktiv)
                 const liste = s.art === 'mieten' ? MIETE : KAUF
-                const zeigeWechsel = wechselOffen === aktiv.id || !s.art
                 return (
                   <div className="wgpanel" style={{ borderTop: `3px solid ${s.info?.farbe || D.hellLinie}` }}>
 
@@ -276,47 +267,23 @@ function DashboardInnen() {
                         <div style={{ fontSize: 15, fontWeight: 800, color: D.dunkel }}>{s.zeile}</div>
                         <div style={{ fontSize: 12.5, color: D.hellGrau, marginTop: 3, lineHeight: 1.55 }}>{s.erklaerung}</div>
                       </div>
-                      {!s.bezahlt && s.art && (
-                        <button className="btnleer" style={{ padding: '9px 15px', fontSize: 13 }}
-                          onClick={() => setWechselOffen(wechselOffen === aktiv.id ? null : aktiv.id)}>
-                          <i className="fa-solid fa-right-left" style={{ marginRight: 7 }} aria-hidden="true" />Produkt wechseln
-                        </button>
+                      {/* Produkt wird NICHT hier umgeschaltet — mieten und kaufen
+                          unterscheiden sich zu sehr (Domain, Hosting, Seitenzahl).
+                          Wer wechseln will, geht zurück in die Konfiguration. */}
+                      {!s.bezahlt && (
+                        <a href={`/start?projekt=${aktiv.id}`} className="btnleer" style={{ padding: '9px 15px', fontSize: 13, whiteSpace: 'nowrap' }}>
+                          <i className="fa-solid fa-sliders" style={{ marginRight: 7 }} aria-hidden="true" />Angaben &amp; Produkt ändern
+                        </a>
                       )}
                     </div>
 
-                    {/* Produktwahl: mieten ODER kaufen */}
-                    {zeigeWechsel && !s.bezahlt && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 4 }}>Wie möchtest du diese Website nutzen?</div>
-                        <p style={{ fontSize: 12.5, color: D.hellGrau, marginBottom: 12, lineHeight: 1.6 }}>
-                          Die Entscheidung kannst du bis zur Zahlung jederzeit ändern. Der Baukasten bleibt derselbe.
-                        </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 12 }}>
-                          {Object.values(ARTEN).map(a => {
-                            const an = s.art === a.id
-                            return (
-                              <button key={a.id} onClick={() => produktWaehlen(aktiv, a.id)}
-                                style={{ textAlign: 'left', background: an ? a.bg : '#fff', border: `2px solid ${an ? a.farbe : D.hellLinie}`, borderRadius: 14, padding: '16px 18px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-                                  <i className={`fa-solid ${a.icon}`} style={{ color: a.farbe, fontSize: 17 }} aria-hidden="true" />
-                                  <span style={{ fontSize: 15.5, fontWeight: 800, color: D.dunkel }}>{a.name}</span>
-                                  {an && <i className="fa-solid fa-circle-check" style={{ color: a.farbe, marginLeft: 'auto' }} aria-hidden="true" />}
-                                </div>
-                                <p style={{ fontSize: 13, color: D.hellGrau, lineHeight: 1.6, marginBottom: 10 }}>{a.satz}</p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                  {a.enthalten.map(e => (
-                                    <span key={e} style={{ fontSize: 11.5, background: an ? '#fff' : D.hellGrund, color: D.hellText, borderRadius: 99, padding: '4px 10px' }}>
-                                      <i className="fa-solid fa-check" style={{ color: a.farbe, marginRight: 5 }} aria-hidden="true" />{e}
-                                    </span>
-                                  ))}
-                                </div>
-                                <div style={{ fontSize: 12.5, color: a.farbe, fontWeight: 700, marginTop: 11 }}>
-                                  ab {eur((a.id === 'mieten' ? MIETE : KAUF)[0].preis)} € {a.zahlweise}
-                                </div>
-                              </button>
-                            )
-                          })}
-                        </div>
+                    {/* Noch kein Produkt hinterlegt (ältere Entwürfe) */}
+                    {!s.art && (
+                      <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '15px 18px', marginBottom: 16, fontSize: 13.5, color: '#92400E', lineHeight: 1.65 }}>
+                        <i className="fa-solid fa-circle-info" style={{ marginRight: 8 }} aria-hidden="true" />
+                        Für diese Website ist noch nicht hinterlegt, ob sie <strong>gemietet</strong> (Domain und Hosting bei uns)
+                        oder <strong>gekauft</strong> (ZIP zum Herunterladen) werden soll. Das legst du in der Konfiguration fest —
+                        deine Angaben und dein Entwurf bleiben dabei erhalten.
                       </div>
                     )}
 
@@ -343,7 +310,7 @@ function DashboardInnen() {
                       )}
                       {s.aktion === 'zip' && (
                         <button className="wgakt" disabled={laedtZip === aktiv.id} onClick={() => zipLaden(aktiv)}
-                          style={{ background: '#16a34a', color: '#fff', opacity: laedtZip === aktiv.id ? .7 : 1 }}>
+                          style={{ background: '#1F9D55', color: '#fff', opacity: laedtZip === aktiv.id ? .7 : 1 }}>
                           <i className={`fa-solid ${laedtZip === aktiv.id ? 'fa-spinner fa-spin' : 'fa-file-zipper'}`} aria-hidden="true" />
                           {laedtZip === aktiv.id ? 'Wird gepackt …' : 'Website herunterladen (ZIP)'}
                         </button>
@@ -355,10 +322,10 @@ function DashboardInnen() {
                             </a>
                           : <span style={{ fontSize: 13, color: D.hellGrau }}>Domain wird eingerichtet — wir melden uns.</span>
                       )}
-                      {s.aktion === 'waehlen' && !zeigeWechsel && (
-                        <button className="wgakt" onClick={() => setWechselOffen(aktiv.id)} style={{ background: D.blau, color: '#fff' }}>
-                          <i className="fa-solid fa-circle-question" aria-hidden="true" />Mieten oder kaufen?
-                        </button>
+                      {s.aktion === 'waehlen' && (
+                        <a className="wgakt" href={`/start?projekt=${aktiv.id}`} style={{ background: D.blau, color: '#fff' }}>
+                          <i className="fa-solid fa-sliders" aria-hidden="true" />Konfiguration öffnen
+                        </a>
                       )}
 
                       <div style={{ flex: 1 }} />
@@ -481,10 +448,17 @@ function DashboardInnen() {
             </>
           )}
 
+          {/* Domains und Postfächer gehören zum MIETPAKET — beim Kauf hostest du
+              selbst. Deshalb erscheinen sie nur, wenn es eine Miet-Website gibt. */}
           <div className="zeile" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0, marginTop: 18 }}>
             {[
-              ['globe', 'Domains', 'Registrierte Domains verwalten und Verfügbarkeit prüfen.', '/domains'],
-              ['envelope', 'E-Mail-Postfächer', 'Adressen unter deiner Domain anlegen.', '/email'],
+              ...(hatMiete ? [
+                ['globe', 'Domains', 'Registrierte Domains verwalten und Verfügbarkeit prüfen.', '/domains'],
+                ['envelope', 'E-Mail-Postfächer', 'Adressen unter deiner Domain anlegen.', '/email'],
+              ] : [
+                ['circle-question', 'Hilfe & FAQ', 'Antworten zum Baukasten, zum Kauf und zum Hochladen der ZIP.', '/hilfe'],
+                ['headset', 'Support', 'Frage stellen — wir antworten in der Regel am selben Werktag.', '/kontakt'],
+              ]),
               ['scale-balanced', 'Rechtstexte', 'Impressum und Datenschutz für deine Website.', '/rechtstexte'],
               ['file-invoice', 'Rechnungen', 'Verträge, Rechnungen und Zahlungsmittel.', '/abrechnungen'],
             ].map(([ic, t, u, href]) => (

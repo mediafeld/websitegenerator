@@ -28,6 +28,15 @@ export default function Domains() {
         <>
           {fehler && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '15px 18px', marginBottom: 18, fontSize: 14, color: '#B91C1C' }}>{fehler}</div>}
 
+          {/* Domains gibt es nur zum Mietpaket — beim Kauf hostet der Kunde selbst. */}
+          {projekte.length > 0 && !projekte.some(p => p.zahlungsart === 'mieten') && (
+            <div style={{ background: D.hellGrund, border: `1px solid ${D.hellLinie}`, borderRadius: 12, padding: '15px 18px', marginBottom: 18, fontSize: 14, color: D.hellText, lineHeight: 1.65 }}>
+              <i className="fa-solid fa-circle-info" style={{ marginRight: 9, color: D.blau }} aria-hidden="true" />
+              Domains gehören zum <strong>Mietpaket</strong>. Deine Website hast du gekauft — Domain und Hosting
+              bringst du dort selbst mit. Die fertige Website lädst du im Kundenkonto als ZIP herunter.
+            </div>
+          )}
+
           <div className="kkarte" style={{ marginBottom: 16 }}>
             <h2>Deine Domains</h2>
             {mitDomain.length === 0 ? (

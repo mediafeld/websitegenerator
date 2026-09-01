@@ -2099,12 +2099,12 @@ export default function EditorPage() {
         {/* Produkt-Erkennung: Datenbank schlägt Formulardaten (die Wahl aus dem
             Baukasten) — damit hier nie „Kauf" steht, wenn längst gemietet wird. */}
         {(projektMeta?.zahlungsart || formDataRef.current?.zahlungsart) === 'mieten' && (
-          <span title="Website mieten — Domain, Hosting und SSL laufen bei uns." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
+          <span title="Website mieten — Domain, Hosting und SSL laufen bei uns." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#1B93D2', background: '#E7F4FC', border: '1px solid #BBE0F4', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
             <i className="fa-solid fa-cloud" />Miete
           </span>
         )}
         {(projektMeta?.zahlungsart || formDataRef.current?.zahlungsart) === 'kaufen' ? (
-          <span title="Beim Kauf nutzt du deine eigene Domain – die fertige Website kommt als ZIP." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#7C3AED', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
+          <span title="Beim Kauf nutzt du deine eigene Domain – die fertige Website kommt als ZIP." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#0A1824', background: '#EEF2F5', border: '1px solid #D5DEE5', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
             <i className="fa-solid fa-download" />Kauf · ZIP-Download
           </span>
         ) : formDataRef.current?.domain ? (
@@ -2188,7 +2188,7 @@ export default function EditorPage() {
               const { error } = await starteCheckout({ paketId: p.id, modus: art, projektId: projektIdRef.current, domain: art === 'mieten' ? fd.domain : '' })
               if (error) { setKauft(false); alert(error) }
             }} title={art === 'mieten' ? 'Mietpaket buchen — wir schalten mit Domain online' : 'Einmal zahlen, Website als ZIP herunterladen'}
-              style={{ background: art === 'mieten' ? '#1D4ED8' : primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              style={{ background: art === 'mieten' ? '#1B93D2' : '#0A1824', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               {kauft ? 'Öffne Kasse…' : <>{label}<i className="fa-solid fa-arrow-right" /></>}
             </button>
           )

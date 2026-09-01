@@ -32,7 +32,7 @@ export default function EmailBereich() {
               <div style={{ fontSize: 15.5, fontWeight: 700 }}>Zusätzliches Postfach</div>
               <div style={{ fontSize: 13, color: D.hellGrau }}>1 weitere E-Mail-Adresse unter deiner Domain, unabhängig vom Paket-Kontingent</div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#FF5722' }}>2,90 €<span style={{ fontSize: 12, fontWeight: 600, color: D.hellGrau }}>/Monat</span></div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: D.blau }}>2,90 €<span style={{ fontSize: 12, fontWeight: 600, color: D.hellGrau }}>/Monat</span></div>
             <button className={imWarenkorb ? 'btnleer' : 'btnfest'} disabled={imWarenkorb}
               onClick={() => hinzufuegen({ id: 'postfach-zusatz', titel: 'Zusätzliches Postfach', unter: 'E-Mail-Adresse unter deiner Domain', preis: 2.90, art: 'monatlich' })}>
               {imWarenkorb ? <><i className="fa-solid fa-check" style={{ marginRight: 7 }} aria-hidden="true" />Im Warenkorb</> : <><i className="fa-solid fa-cart-plus" style={{ marginRight: 7 }} aria-hidden="true" />Hinzufügen</>}

@@ -6,6 +6,7 @@ import { createMessage, extractText } from '@/lib/claudeModel'
 import { FONT_PAIRS } from '@/lib/fonts'
 
 import { nutzerAusToken, supabaseAdmin } from '@/lib/supabaseServer'
+import { rechtsSeitenEinbauen } from '@/lib/rechtsseiten'
 
 async function nutzungFesthalten(accessToken, art) {
   try {
@@ -322,6 +323,23 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
         { type: 'footer', variant: 'footer-modern', content: { ...globalContent, footerDesc: formData.beschreibung } },
       ]
     })
+
+    // ── Impressum & Datenschutz als echte Unterseiten anhängen ──────────────
+    // Der Fußbereich verlinkt beides seit jeher — ohne die Seiten wären das
+    // tote Links. Die Texte kommen aus dem Kundenkonto („Rechtstexte"); fehlen
+    // sie, steht dort ein klar erkennbarer Platzhalter statt erfundener Angaben.
+    try {
+      let rechtstexte = {}
+      const nutzer = await nutzerAusToken(accessToken)
+      if (nutzer) {
+        const { data: profil } = await supabaseAdmin()
+          .from('profile').select('text_impressum,text_datenschutz').eq('id', nutzer.id).maybeSingle()
+        if (profil) rechtstexte = profil
+      }
+      Object.assign(pages, rechtsSeitenEinbauen(pages, rechtstexte, { platzhalter: true }))
+    } catch (e) {
+      console.warn('Rechtsseiten übersprungen:', e?.message)
+    }
 
     return Response.json({ pages, palette, font, fontHeadline })
   } catch (error) {

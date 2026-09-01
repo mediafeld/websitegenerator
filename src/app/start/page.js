@@ -7,7 +7,7 @@ import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
 import MenuBuilder from '@/components/MenuBuilder'
-import { aktuellerNutzer } from '@/lib/projekte'
+import { aktuellerNutzer, projektLaden } from '@/lib/projekte'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { useWarenkorb } from '@/lib/warenkorb'
@@ -198,6 +198,8 @@ function WizardInnen() {
   })
 
   const [nutzer, setNutzer] = useState(null)
+  // gesetzt, wenn eine BESTEHENDE Website neu konfiguriert wird
+  const [neuAufbau, setNeuAufbau] = useState(null)
   useEffect(() => { aktuellerNutzer().then(setNutzer).catch(() => {}) }, [])
   // Wunschdomain aus der Startseite übernehmen
   useEffect(() => {
@@ -221,6 +223,26 @@ function WizardInnen() {
       // Frischer Start → Standard-Paket direkt in den Warenkorb (Badge zeigt 1)
       waehlePaket('kaufen', 'multipage')
     }
+  }, [])
+
+  // ── Bestehende Website neu konfigurieren (/start?projekt=…) ───────────────
+  // Von der Übersicht aus: alle Angaben kommen zurück in den Baukasten, dort
+  // lässt sich auch das Produkt (mieten/kaufen) ändern. Bezahlte Websites
+  // werden nicht angefasst.
+  useEffect(() => {
+    const pid = params.get('projekt')
+    if (!pid) { try { sessionStorage.removeItem('wg24_projektId') } catch {} ; return }
+    projektLaden(pid).then(p => {
+      if (!p) return
+      const bezahlt = !!p.bezahlt_am || ['online', 'gekauft', 'gekuendigt'].includes(p.status)
+      if (bezahlt) { setNeuAufbau({ id: pid, name: p.name, gesperrt: true }); return }
+      try { sessionStorage.setItem('wg24_projektId', pid) } catch {}
+      setNeuAufbau({ id: pid, name: p.name, gesperrt: false })
+      if (p.form_data) setFd(prev => ({ ...prev, ...p.form_data }))
+      const za = p.form_data?.zahlungsart === 'mieten' ? 'mieten' : 'kaufen'
+      waehlePaket(za, p.paket_id || p.form_data?.paket || 'multipage')
+      setStep(1)
+    }).catch(() => {})
   }, [])
 
   const upd = (k, v) => setFd(prev => ({ ...prev, [k]: v }))
@@ -410,6 +432,23 @@ function WizardInnen() {
       {/* Content */}
       <div style={{ flex: 1 }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '36px 24px 100px' }}>
+
+          {/* Hinweis, wenn eine bestehende Website neu konfiguriert wird */}
+          {neuAufbau && (
+            <div style={{ background: neuAufbau.gesperrt ? '#FEF2F2' : '#E7F4FC', border: `1px solid ${neuAufbau.gesperrt ? '#FECACA' : '#BBE0F4'}`, borderRadius: 14, padding: '16px 20px', marginBottom: 26, fontSize: 14, lineHeight: 1.7, color: neuAufbau.gesperrt ? '#B91C1C' : '#0A1824' }}>
+              {neuAufbau.gesperrt ? (
+                <><i className="fa-solid fa-lock" style={{ marginRight: 9 }} aria-hidden="true" />
+                  „{neuAufbau.name}" ist bereits bezahlt und wird hier nicht verändert. Wenn du eine weitere
+                  Website möchtest, konfiguriere sie einfach neu — sie kommt als eigenes Produkt dazu.</>
+              ) : (
+                <><i className="fa-solid fa-sliders" style={{ marginRight: 9, color: '#1B93D2' }} aria-hidden="true" />
+                  Du bearbeitest die Angaben von <strong>„{neuAufbau.name}"</strong>. Hier kannst du auch zwischen
+                  <strong> mieten</strong> und <strong>kaufen</strong> wechseln. Beim Abschluss wird die Website mit
+                  den neuen Angaben <strong>neu aufgebaut</strong> — dein bisheriger Stand wird vorher automatisch
+                  im Verlauf gesichert (im Editor unter „Verlauf" wiederherstellbar).</>
+              )}
+            </div>
+          )}
 
           {/* STEP 1 – PAKET (Kaufen ODER Mieten) */}
           {step === 1 && (

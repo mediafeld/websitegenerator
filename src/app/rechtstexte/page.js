@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react'
 import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
-import { supabase, supabaseBereit } from '@/lib/supabaseClient'
+import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
 import { aktuellerNutzer } from '@/lib/projekte'
+import { rechtsSeitenEinbauen } from '@/lib/rechtsseiten'
 
 function impressumErzeugen(p) {
   if (!p?.nachname || !p?.strasse || !p?.plz || !p?.ort) {
@@ -73,10 +74,31 @@ function datenschutzErzeugen(p) {
   ].join('\n')
 }
 
+// Speichert den Text im Konto UND trägt ihn als Unterseite in alle eigenen
+// Websites ein (Footer verlinkt bereits auf impressum.html/datenschutz.html).
+async function inWebsitesUebernehmen(userId, texte) {
+  const { data: projekte, error } = await supabase
+    .from('projekte').select('id,pages').eq('user_id', userId)
+  if (error) return { anzahl: 0, fehler: fehlerText(error) }
+  let anzahl = 0
+  for (const p of projekte || []) {
+    if (!p?.pages || !Object.keys(p.pages).length) continue
+    const neu = rechtsSeitenEinbauen(p.pages, texte)
+    if (neu === p.pages) continue
+    const { data, error: schreibFehler } = await supabase
+      .from('projekte').update({ pages: neu }).eq('id', p.id).select('id')
+    if (schreibFehler) return { anzahl, fehler: fehlerText(schreibFehler) }
+    if (data?.length) anzahl++
+  }
+  return { anzahl, fehler: '' }
+}
+
 function RechtstextKarte({ art, titel, erzeugen }) {
   const [profil, setProfil] = useState(null)
   const [text, setText] = useState('')
   const [status, setStatus] = useState('')
+  const [fehler, setFehler] = useState('')
+  const [info, setInfo] = useState('')
 
   useEffect(() => {
     if (!supabaseBereit) return
@@ -84,8 +106,7 @@ function RechtstextKarte({ art, titel, erzeugen }) {
       if (!u) return
       const { data: p } = await supabase.from('profile').select('*').eq('id', u.id).maybeSingle()
       setProfil(p || {})
-      const { data: rt } = await supabase.from('profile').select(`text_${art}`).eq('id', u.id).maybeSingle()
-      if (rt?.[`text_${art}`]) setText(rt[`text_${art}`])
+      if (p?.[`text_${art}`]) setText(p[`text_${art}`])
     })
   }, [])
 
@@ -95,11 +116,33 @@ function RechtstextKarte({ art, titel, erzeugen }) {
 
   async function speichern() {
     const u = await aktuellerNutzer()
-    if (!u) return
-    setStatus('speichert')
+    if (!u) { setFehler('Bitte zuerst einloggen.'); return }
+    setStatus('speichert'); setFehler(''); setInfo('')
+
     const { error } = await supabase.from('profile').upsert({ id: u.id, [`text_${art}`]: text })
-    setStatus(error ? 'fehler' : 'gespeichert')
-    setTimeout(() => setStatus(''), 2500)
+    if (error) {
+      setFehler(/text_(impressum|datenschutz)/.test(error.message || '')
+        ? 'Der Datenbank fehlt noch die Spalte für die Rechtstexte (migration_v40 ausführen).'
+        : fehlerText(error))
+      setStatus(''); return
+    }
+    // Gegenprobe: wirklich angekommen?
+    const { data: p } = await supabase.from('profile')
+      .select('text_impressum,text_datenschutz').eq('id', u.id).maybeSingle()
+    if (!p || (p[`text_${art}`] || '') !== text) {
+      setFehler('Der Text konnte nicht gespeichert werden. Bitte beim Support melden.')
+      setStatus(''); return
+    }
+
+    // …und direkt in die Websites eintragen (beide Texte, damit Impressum und
+    // Datenschutz immer zusammen aktuell sind)
+    const { anzahl, fehler: uebernahmeFehler } = await inWebsitesUebernehmen(u.id, p)
+    setStatus('gespeichert')
+    if (uebernahmeFehler) setFehler(`Gespeichert — aber die Übernahme in die Website hat nicht geklappt: ${uebernahmeFehler}`)
+    else setInfo(anzahl === 0
+      ? 'Gespeichert. Sobald eine Website erzeugt ist, erscheint der Text dort automatisch im Fußbereich.'
+      : `Gespeichert und in ${anzahl} ${anzahl === 1 ? 'Website' : 'Websites'} übernommen — im Fußbereich verlinkt.`)
+    setTimeout(() => setStatus(''), 3000)
   }
 
   return (
@@ -116,14 +159,28 @@ function RechtstextKarte({ art, titel, erzeugen }) {
       <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Hier eigenen Text einfügen — oder rechts oben erzeugen lassen."
         style={{ width: '100%', minHeight: 260, marginTop: 14, padding: '16px 18px', fontSize: 13.5, lineHeight: 1.7, fontFamily: 'ui-monospace,monospace',
           border: `2px solid ${D.linie}`, borderRadius: 12, outline: 'none', resize: 'vertical', color: D.text }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14 }}>
-        <button className="btnfest" onClick={speichern} disabled={!text.trim()}>
-          <i className="fa-solid fa-floppy-disk" style={{ marginRight: 7 }} aria-hidden="true" />Speichern
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
+        <button className="btnfest" onClick={speichern} disabled={!text.trim() || status === 'speichert'}>
+          <i className={`fa-solid ${status === 'speichert' ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}`} style={{ marginRight: 7 }} aria-hidden="true" />
+          {status === 'speichert' ? 'Speichert …' : 'Speichern & in Website übernehmen'}
         </button>
-        {status === 'speichert' && <span style={{ fontSize: 13, color: D.hellGrau }}>Speichert …</span>}
-        {status === 'gespeichert' && <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}><i className="fa-solid fa-circle-check" style={{ marginRight: 6 }} aria-hidden="true" />Gespeichert</span>}
-        {status === 'fehler' && <span style={{ fontSize: 13, color: '#DC2626' }}>Fehler beim Speichern — bitte nochmal versuchen.</span>}
+        {status === 'gespeichert' && !fehler && (
+          <span style={{ fontSize: 13, color: '#1F9D55', fontWeight: 700 }}>
+            <i className="fa-solid fa-circle-check" style={{ marginRight: 6 }} aria-hidden="true" />Gespeichert
+          </span>
+        )}
+        {/* Fehler IMMER direkt am Knopf — oben sieht man ihn bei langem Text nicht */}
+        {fehler && (
+          <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '9px 14px', lineHeight: 1.5 }}>
+            <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 7 }} aria-hidden="true" />{fehler}
+          </span>
+        )}
       </div>
+      {info && !fehler && (
+        <div style={{ marginTop: 11, fontSize: 13, color: D.hellText, background: D.hellGrund, borderRadius: 10, padding: '10px 14px', lineHeight: 1.6 }}>
+          <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: D.blau }} aria-hidden="true" />{info}
+        </div>
+      )}
     </div>
   )
 }

@@ -56,20 +56,42 @@ export async function projektAnlegen(daten) {
 // Grund: Vorher entstand bei JEDER Generierung ein neuer Eintrag — nach ein
 // paar Versuchen lagen 7 "Neue Website"-Entwürfe im Konto. Pro gebuchtem bzw.
 // kostenlos getestetem Produkt soll es genau EINE Website geben.
+// `daten.projektId` (aus /start?projekt=…) meint AUSDRÜCKLICH diese Website —
+// dann wird genau sie neu aufgebaut und nicht irgendein anderer Entwurf.
 export async function projektAnlegenOderAktualisieren(daten) {
   const user = await aktuellerNutzer()
   if (!user) return null
 
-  const { data: entwurf } = await supabase
-    .from('projekte')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('status', 'entwurf')
-    .order('geaendert_am', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  let entwurf = null
+  if (daten.projektId) {
+    const { data } = await supabase
+      .from('projekte').select('id,status,bezahlt_am').eq('id', daten.projektId).maybeSingle()
+    // Bezahlte Websites werden NIE überschrieben.
+    if (data && !data.bezahlt_am && !['online', 'gekauft', 'gekuendigt'].includes(data.status)) entwurf = data
+  }
+  if (!entwurf) {
+    const { data } = await supabase
+      .from('projekte')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'entwurf')
+      .order('geaendert_am', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    entwurf = data
+  }
 
   if (entwurf?.id) {
+    // Sicherungsstand anlegen, bevor der alte Aufbau überschrieben wird —
+    // sonst wären Editor-Änderungen nach einer Neu-Konfiguration verloren.
+    try {
+      const alt = await projektLaden(entwurf.id)
+      if (alt?.pages) {
+        await versionAblegen(entwurf.id, {
+          pages: alt.pages, palette: alt.palette, font: alt.font, form_data: alt.form_data,
+        }, 'vor-neuerzeugung', 0)
+      }
+    } catch {}
     const ok = await projektSpeichern(entwurf.id, {
       name: daten.name || daten.firma || 'Neue Website',
       firma: daten.firma || null,

@@ -80,7 +80,12 @@ export default function GeneratingPage() {
       try {
         const nutzer = await aktuellerNutzer()
         if (nutzer) {
+          // Kommt der Kunde aus „Angaben & Produkt ändern" (/start?projekt=…),
+          // wird GENAU diese Website neu aufgebaut — nicht irgendein Entwurf.
+          let zielId = null
+          try { zielId = sessionStorage.getItem('wg24_projektId') || null } catch {}
           projektId = await projektAnlegenOderAktualisieren({
+            projektId: zielId,
             name: fdForApi.firmenname || 'Neue Website',
             firma: fdForApi.firmenname,
             branche: fdForApi.branche,
@@ -90,6 +95,7 @@ export default function GeneratingPage() {
             font: data.font || 'Inter Tight',
           })
         }
+        try { sessionStorage.removeItem('wg24_projektId') } catch {}
       } catch (e) {
         console.warn('Projekt konnte nicht gespeichert werden:', e?.message)
       }

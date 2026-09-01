@@ -127,7 +127,9 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
                 <div style={{ fontSize: 11.5, color: D.hellGrauHell, overflow: 'hidden', textOverflow: 'ellipsis' }}>{nutzer.email}</div>
               </div>
             </div>
-            {BEREICHE.map(b => (
+            {/* „Domains & E-Mail" gehören zum Mietpaket. Wer nur kauft, hostet
+                selbst — dann hat dieser Bereich im Konto nichts zu suchen. */}
+            {BEREICHE.filter(b => b.gruppe !== 'Domains & E-Mail' || meineWebsites.some(w => w.zahlungsart === 'mieten')).map(b => (
               <div key={b.gruppe}>
                 <div className="skopf">{b.gruppe}</div>
                 {b.punkte.filter(p => p[0] !== 'websites').map(([id, href, icon, t]) => (
