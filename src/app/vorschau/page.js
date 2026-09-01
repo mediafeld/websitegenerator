@@ -83,7 +83,11 @@ function Vorschau() {
       font: projekt.font || 'Inter Tight',
       fontHeadline: projekt.form_data?.fontHeadline || projekt.font || 'Inter Tight',
       title: seite,
+      seite,
       forEditor: false,
+      // Vorschau: Formular zeigt nur, was passieren würde — es wird nichts
+      // verschickt und läuft auch nicht ins Leere.
+      formular: { art: 'demo', email: projekt.form_data?.email || '', telefon: projekt.form_data?.telefon || '' },
       seo: {
         titel: seo.seiten?.[seite]?.titel || '',
         beschreibung: seo.seiten?.[seite]?.beschreibung || '',

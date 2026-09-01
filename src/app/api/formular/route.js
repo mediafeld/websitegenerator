@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseServer'
 import { sendeMail, mailRahmen } from '@/lib/mail'
+import { istBezahlt } from '@/lib/produkt'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -60,9 +61,14 @@ export async function POST(req) {
     // Nur für echte, GEMIETETE und bezahlte Websites zustellen
     const db = supabaseAdmin()
     const { data: projekt } = await db.from('projekte')
-      .select('id,user_id,firma,name,zahlungsart,status,form_data')
+      .select('id,user_id,firma,name,zahlungsart,status,bezahlt_am,form_data')
       .eq('id', projektId).maybeSingle()
-    if (!projekt || projekt.zahlungsart !== 'mieten' || projekt.status !== 'online') {
+      .then(r => r.error ? db.from('projekte')
+        .select('id,user_id,firma,name,zahlungsart,status,form_data')
+        .eq('id', projektId).maybeSingle() : r)
+    // Gemietet und bezahlt — auch bei offener Folgezahlung oder Kündigung
+    // bleibt das Formular an, solange die Website läuft. Nur Entwürfe nicht.
+    if (!projekt || projekt.zahlungsart !== 'mieten' || !istBezahlt(projekt)) {
       return antwort({ ok: false, error: 'Formular für diese Website nicht aktiv.' }, 404)
     }
 

@@ -29,7 +29,8 @@ export async function GET(req) {
     let html = renderPage({
       blocks: pages[seite], seiten, palette: p.palette, font: p.font || 'Inter Tight',
       fontHeadline: p.form_data?.fontHeadline || p.font || 'Inter Tight',
-      title: `ADMIN – ${seite}`, forEditor: false,
+      title: `ADMIN – ${seite}`, seite, forEditor: false,
+      formular: { art: 'demo', email: p.form_data?.email || '', telefon: p.form_data?.telefon || '' },
       seo: { titel: seoDaten.seiten?.[seite]?.titel ? `ADMIN – ${seoDaten.seiten[seite].titel}` : '', beschreibung: seoDaten.seiten?.[seite]?.beschreibung || '', favicon: seoDaten.global?.favicon || '' },
     }).replace('</body>', leiste + '</body>')
 

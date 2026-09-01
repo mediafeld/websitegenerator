@@ -10,9 +10,10 @@ import JSZip from 'jszip'
 import { renderPage } from './blockRenderer'
 import { FONTS } from './fonts'
 
-const MAIL_PHP = `<?php
-// Einfaches Kontaktformular-Skript. E-Mail-Adresse hier eintragen:
-$empfaenger = 'info@ihre-domain.de';
+const mailPhp = (empfaenger) => `<?php
+// Kontaktformular-Skript. Die Empfängeradresse steht bereits hier drin —
+// sie stammt aus deinen Angaben im Baukasten. Zum Ändern einfach ersetzen:
+$empfaenger = '${String(empfaenger || 'info@ihre-domain.de').replace(/'/g, '')}';
 header('Content-Type: application/json');
 // Honigtopf: Bots füllen das unsichtbare Feld aus -> still verwerfen
 if (!empty($_POST['firma_hp'])) { echo json_encode(['ok' => true]); exit; }
@@ -43,7 +44,12 @@ function anleitung(mitAssets, domain) {
    Webspace laden (per FTP oder über den Datei-Manager Ihres Hosters).
    Wichtig: auch den Ordner "assets" mit hochladen!
 2. index.html ist die Startseite.
-3. Kontaktformular: In mail.php oben Ihre E-Mail-Adresse eintragen.
+3. Kontaktformular: Die Datei mail.php ist bereits auf Ihre E-Mail-Adresse
+   eingestellt (aus Ihren Angaben im Baukasten). Zum Aendern die Zeile
+   $empfaenger = '...' oben in mail.php anpassen.
+   Wichtig: mail.php braucht PHP auf dem Hosting. Fehlt PHP, bietet das
+   Formular dem Besucher automatisch an, die Nachricht per E-Mail-Programm
+   zu senden - es geht also nie eine Anfrage verloren.
    (Der Webspace muss PHP unterstützen — das ist bei fast allen Hostern
    Standard. Falls Ihr Hosting KEIN PHP kann: Das Formular zeigt Besuchern
    dann automatisch Ihre E-Mail-Adresse zum direkten Anschreiben an.)
@@ -133,6 +139,11 @@ export async function websiteAlsZip(projekt) {
   const domain = (projekt.domain || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '')
   const basisUrl = domain ? `https://${domain}` : 'https://www.ihre-domain.de'
   const gemietet = projekt.zahlungsart === 'mieten'
+  const kontaktMail = (projekt.form_data?.email || '').trim()
+  const kontaktTel = (projekt.form_data?.telefon || '').trim()
+  const appBasis = (typeof window !== 'undefined' && window.location?.origin)
+    ? window.location.origin
+    : 'https://www.websitegenerator24.de'
 
   // Schriften/Icons/Skripte als Dateien beilegen – bei Netzproblemen
   // greifen automatisch wieder die CDN-Links (Website bleibt funktionsfähig).
@@ -148,7 +159,7 @@ export async function websiteAlsZip(projekt) {
     const seiteSeo = seoDaten.seiten?.[seite] || {}
     const html = renderPage({
       blocks: pages[seite],
-      seiten,
+      seiten, seite,
       palette: projekt.palette,
       font, fontHeadline,
       title: `${projekt.firma || projekt.name || 'Website'} – ${seite}`,
@@ -161,13 +172,17 @@ export async function websiteAlsZip(projekt) {
         favicon: seoDaten.global?.favicon || '',
         url: domain ? `${basisUrl}/${dateiname(seite) === 'index.html' ? '' : dateiname(seite)}` : '',
       },
+      // Kontaktformular: bei Miete über unseren Server (Kunde muss nichts
+      // einrichten), beim Kauf über mail.php auf dem eigenen Hosting.
+      // `basis` ist die Adresse DIESER Anwendung – nicht fest verdrahtet,
+      // sonst zeigt sie auf eine Domain, die noch gar nicht läuft.
       formular: gemietet
-        ? { art: 'server', projekt: projekt.id || '', basis: 'https://www.websitegenerator24.de', email: projekt.form_data?.email || '' }
-        : { art: 'php', email: projekt.form_data?.email || '' },
+        ? { art: 'server', projekt: projekt.id || '', basis: appBasis, email: kontaktMail, telefon: kontaktTel }
+        : { art: 'php', email: kontaktMail, telefon: kontaktTel },
     })
     zip.file(dateiname(seite), html)
   })
-  if (!gemietet) zip.file('mail.php', MAIL_PHP)
+  if (!gemietet) zip.file('mail.php', mailPhp(kontaktMail))
   zip.file('sitemap.xml', sitemapXml(seiten, basisUrl))
   zip.file('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${basisUrl}/sitemap.xml\n`)
   zip.file('ANLEITUNG.txt', anleitung(assetsLokal, domain))

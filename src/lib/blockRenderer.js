@@ -44,23 +44,67 @@ const ANIM_INIT = `
   // Kontaktformular – Ziel je nach Paket:
   //   Kauf-ZIP: mail.php auf dem eigenen Hosting (window.__wgFormular fehlt oder art:'php')
   //   Miete:    unser Server (art:'server' mit projekt+basis) – Kunde muss nichts einrichten
-  document.querySelectorAll('[data-contact-form]').forEach(f=>{
+  document.querySelectorAll('[data-contact-form]').forEach(function(f){
     // Unsichtbares Honigtopf-Feld gegen Spam-Bots
     if(!f.querySelector('[name=firma_hp]')){var hp=document.createElement('input');hp.type='text';hp.name='firma_hp';hp.tabIndex=-1;hp.autocomplete='off';hp.setAttribute('aria-hidden','true');hp.style.cssText='position:absolute;left:-9999px;height:0;width:0;opacity:0;';f.appendChild(hp);}
+    // Eigene Prüfung statt der Browser-Sprechblasen: die sehen in jedem
+    // Browser anders aus und verschwinden sofort wieder.
+    f.setAttribute('novalidate','novalidate');
+    // Statuszeile unter dem Formular – dort steht IMMER, was passiert ist
+    var box=f.querySelector('[data-form-status]');
+    if(!box){box=document.createElement('div');box.setAttribute('data-form-status','');box.setAttribute('role','status');box.style.cssText='display:none;margin-top:14px;padding:12px 15px;border-radius:10px;font-size:14.5px;line-height:1.6;';f.appendChild(box);}
+    function melde(art,html){
+      var farben={ok:['#EAF6EF','#1F9D55','#14532d'],warn:['#FFFBEB','#F59E0B','#92400E'],fehler:['#FEF2F2','#DC2626','#991B1B']}[art]||['#F1F4F6','#94A3B8','#334155'];
+      box.style.display='block';box.style.background=farben[0];box.style.border='1px solid '+farben[1];box.style.color=farben[2];box.innerHTML=html;
+    }
     f.addEventListener('submit',function(e){
-      e.preventDefault();var btn=this.querySelector('button[type=submit]');var orig=btn.textContent;var form=this;
-      btn.textContent='Wird gesendet...';btn.disabled=true;
+      e.preventDefault();
+      var form=this;var btn=form.querySelector('button[type=submit]');var orig=btn?btn.textContent:'';
       var cfg=window.__wgFormular||{};var fd=new FormData(form);
-      var ziel='mail.php';
-      if(cfg.art==='server'&&cfg.basis){ziel=cfg.basis.replace(/\\/$/,'')+'/api/formular';fd.append('projekt',cfg.projekt||'');}
-      function fehler(){
-        var mail=cfg.email||'';
-        btn.textContent=mail?('Bitte direkt an '+mail+' schreiben'):'Fehler – bitte anrufen';
+      var wert=function(n){var v=fd.get(n);return v?String(v).trim():'';};
+      var name=wert('name'),mail=wert('email'),tel=wert('telefon'),nachricht=wert('nachricht');
+
+      // 1) Prüfen, BEVOR irgendetwas verschickt wird
+      if(!mail||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(mail)){melde('warn','Bitte eine gültige E-Mail-Adresse angeben, damit wir antworten können.');return;}
+      if(!nachricht&&!name){melde('warn','Bitte schreiben Sie kurz, worum es geht.');return;}
+
+      // 2) Vorschau im Kundenkonto: nichts verschicken, nur zeigen
+      if(cfg.art==='demo'){melde('ok','<b>Vorschau:</b> Auf der fertigen Website wird die Nachricht jetzt an ' + (cfg.email||'Ihre E-Mail-Adresse') + ' zugestellt.');return;}
+
+      // 3) Notfall: Nachricht geht NIE verloren – E-Mail-Programm bzw. Telefon
+      function notfall(grund){
+        var an=cfg.email||'';
+        var betreff='Anfrage über die Website'+(name?' von '+name:'');
+        var text='Name: '+name+String.fromCharCode(10)+'E-Mail: '+mail+String.fromCharCode(10)+'Telefon: '+tel+String.fromCharCode(10)+String.fromCharCode(10)+nachricht;
+        var teile=[];
+        if(an)teile.push('<a href="mailto:'+an+'?subject='+encodeURIComponent(betreff)+'&body='+encodeURIComponent(text)+'" style="font-weight:700;text-decoration:underline;color:inherit;">Nachricht jetzt per E-Mail-Programm senden</a>');
+        if(cfg.telefon)teile.push('oder anrufen: <a href="tel:'+String(cfg.telefon).replace(/[^+0-9]/g,'')+'" style="font-weight:700;text-decoration:underline;color:inherit;">'+cfg.telefon+'</a>');
+        melde('fehler','Der automatische Versand hat gerade nicht geklappt.'+(teile.length?' '+teile.join(' — '):' Bitte versuchen Sie es später noch einmal.'));
       }
-      fetch(ziel,{method:'POST',body:fd})
-        .then(r=>r.json()).then(d=>{if(d.ok||d.success){btn.textContent='✓ Gesendet!';form.reset();}else{fehler();}})
-        .catch(fehler)
-        .finally(()=>{setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},4500);});
+
+      // 4) Senden – bei Miete über unseren Server, beim Kauf über mail.php.
+      //    Klappt das eine nicht, wird automatisch das andere versucht.
+      var ziele=[];
+      if(cfg.art==='server'&&cfg.basis){fd.append('projekt',cfg.projekt||'');ziele.push(cfg.basis.replace(/\\/+$/,'')+'/api/formular');}
+      ziele.push('mail.php');
+      if(btn){btn.textContent='Wird gesendet …';btn.disabled=true;}
+
+      function versuch(i){
+        if(i>=ziele.length){if(btn){btn.textContent=orig;btn.disabled=false;}notfall();return;}
+        fetch(ziele[i],{method:'POST',body:fd})
+          .then(function(r){return r.text();})
+          .then(function(t){
+            var d=null;try{d=JSON.parse(t);}catch(x){}
+            if(d&&(d.ok||d.success)){
+              if(btn){btn.textContent='✓ Gesendet';}
+              melde('ok','<b>Vielen Dank!</b> Ihre Nachricht ist angekommen – wir melden uns zeitnah zurück.');
+              form.reset();
+              setTimeout(function(){if(btn){btn.textContent=orig;btn.disabled=false;}},4000);
+            } else { versuch(i+1); }
+          })
+          .catch(function(){versuch(i+1);});
+      }
+      versuch(0);
     });
   });
   // Mobile nav
@@ -221,13 +265,16 @@ function mitAnker(html, typ) {
 
 // Verweise auf Seiten, die es in diesem Entwurf nicht gibt, werden zu
 // Sprungmarken — gibt es auch den Abschnitt nicht, zum Seitenanfang.
-function interneLinksReparieren(html, seiten) {
+// Auf UNTERSEITEN (Impressum, Datenschutz …) gibt es die Abschnitte der
+// Startseite nicht: Sprungmarken müssen dort zur Startseite führen, sonst
+// bleibt der Besucher beim Klick auf „Start" einfach stehen.
+function interneLinksReparieren(html, seiten, aktuelleSeite) {
   if (!Array.isArray(seiten) || !seiten.length) return html
   const dateien = new Set(seiten.map(seitenDatei))
   const anker = new Set(
     Array.from(html.matchAll(/\sid="([a-z0-9_-]+)"/gi)).map(m => m[1].toLowerCase())
   )
-  return html.replace(/href="([a-z0-9][a-z0-9-]*\.html)(#[^"]*)?"/gi, (voll, datei) => {
+  let out = html.replace(/href="([a-z0-9][a-z0-9-]*\.html)(#[^"]*)?"/gi, (voll, datei) => {
     const d = datei.toLowerCase()
     if (dateien.has(d)) return voll
     const basis = d.replace(/\.html$/, '')
@@ -235,6 +282,15 @@ function interneLinksReparieren(html, seiten) {
     const ziel = DATEI_ANKER[basis] || basis
     return anker.has(ziel) ? `href="#${ziel}"` : 'href="#"'
   })
+
+  const istStartseite = !aktuelleSeite || seitenDatei(aktuelleSeite) === 'index.html'
+  if (!istStartseite) {
+    out = out.replace(/href="#([a-z0-9_-]*)"/gi, (voll, id) => {
+      if (!id) return 'href="index.html"'
+      return anker.has(id.toLowerCase()) ? voll : `href="index.html#${id}"`
+    })
+  }
+  return out
 }
 
 // Kennzeichnet die Sektion (data-bi) und hängt CSS-ID/-Klassen des Nutzers an.
@@ -487,7 +543,7 @@ function mitEigenemCode(html, c, index) {
 // seiten: Namen ALLER Seiten dieser Website. Damit weiß die Ausgabe, welche
 // internen Links es wirklich gibt — fehlende werden zu Sprungmarken, und der
 // Fußbereich verlinkt Impressum/Datenschutz nur, wenn es sie gibt.
-export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false, assetsLokal = false, seo = null, formular = null, seiten = null }) {
+export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline, title = '', forEditor = false, assetsLokal = false, seo = null, formular = null, seiten = null, seite = null }) {
   const fontParam = font.replace(/ /g, '+')
   const headlineParam = fontHeadline && fontHeadline !== font ? `&family=${fontHeadline.replace(/ /g, '+')}:wght@200;300;400;500;600;700;800;900` : ''
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -518,6 +574,7 @@ export function renderPage({ blocks, palette, font = 'Inter Tight', fontHeadline
       .map((b, i) => mitIndexAttr(mitEigenemCode(applyParallaxAttr(mitAnker(renderBlock(b.type, b.variant, b.content), b.type), b.content), b.content, i), b.content, i))
       .join('\n'),
     seiten,
+    seite || title,
   )
 
   // Layout-Overrides (Abstände, Breiten, Z-Index) des Nutzers:
