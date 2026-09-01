@@ -573,15 +573,255 @@ feNeu('fe-mit-cta', 'Merkmale + Aufruf', (c) => feSekt('fe-mit-cta', c, `${feKop
       </div>
     </div>`, 'background:var(--p50);'))
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FAQ / HÄUFIGE FRAGEN (10 Varianten)
+// Aufklapp-Listen (details/summary – funktioniert ohne JavaScript), dazu
+// Varianten mit Bild, Kategorien, Kontakt-Karte und offener Darstellung.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const D_FRAGEN = [
+  { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.' },
+  { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.' },
+  { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.' },
+  { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.' },
+  { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.' },
+  { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.' },
+]
+const fragenListe = (c, n = 5) => misch(c.fragen, D_FRAGEN.slice(0, n))
+
+// Aufklapp-Eintrag (details/summary; das Plus dreht sich beim Öffnen)
+const faZeile = (it, i, feld = 'fragen', dunkel = false, offenErste = false) => `<details class="wg-reveal"${offenErste && i === 0 ? ' open' : ''} style="border-bottom:1px solid ${dunkel ? 'rgba(255,255,255,.14)' : 'var(--p100)'};">
+        <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:14px;padding:16px 2px;font-size:15.5px;font-weight:700;color:${dunkel ? '#fff' : '#0f172a'};">
+          <span style="flex:1;">${ed(`${feld}.${i}.q`, it.q)}</span>
+          <span class="wg-fa-plus" style="width:26px;height:26px;border-radius:50%;background:${dunkel ? 'rgba(255,255,255,.12)' : 'var(--p50)'};color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:transform .25s;"><i class="fa-solid fa-plus"></i></span>
+        </summary>
+        <div style="padding:0 40px 18px 2px;font-size:14.5px;color:${dunkel ? 'rgba(255,255,255,.72)' : '#64748b'};line-height:1.75;">${ed(`${feld}.${i}.a`, it.a)}</div>
+      </details>`
+
+const FA_CSS = '<style>details[open] .wg-fa-plus{transform:rotate(45deg)}summary::-webkit-details-marker{display:none}</style>'
+
+const faKopf = (c, mitte = true, dTitle = 'Häufige Fragen') => `
+    <div class="wg-reveal" style="${mitte ? 'text-align:center;max-width:700px;margin:0 auto clamp(26px,4vw,46px);' : 'margin-bottom:clamp(22px,3.4vw,38px);'}">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'FAQ')}</span>
+      <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, dTitle)}</h2>
+      <span class="wg-strichlinie${mitte ? ' mitte' : ''}"></span>
+      ${c.subtitle ? `<div class="wg-lead">${ed('subtitle', c.subtitle)}</div>` : ''}
+    </div>`
+
+const FA = []
+const faNeu = (id, name, render) => FA.push({ id, name, render })
+const faSekt = (id, c, innen, fallback = 'background:#fff;', wrapStil = '') =>
+  `<section data-block="fragen" data-variant="${id}" class="wg-sekt" style="${bg(c, fallback)}">
+  <div class="wg-wrap"${wrapStil ? ` style="${wrapStil}"` : ''}>
+${innen}
+  </div>
+  ${FA_CSS}
+</section>`
+
+// 1 — Klassisch: zentriert, eine Spalte
+faNeu('fa-klassisch', 'Klassisch zentriert', (c) => faSekt('fa-klassisch', c, `${faKopf(c)}
+    <div style="display:grid;">
+      ${fragenListe(c, 5).map((it, i) => faZeile(it, i)).join('')}
+    </div>`, 'background:#fff;', 'max-width:860px;'))
+
+// 2 — Bild links, Fragen rechts
+faNeu('fa-bild-links', 'Bild links', (c) => faSekt('fa-bild-links', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.3fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(280px,34vw,420px)', '', 21)}</div>
+      <div class="wg-reveal re">
+        ${faKopf(c, false)}
+        <div style="display:grid;">
+          ${fragenListe(c, 5).map((it, i) => faZeile(it, i)).join('')}
+        </div>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 3 — Intro-Karte links, Fragen rechts
+faNeu('fa-intro', 'Mit Intro-Karte', (c) => faSekt('fa-intro', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.4fr;gap:clamp(24px,4vw,56px);align-items:start;">
+      <div class="wg-karte wg-reveal li" style="background:#fff;border:1px solid var(--p100);border-radius:18px;padding:clamp(24px,3.4vw,36px);position:sticky;top:90px;">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'FAQ')}</span>
+        <h2 style="font-size:clamp(20px,2.6vw,28px);font-weight:900;letter-spacing:-.02em;margin:12px 0 10px;">${txt('title', c.title, 'Häufige Fragen')}</h2>
+        <div style="font-size:14px;color:#64748b;line-height:1.75;">${txt('text', c.text, 'Ihre Frage ist nicht dabei? Schreiben Sie uns – wir antworten gern persönlich.')}</div>
+        <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn" style="margin-top:18px;">${txt('cta', c.cta, 'Frage stellen')}</a>
+      </div>
+      <div class="wg-reveal re" style="display:grid;">
+        ${fragenListe(c, 6).map((it, i) => faZeile(it, i, 'fragen', false, true)).join('')}
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 4 — Zwei Spalten aufklappbar
+faNeu('fa-zwei-spalten', 'Zwei Spalten', (c) => {
+  const li = fragenListe(c, 6)
+  const links = li.slice(0, Math.ceil(li.length / 2))
+  const rechts = li.slice(Math.ceil(li.length / 2))
+  return faSekt('fa-zwei-spalten', c, `${faKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3.4vw,44px);align-items:start;">
+      <div class="wg-reveal li" style="display:grid;">
+        ${links.map((it, i) => faZeile(it, i)).join('')}
+      </div>
+      <div class="wg-reveal re" style="display:grid;">
+        ${rechts.map((it, k) => faZeile(it, k + links.length)).join('')}
+      </div>
+    </div>`)
+})
+
+// 5 — Zwei Kategorien nebeneinander
+faNeu('fa-kategorien', 'Zwei Kategorien', (c) => {
+  const gr = misch(c.gruppen, [
+    { titel: 'Erste Kategorie', fragen: D_FRAGEN.slice(0, 3) },
+    { titel: 'Zweite Kategorie', fragen: D_FRAGEN.slice(0, 3) },
+  ])
+  return faSekt('fa-kategorien', c, `${faKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.8vw,32px);align-items:start;">
+      ${gr.map((g, i) => `<div class="wg-karte wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:18px;padding:clamp(20px,3vw,30px);">
+        <h3 style="font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;">${ed(`gruppen.${i}.titel`, g.titel)}</h3>
+        <div style="display:grid;">
+          ${(Array.isArray(g.fragen) ? g.fragen : []).map((it, j) => `<details class="wg-reveal" style="border-bottom:1px solid var(--p50);">
+            <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:13px 2px;font-size:14.5px;font-weight:700;color:#0f172a;">
+              <span style="flex:1;">${ed(`gruppen.${i}.fragen.${j}.q`, it.q)}</span>
+              <span class="wg-fa-plus" style="width:24px;height:24px;border-radius:50%;background:var(--p50);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:transform .25s;"><i class="fa-solid fa-plus"></i></span>
+            </summary>
+            <div style="padding:0 34px 14px 2px;font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`gruppen.${i}.fragen.${j}.a`, it.a)}</div>
+          </details>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);')
+})
+
+// 6 — Dunkle Karte links, Fragen rechts
+faNeu('fa-dunkel', 'Dunkle Karte', (c) => faSekt('fa-dunkel', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.35fr;gap:clamp(20px,3.4vw,44px);align-items:stretch;">
+      <div class="wg-karte wg-dunkelzone wg-reveal li" style="position:relative;overflow:hidden;background:var(--p900);border-radius:20px;padding:clamp(26px,3.6vw,40px);color:#fff;display:flex;flex-direction:column;justify-content:space-between;">
+        ${feMuster()}
+        <div style="position:relative;">
+          <span class="wg-eyebrow" style="color:var(--accent);">${txt('tag', c.tag, 'FAQ')}</span>
+          <h2 style="font-size:clamp(21px,2.8vw,30px);font-weight:900;letter-spacing:-.02em;color:#fff;margin:12px 0 10px;">${txt('title', c.title, 'Häufige Fragen')}</h2>
+          <div style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.75;">${txt('text', c.text, 'Ihre Frage ist nicht dabei? Melden Sie sich einfach.')}</div>
+        </div>
+        <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn" style="position:relative;margin-top:24px;align-self:flex-start;">${txt('cta', c.cta, 'Frage stellen')}</a>
+      </div>
+      <div class="wg-reveal re" style="display:grid;align-content:start;">
+        ${fragenListe(c, 5).map((it, i) => faZeile(it, i)).join('')}
+      </div>
+    </div>`))
+
+// 7 — Mit Kontakt-Karte unter den Fragen
+faNeu('fa-kontakt', 'Mit Kontakt-Karte', (c) => faSekt('fa-kontakt', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.3fr;gap:clamp(24px,4vw,54px);align-items:start;">
+      <div class="wg-reveal li">
+        ${faKopf(c, false)}
+        <div style="font-size:14px;color:#64748b;line-height:1.75;">${txt('text', c.text, 'Ihre Frage ist nicht dabei? Rufen Sie uns an – wir helfen weiter.')}</div>
+        <div class="wg-karte" style="display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--p100);border-radius:14px;padding:16px 18px;margin-top:20px;">
+          <span style="width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon('icon', c.icon || 'phone')}</span>
+          <div>
+            <div style="font-size:11.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">${txt('kontaktLabel', c.kontaktLabel, 'Direkt erreichbar')}</div>
+            <div style="font-size:16px;font-weight:800;">${txt('telefon', c.telefon, 'Ihre Telefonnummer')}</div>
+          </div>
+        </div>
+      </div>
+      <div class="wg-reveal re" style="display:grid;">
+        ${fragenListe(c, 5).map((it, i) => faZeile(it, i)).join('')}
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 8 — Nummerierte Gruppen (Zeitstrahl-artig)
+faNeu('fa-nummern', 'Nummerierte Gruppen', (c) => {
+  const gr = misch(c.gruppen, [
+    { titel: 'Erste Kategorie', text: 'Kurz beschreiben, worum es in dieser Gruppe geht.', fragen: D_FRAGEN.slice(0, 2) },
+    { titel: 'Zweite Kategorie', text: 'Kurz beschreiben, worum es in dieser Gruppe geht.', fragen: D_FRAGEN.slice(0, 2) },
+  ])
+  return faSekt('fa-nummern', c, `${faKopf(c, false)}
+    <div style="display:grid;gap:clamp(24px,3.6vw,42px);">
+      ${gr.map((g, i) => `<div class="wg-split wg-reveal" style="display:grid;grid-template-columns:1fr 2fr;gap:clamp(18px,3vw,40px);align-items:start;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:20px;font-weight:900;color:var(--p200);line-height:1.2;">${String(i + 1).padStart(2, '0')}</span>
+          <div>
+            <h3 style="font-size:16.5px;font-weight:800;margin:0 0 5px;">${ed(`gruppen.${i}.titel`, g.titel)}</h3>
+            <div style="font-size:13px;color:#94a3b8;line-height:1.65;">${ed(`gruppen.${i}.text`, g.text)}</div>
+          </div>
+        </div>
+        <div style="display:grid;">
+          ${(Array.isArray(g.fragen) ? g.fragen : []).map((it, j) => `<details class="wg-reveal" style="border-bottom:1px solid var(--p100);">
+            <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 2px;font-size:15px;font-weight:700;color:#0f172a;">
+              <span style="flex:1;">${ed(`gruppen.${i}.fragen.${j}.q`, it.q)}</span>
+              <span class="wg-fa-plus" style="width:24px;height:24px;border-radius:50%;background:var(--p50);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:transform .25s;"><i class="fa-solid fa-plus"></i></span>
+            </summary>
+            <div style="padding:0 36px 15px 2px;font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`gruppen.${i}.fragen.${j}.a`, it.a)}</div>
+          </details>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>`)
+})
+
+// 9 — Offene Frage-Antwort-Spalten (ohne Aufklappen)
+faNeu('fa-offen', 'Offen in Spalten', (c) => faSekt('fa-offen', c, `${faKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(22px,3.6vw,48px);">
+      ${fragenListe(c, 6).map((it, i) => `<div class="wg-reveal">
+        <h3 style="font-size:16.5px;font-weight:800;margin:0 0 7px;">${ed(`fragen.${i}.q`, it.q)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.75;">${ed(`fragen.${i}.a`, it.a)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 10 — Karten-Raster mit Icon je Frage
+faNeu('fa-karten', 'Karten mit Icon', (c) => faSekt('fa-karten', c, `${faKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.6vw,28px);">
+      ${fragenListe(c, 6).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(20px,2.8vw,28px);display:flex;gap:14px;align-items:flex-start;">
+        <span style="width:38px;height:38px;border-radius:10px;background:var(--p50);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${icon(`fragen.${i}.icon`, it.icon || 'circle-question')}</span>
+        <div>
+          <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">${ed(`fragen.${i}.q`, it.q)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`fragen.${i}.a`, it.a)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+export const FRAGEN = { type: 'fragen', label: 'FAQ / Häufige Fragen', variants: FA }
+
 export const MERKMALE = { type: 'merkmale', label: 'Features / Merkmale', variants: FE }
 
-export const ZUSATZ4_BLOECKE = { merkmale: MERKMALE }
+export const ZUSATZ4_BLOECKE = { merkmale: MERKMALE, fragen: FRAGEN }
 
 export const ZUSATZ4_ADDABLE = [
   { type: 'merkmale', label: 'Features / Merkmale', fa: 'list-check', cat: 'Inhalt' },
+  { type: 'fragen', label: 'FAQ / Häufige Fragen', fa: 'circle-question', cat: 'Inhalt' },
 ]
 
 export const ZUSATZ4_DEFAULTS = {
+  fragen: {
+    tag: 'FAQ',
+    title: 'Häufige Fragen',
+    text: 'Ihre Frage ist nicht dabei? Schreiben Sie uns – wir antworten gern persönlich.',
+    cta: 'Frage stellen', ctaHref: 'kontakt.html',
+    icon: 'phone',
+    kontaktLabel: 'Direkt erreichbar',
+    telefon: 'Ihre Telefonnummer',
+    fragen: [
+      { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.', icon: 'circle-question' },
+      { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.', icon: 'circle-question' },
+      { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.', icon: 'circle-question' },
+      { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.', icon: 'circle-question' },
+      { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.', icon: 'circle-question' },
+      { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und durch Ihre echten Inhalte ersetzen.', icon: 'circle-question' },
+    ],
+    gruppen: [
+      {
+        titel: 'Erste Kategorie', text: 'Kurz beschreiben, worum es in dieser Gruppe geht.',
+        fragen: [
+          { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und ersetzen.' },
+          { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und ersetzen.' },
+          { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und ersetzen.' },
+        ],
+      },
+      {
+        titel: 'Zweite Kategorie', text: 'Kurz beschreiben, worum es in dieser Gruppe geht.',
+        fragen: [
+          { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und ersetzen.' },
+          { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und ersetzen.' },
+          { q: 'Hier steht eine häufige Frage Ihrer Kunden?', a: 'Und hier die passende Antwort – beides im Editor anklicken und ersetzen.' },
+        ],
+      },
+    ],
+  },
   merkmale: {
     tag: 'Merkmale',
     title: 'Was diese Lösung ausmacht',
