@@ -1414,17 +1414,394 @@ ibNeu('ib-schach', 'Schachbrett', (c) => ibSekt('ib-schach', c, `${ibKopf(c)}
 
 export const ICONBOXEN = { type: 'iconboxen', label: 'Icon-Boxen (Vorteile)', variants: IB }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CALL TO ACTION (20 Varianten)
+// Handlungsaufrufe: schmale Bänder bis große Abschluss-Flächen. Buttons sind
+// echte <a>-Elemente (Ziel im Panel unter „Verlinkung" setzbar), Texte und
+// Bilder wie überall direkt bearbeitbar.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Diagonal-Muster als eigene Ebene (dunkle CTA-Flächen aus der Vorlage)
+const ctaMuster = (deck = 'rgba(255,255,255,.05)') =>
+  `<div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(45deg,transparent 0 14px,${deck} 14px 15px),repeating-linear-gradient(-45deg,transparent 0 14px,${deck} 14px 15px);"></div>`
+
+const D_CTA_TITEL = 'Ihre Aufforderung in einem Satz'
+const D_CTA_TEXT = 'Ein kurzer Satz, der erklärt, was als Nächstes passiert.'
+const D_CTA_PUNKTE = [
+  { icon: 'check', text: 'Stichwort 1' },
+  { icon: 'check', text: 'Stichwort 2' },
+  { icon: 'check', text: 'Stichwort 3' },
+]
+
+// Knopfpaar (immer echte Links → Verlinkung im Panel)
+const ctaKnoepfe = (c, hell = false, mitte = false) => `
+        <div style="display:flex;gap:12px;flex-wrap:wrap;${mitte ? 'justify-content:center;' : ''}margin-top:24px;">
+          <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+          <a href="${esc(c.cta2Href || 'leistungen.html')}" class="wg-btn-leer"${hell ? ' style="color:#fff;border-color:rgba(255,255,255,.4);"' : ''}>${txt('cta2', c.cta2, 'Mehr erfahren')}</a>
+        </div>`
+
+const CTA = []
+const ctaNeu = (id, name, render) => CTA.push({ id, name, render })
+const ctaSekt = (id, c, innen, fallback = 'background:#fff;') =>
+  `<section data-block="aufruf" data-variant="${id}" class="wg-sekt" style="${bg(c, fallback)}">
+  <div class="wg-wrap">
+${innen}
+  </div>
+</section>`
+
+// 1 — Zentriert, hell
+ctaNeu('cta-zentriert', 'Zentriert', (c) => ctaSekt('cta-zentriert', c, `
+    <div class="wg-reveal" style="text-align:center;max-width:700px;margin:0 auto;">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+      <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <span class="wg-strichlinie mitte"></span>
+      <div class="wg-lead">${txt('text', c.text, D_CTA_TEXT)}</div>
+      ${ctaKnoepfe(c, false, true)}
+    </div>`, 'background:var(--p50);'))
+
+// 2 — Dunkle Fläche mit Diagonal-Muster
+ctaNeu('cta-muster', 'Dunkel mit Muster', (c) => `
+<section data-block="aufruf" data-variant="cta-muster" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:var(--p900);')}position:relative;overflow:hidden;">
+  ${ctaMuster()}
+  <div class="wg-wrap" style="position:relative;">
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto;color:#fff;">
+      <span class="wg-chip glas">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+      <h2 class="wg-t2" style="color:#fff;margin-top:16px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <div style="color:rgba(255,255,255,.8);font-size:16px;line-height:1.7;margin-top:12px;">${txt('text', c.text, D_CTA_TEXT)}</div>
+      ${ctaKnoepfe(c, true, true)}
+    </div>
+  </div>
+</section>`)
+
+// 3 — Schmales Band, Text links / Knopf rechts
+ctaNeu('cta-band', 'Schmales Band', (c) => `
+<section data-block="aufruf" data-variant="cta-band" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}padding-top:clamp(24px,3.5vw,40px);padding-bottom:clamp(24px,3.5vw,40px);">
+  <div class="wg-wrap">
+    <div class="wg-split wg-reveal" style="display:grid;grid-template-columns:1fr auto;gap:clamp(16px,3vw,36px);align-items:center;">
+      <div>
+        <h2 style="font-size:clamp(18px,2.4vw,26px);font-weight:900;letter-spacing:-.02em;margin:0;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <div style="font-size:14.5px;color:#64748b;margin-top:5px;">${txt('text', c.text, D_CTA_TEXT)}</div>
+      </div>
+      <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+    </div>
+  </div>
+</section>`)
+
+// 4 — Dunkles Pillen-Band
+ctaNeu('cta-pille', 'Dunkle Pille', (c) => ctaSekt('cta-pille', c, `
+    <div class="wg-karte wg-dunkelzone wg-reveal" style="position:relative;overflow:hidden;background:var(--p900);border-radius:99px;padding:clamp(16px,2.4vw,22px) clamp(22px,3.4vw,38px);display:flex;gap:clamp(14px,2.5vw,28px);align-items:center;flex-wrap:wrap;justify-content:space-between;">
+      ${ctaMuster('rgba(255,255,255,.045)')}
+      <div style="position:relative;color:#fff;flex:1;min-width:220px;">
+        <div style="font-size:clamp(16px,2vw,21px);font-weight:800;">${txt('title', c.title, D_CTA_TITEL)}</div>
+      </div>
+      <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn" style="position:relative;">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+    </div>`))
+
+// 5 — Text links, Bild rechts
+ctaNeu('cta-bild-rechts', 'Mit Bild rechts', (c) => ctaSekt('cta-bild-rechts', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <span class="wg-strichlinie"></span>
+        <div class="wg-lead">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c)}
+      </div>
+      <div class="wg-reveal re">${bildBox('bildHaupt', c.bildHaupt, 'clamp(240px,32vw,400px)', '', 31)}</div>
+    </div>`, 'background:var(--p50);'))
+
+// 6 — Bild links, Text rechts
+ctaNeu('cta-bild-links', 'Mit Bild links', (c) => ctaSekt('cta-bild-links', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(240px,32vw,400px)', '', 32)}</div>
+      <div class="wg-reveal re">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <span class="wg-strichlinie"></span>
+        <div class="wg-lead">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c)}
+      </div>
+    </div>`))
+
+// 7 — Vollbild-Hintergrund mit Überlagerung
+ctaNeu('cta-vollbild', 'Auf Vollbild', (c) => `
+<section data-block="aufruf" data-variant="cta-vollbild" class="wg-sekt" style="${bg(c, 'background:#fff;')}">
+  <div class="wg-wrap">
+    <div class="wg-reveal" style="position:relative;border-radius:24px;overflow:hidden;min-height:clamp(300px,36vw,440px);display:flex;align-items:center;justify-content:center;">
+      <div class="wg-bildbox" style="position:absolute;inset:0;">${bild('bildHaupt', c.bildHaupt, COVER, 33)}</div>
+      <div style="position:absolute;inset:0;background:rgba(10,15,28,.68);"></div>
+      <div class="wg-dunkelzone" style="position:relative;text-align:center;color:#fff;max-width:640px;padding:clamp(26px,5vw,52px);">
+        <span class="wg-chip glas">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+        <h2 class="wg-t2" style="color:#fff;margin-top:14px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <div style="color:rgba(255,255,255,.84);font-size:15.5px;line-height:1.7;margin-top:10px;">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c, true, true)}
+      </div>
+    </div>
+  </div>
+</section>`)
+
+// 8 — Dunkle Karte mit drei Merkmalen
+ctaNeu('cta-merkmale', 'Mit Merkmalen', (c) => `
+<section data-block="aufruf" data-variant="cta-merkmale" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:var(--p900);')}position:relative;overflow:hidden;">
+  ${ctaMuster()}
+  <div class="wg-wrap" style="position:relative;">
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto;color:#fff;">
+      <span class="wg-eyebrow" style="color:var(--accent);">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+      <h2 class="wg-t2" style="color:#fff;margin-top:12px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <div style="color:rgba(255,255,255,.78);font-size:15.5px;line-height:1.7;margin-top:10px;">${txt('text', c.text, D_CTA_TEXT)}</div>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);margin-top:clamp(26px,4vw,42px);">
+      ${misch(c.punkte, D_CTA_PUNKTE).map((p, i) => `<div class="wg-karte wg-reveal" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:20px;text-align:center;color:#fff;">
+        <span style="color:var(--accent);font-size:20px;">${icon(`punkte.${i}.icon`, p.icon)}</span>
+        <div style="font-size:14.5px;font-weight:800;margin-top:10px;">${ed(`punkte.${i}.text`, p.text)}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:center;">${ctaKnoepfe(c, true, true)}</div>
+  </div>
+</section>`)
+
+// 9 — Newsletter-Anmeldung
+ctaNeu('cta-newsletter', 'Newsletter-Feld', (c) => ctaSekt('cta-newsletter', c, `
+    <div class="wg-karte wg-reveal" style="max-width:680px;margin:0 auto;background:#fff;border:1px solid var(--p100);border-radius:20px;padding:clamp(26px,4vw,44px);text-align:center;box-shadow:0 18px 50px rgba(15,23,42,.08);">
+      <span style="width:56px;height:56px;border-radius:50%;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:21px;">${icon('icon', c.icon || 'envelope')}</span>
+      <h2 class="wg-t2" style="margin:16px 0 8px;">${txt('title', c.title, 'Bleiben Sie auf dem Laufenden')}</h2>
+      <div style="font-size:14.5px;color:#64748b;line-height:1.7;">${txt('text', c.text, 'Ein kurzer Satz dazu, was Empfänger erwartet.')}</div>
+      <form data-contact-form style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:22px;">
+        <input type="email" name="email" placeholder="E-Mail-Adresse" style="flex:1;min-width:220px;border:1.5px solid var(--p100);border-radius:10px;padding:13px 15px;font-size:14.5px;font-family:inherit;outline:none;">
+        <button type="submit" class="wg-btn" style="border:none;cursor:pointer;">${txt('cta', c.cta, 'Eintragen')}</button>
+      </form>
+      <div style="font-size:11.5px;color:#94a3b8;margin-top:12px;">${txt('hinweis', c.hinweis, 'Abmeldung jederzeit möglich.')}</div>
+    </div>`, 'background:var(--p50);'))
+
+// 10 — Zwei Karten nebeneinander (zwei Wege)
+ctaNeu('cta-zwei-wege', 'Zwei Wege', (c) => {
+  const wege = misch(c.wege, [
+    { icon: 'phone', titel: 'Direkt anrufen', text: 'Kurz sprechen und offene Fragen klären.', cta: 'Nummer anzeigen', href: 'kontakt.html' },
+    { icon: 'calendar-days', titel: 'Termin vereinbaren', text: 'Wir melden uns mit einem Terminvorschlag.', cta: 'Termin anfragen', href: 'kontakt.html' },
+  ])
+  return ctaSekt('cta-zwei-wege', c, `
+    <div class="wg-reveal" style="text-align:center;max-width:640px;margin:0 auto clamp(24px,3.5vw,42px);">
+      <h2 class="wg-t2">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <span class="wg-strichlinie mitte"></span>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.6vw,30px);">
+      ${wege.map((w, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:18px;padding:clamp(24px,3.4vw,36px);text-align:center;">
+        <span style="width:54px;height:54px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:20px;">${icon(`wege.${i}.icon`, w.icon)}</span>
+        <h3 style="font-size:18px;font-weight:800;margin:15px 0 7px;">${ed(`wege.${i}.titel`, w.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`wege.${i}.text`, w.text)}</div>
+        <a href="${esc(w.href || 'kontakt.html')}" class="wg-btn" style="margin-top:18px;">${ed(`wege.${i}.cta`, w.cta)}</a>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);')
+})
+
+// 11 — Mit Zahlen-Zeile
+ctaNeu('cta-zahlen', 'Mit Zahlen', (c) => ctaSekt('cta-zahlen', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">
+        <h2 class="wg-t2">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <span class="wg-strichlinie"></span>
+        <div class="wg-lead">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c)}
+      </div>
+      <div class="wg-reveal re" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,2vw,22px);">
+        ${misch(c.stats, D_STATS).map((st, i) => `<div style="text-align:center;padding:18px 8px;border-radius:14px;background:var(--p50);">
+          <div style="font-size:clamp(22px,3vw,32px);font-weight:900;color:var(--p700);">${ed(`stats.${i}.num`, st.num)}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">${ed(`stats.${i}.label`, st.label)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+// 12 — Bewertungs-Zeile über dem Aufruf
+ctaNeu('cta-bewertung', 'Mit Bewertung', (c) => ctaSekt('cta-bewertung', c, `
+    <div class="wg-reveal" style="text-align:center;max-width:680px;margin:0 auto;">
+      <div style="display:inline-flex;align-items:center;gap:10px;background:var(--p50);border:1px solid var(--p100);border-radius:99px;padding:8px 18px;margin-bottom:18px;">
+        <span style="color:var(--accent);font-size:13px;">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</span>
+        <span style="font-size:13px;font-weight:700;">${txt('badge', c.badge, 'Ihre echte Bewertung eintragen')}</span>
+      </div>
+      <h2 class="wg-t2">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <div class="wg-lead">${txt('text', c.text, D_CTA_TEXT)}</div>
+      ${ctaKnoepfe(c, false, true)}
+    </div>`))
+
+// 13 — Kontaktdaten-Zeile mit Aufruf
+ctaNeu('cta-kontaktzeile', 'Mit Kontaktdaten', (c) => ctaSekt('cta-kontaktzeile', c, `
+    <div class="wg-karte wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:20px;padding:clamp(24px,3.6vw,40px);">
+      <div class="wg-split" style="display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(20px,3.4vw,44px);align-items:center;">
+        <div>
+          <h2 style="font-size:clamp(20px,2.6vw,28px);font-weight:900;letter-spacing:-.02em;margin:0 0 8px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+          <div style="font-size:14.5px;color:#64748b;line-height:1.7;">${txt('text', c.text, D_CTA_TEXT)}</div>
+          ${ctaKnoepfe(c)}
+        </div>
+        <div style="display:grid;gap:12px;">
+          ${misch(c.kontakt, [
+            { icon: 'phone', label: 'Telefon', wert: 'Ihre Telefonnummer' },
+            { icon: 'envelope', label: 'E-Mail', wert: 'Ihre E-Mail-Adresse' },
+            { icon: 'clock', label: 'Erreichbar', wert: 'Ihre Zeiten eintragen' },
+          ]).map((k, i) => `<div style="display:flex;gap:13px;align-items:center;background:var(--p50);border-radius:12px;padding:13px 16px;">
+            <span style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon(`kontakt.${i}.icon`, k.icon)}</span>
+            <div>
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">${ed(`kontakt.${i}.label`, k.label)}</div>
+              <div style="font-size:14px;font-weight:700;">${ed(`kontakt.${i}.wert`, k.wert)}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 14 — Video-Teaser mit Aufruf
+ctaNeu('cta-video', 'Video-Teaser', (c) => ctaSekt('cta-video', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li" style="position:relative;border-radius:20px;overflow:hidden;min-height:clamp(220px,28vw,340px);display:flex;align-items:center;justify-content:center;">
+        <div class="wg-bildbox" style="position:absolute;inset:0;">${bild('bildHaupt', c.bildHaupt, COVER, 34)}</div>
+        <div style="position:absolute;inset:0;background:rgba(10,15,28,.4);"></div>
+        <span style="position:relative;width:74px;height:74px;border-radius:50%;background:#fff;color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 16px 40px rgba(0,0,0,.3);">${icon('icon', c.icon || 'play')}</span>
+      </div>
+      <div class="wg-reveal re">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Einblick')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <span class="wg-strichlinie"></span>
+        <div class="wg-lead">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c)}
+      </div>
+    </div>`))
+
+// 15 — Häkchenliste neben dem Aufruf
+ctaNeu('cta-liste', 'Mit Häkchenliste', (c) => `
+<section data-block="aufruf" data-variant="cta-liste" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:linear-gradient(150deg,var(--p800),var(--p900));')}position:relative;overflow:hidden;">
+  ${ctaMuster('rgba(255,255,255,.04)')}
+  <div class="wg-wrap" style="position:relative;">
+    <div class="wg-split" style="display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li" style="color:#fff;">
+        <h2 class="wg-t2" style="color:#fff;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <span class="wg-strichlinie"></span>
+        <div style="color:rgba(255,255,255,.78);font-size:15.5px;line-height:1.7;">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c, true)}
+      </div>
+      <div class="wg-reveal re">
+        <ul style="list-style:none;padding:0;margin:0;display:grid;gap:12px;">
+          ${misch(c.punkte, D_CTA_PUNKTE).map((p, i) => `<li style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 16px;color:#fff;font-size:14.5px;font-weight:600;">
+            <span style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">${icon(`punkte.${i}.icon`, p.icon)}</span>${ed(`punkte.${i}.text`, p.text)}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>`)
+
+// 16 — Riesen-Überschrift, minimal
+ctaNeu('cta-gross', 'Riesen-Überschrift', (c) => ctaSekt('cta-gross', c, `
+    <div class="wg-reveal" style="text-align:center;max-width:900px;margin:0 auto;">
+      <h2 style="font-size:clamp(30px,6vw,68px);font-weight:900;letter-spacing:-.04em;line-height:1.05;margin:0;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:28px;">
+        <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+        <a href="${esc(c.cta2Href || 'leistungen.html')}" class="wg-btn-leer">${txt('cta2', c.cta2, 'Mehr erfahren')}</a>
+      </div>
+    </div>`))
+
+// 17 — Chip-Wolke unter dem Aufruf
+ctaNeu('cta-chips', 'Mit Stichwort-Chips', (c) => `
+<section data-block="aufruf" data-variant="cta-chips" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:var(--p900);')}position:relative;overflow:hidden;">
+  ${ctaMuster()}
+  <div class="wg-wrap" style="position:relative;">
+    <div class="wg-reveal" style="text-align:center;max-width:760px;margin:0 auto;color:#fff;">
+      <h2 class="wg-t2" style="color:#fff;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <div style="color:rgba(255,255,255,.78);font-size:15.5px;line-height:1.7;margin-top:10px;">${txt('text', c.text, D_CTA_TEXT)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:24px 0 4px;">
+        ${misch(c.chips, ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4', 'Stichwort 5']).map((ch, i) =>
+          `<span style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:13px;font-weight:700;border-radius:99px;padding:8px 16px;">${ed(`chips.${i}`, ch)}</span>`).join('')}
+      </div>
+      ${ctaKnoepfe(c, true, true)}
+    </div>
+  </div>
+</section>`)
+
+// 18 — Karte über der Kante (überlappend)
+ctaNeu('cta-ueberlappt', 'Überlappende Karte', (c) => `
+<section data-block="aufruf" data-variant="cta-ueberlappt" class="wg-sekt" style="${bg(c, 'background:var(--p50);')}padding-top:0;">
+  <div class="wg-wrap">
+    <div class="wg-karte wg-dunkelzone wg-reveal" style="position:relative;overflow:hidden;background:var(--p800);border-radius:24px;padding:clamp(28px,4.4vw,54px);margin-top:-40px;box-shadow:0 26px 70px rgba(15,23,42,.28);color:#fff;text-align:center;">
+      ${ctaMuster('rgba(255,255,255,.05)')}
+      <div style="position:relative;">
+        <span class="wg-chip glas">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+        <h2 class="wg-t2" style="color:#fff;margin-top:14px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <div style="color:rgba(255,255,255,.8);font-size:15.5px;line-height:1.7;margin-top:10px;max-width:600px;margin-left:auto;margin-right:auto;">${txt('text', c.text, D_CTA_TEXT)}</div>
+        <div style="display:flex;justify-content:center;">${ctaKnoepfe(c, true, true)}</div>
+      </div>
+    </div>
+  </div>
+</section>`)
+
+// 19 — Farbige Hälfte (Text | Bild, vollflächig)
+ctaNeu('cta-haelfte', 'Farbige Hälfte', (c) => `
+<section data-block="aufruf" data-variant="cta-haelfte" class="wg-sekt" style="${bg(c, 'background:#fff;')}padding-top:0;padding-bottom:0;">
+  <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;min-height:clamp(300px,38vw,460px);">
+    <div class="wg-dunkelzone" style="position:relative;overflow:hidden;background:var(--p800);color:#fff;display:flex;align-items:center;padding:clamp(28px,5vw,68px);">
+      ${ctaMuster('rgba(255,255,255,.05)')}
+      <div class="wg-reveal li" style="position:relative;">
+        <span class="wg-eyebrow" style="color:var(--accent);">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+        <h2 class="wg-t2" style="color:#fff;margin-top:12px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+        <span class="wg-strichlinie"></span>
+        <div style="color:rgba(255,255,255,.78);font-size:15.5px;line-height:1.75;">${txt('text', c.text, D_CTA_TEXT)}</div>
+        ${ctaKnoepfe(c, true)}
+      </div>
+    </div>
+    <div class="wg-bildbox" style="overflow:hidden;min-height:260px;">${bild('bildHaupt', c.bildHaupt, COVER, 35)}</div>
+  </div>
+</section>`)
+
+// 20 — Schlichte Linie mit Aufruf
+ctaNeu('cta-schlicht', 'Schlicht mit Linie', (c) => `
+<section data-block="aufruf" data-variant="cta-schlicht" class="wg-sekt" style="${bg(c, 'background:#fff;')}padding-top:clamp(26px,4vw,46px);padding-bottom:clamp(26px,4vw,46px);">
+  <div class="wg-wrap">
+    <div class="wg-reveal" style="border-top:1px solid var(--p100);border-bottom:1px solid var(--p100);padding:clamp(22px,3.4vw,38px) 0;text-align:center;">
+      <h2 style="font-size:clamp(18px,2.4vw,26px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px;">${txt('title', c.title, D_CTA_TITEL)}</h2>
+      <div style="font-size:14.5px;color:#64748b;">${txt('text', c.text, D_CTA_TEXT)}</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:18px;">
+        <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+      </div>
+    </div>
+  </div>
+</section>`)
+
+export const AUFRUF = { type: 'aufruf', label: 'Call to Action', variants: CTA }
+
 export const KOMBI = { type: 'kombi', label: 'Bild + Text Kombis', variants: V }
 
-export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF, iconboxen: ICONBOXEN }
+export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF, iconboxen: ICONBOXEN, aufruf: AUFRUF }
 
 export const ZUSATZ3_ADDABLE = [
   { type: 'kombi', label: 'Bild + Text Kombis', fa: 'object-group', cat: 'Inhalt' },
   { type: 'ablauf', label: 'Step Box / Abläufe', fa: 'stairs', cat: 'Inhalt' },
   { type: 'iconboxen', label: 'Icon-Boxen (Vorteile)', fa: 'icons', cat: 'Inhalt' },
+  { type: 'aufruf', label: 'Call to Action', fa: 'bullhorn', cat: 'Konversion' },
 ]
 
 export const ZUSATZ3_DEFAULTS = {
+  aufruf: {
+    tag: 'Nächster Schritt',
+    title: 'Ihre Aufforderung in einem Satz',
+    text: 'Ein kurzer Satz, der erklärt, was als Nächstes passiert.',
+    cta: 'Jetzt anfragen', ctaHref: 'kontakt.html',
+    cta2: 'Mehr erfahren', cta2Href: 'leistungen.html',
+    badge: 'Ihre echte Bewertung eintragen',
+    hinweis: 'Abmeldung jederzeit möglich.',
+    icon: 'envelope',
+    chips: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4', 'Stichwort 5'],
+    punkte: [
+      { icon: 'check', text: 'Stichwort 1' },
+      { icon: 'check', text: 'Stichwort 2' },
+      { icon: 'check', text: 'Stichwort 3' },
+    ],
+    stats: [{ num: '0', label: 'Ihre Kennzahl' }, { num: '0', label: 'Ihre Kennzahl' }, { num: '0', label: 'Ihre Kennzahl' }],
+    wege: [
+      { icon: 'phone', titel: 'Direkt anrufen', text: 'Kurz sprechen und offene Fragen klären.', cta: 'Nummer anzeigen', href: 'kontakt.html' },
+      { icon: 'calendar-days', titel: 'Termin vereinbaren', text: 'Wir melden uns mit einem Terminvorschlag.', cta: 'Termin anfragen', href: 'kontakt.html' },
+    ],
+    kontakt: [
+      { icon: 'phone', label: 'Telefon', wert: 'Ihre Telefonnummer' },
+      { icon: 'envelope', label: 'E-Mail', wert: 'Ihre E-Mail-Adresse' },
+      { icon: 'clock', label: 'Erreichbar', wert: 'Ihre Zeiten eintragen' },
+    ],
+  },
   iconboxen: {
     tag: 'Vorteile',
     title: 'Warum Kunden sich für uns entscheiden',
