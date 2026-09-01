@@ -1,0 +1,56 @@
+v38 — REPARATUR: „Meine Daten" und „Rechnungsdaten" speichern nicht
+===================================================================
+
+WAS WAR LOS?
+In der Datenbank fehlten Dinge, die das Konto braucht:
+  • Die Tabelle „profile" hatte nicht alle Felder (Straße, PLZ, Ort,
+    Telefon, USt-IdNr. …) und vor allem KEINE Schreibrechte.
+    Deshalb wurden deine Eingaben unter „Meine Daten" verworfen —
+    und die gelbe Warnung „Straße, PLZ, Ort fehlen" blieb stehen.
+  • An den Websites fehlten die Rechnungsdaten-Felder (re_…),
+    deshalb ließ sich auch das Formular im Dashboard nicht speichern.
+
+Zusätzlich hat die Seite den Fehler nicht angezeigt, weil die
+Fehlermeldung ganz oben erschien — beim langen Formular sieht man
+sie beim Klick auf „Daten speichern" gar nicht.
+
+────────────────────────────────────────────────────────
+SCHRITT 1 (wichtigster): SQL ausführen
+────────────────────────────────────────────────────────
+Supabase → SQL Editor → New query → Inhalt von
+  migration_v38_reparatur.sql
+komplett einfügen → RUN.
+
+Unten erscheint eine Prüftabelle mit fünf Spalten. Dort muss stehen:
+  profil_felder              → ja
+  profil_schreibrechte       → ja
+  rechnungsdaten_je_website  → ja
+  zusatz_tabellen            → ja
+  kunden_mit_nummer          → eine Zahl (z. B. 1)
+
+Falls irgendwo „NEIN" steht: Screenshot schicken.
+
+────────────────────────────────────────────────────────
+SCHRITT 2: Diese zwei Dateien bei GitHub hochladen
+────────────────────────────────────────────────────────
+  src/app/konto/page.js       (in den Ordner src/app/konto)
+  src/app/dashboard/page.js   (in den Ordner src/app/dashboard)
+
+Danach „Commit changes" — Vercel baut automatisch neu.
+
+Was sich dadurch ändert:
+  • Fehlermeldungen erscheinen jetzt DIREKT neben dem Speichern-Knopf,
+    nicht mehr unsichtbar am Seitenanfang.
+  • Nach dem Speichern liest die Seite die Daten zur Sicherheit wieder
+    aus der Datenbank zurück. „Gespeichert" erscheint nur noch, wenn
+    es auch wirklich gespeichert wurde.
+
+────────────────────────────────────────────────────────
+DANACH TESTEN
+────────────────────────────────────────────────────────
+  1. Konto → „Meine Daten" → Straße, PLZ, Ort eintragen → speichern.
+     Es muss grün „Gespeichert" erscheinen.
+  2. Seite neu laden — die Werte müssen noch da stehen
+     (nicht nur hellblau vom Browser-Vorschlag).
+  3. Übersicht: Die gelbe Warnung ist weg, „Online schalten" geht.
+  4. Rechnungsdaten je Website eintragen → speichern → neu laden.
