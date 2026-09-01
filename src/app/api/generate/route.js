@@ -6,7 +6,7 @@ import { createMessage, extractText } from '@/lib/claudeModel'
 import { FONT_PAIRS } from '@/lib/fonts'
 
 import { nutzerAusToken, supabaseAdmin } from '@/lib/supabaseServer'
-import { rechtsSeitenEinbauen } from '@/lib/rechtsseiten'
+import { rechtsSeitenSync } from '@/lib/rechtsseiten'
 
 async function nutzungFesthalten(accessToken, art) {
   try {
@@ -324,19 +324,22 @@ Gib NUR valides JSON zurueck (kein Markdown). Fuer JEDE Seite einen Eintrag:
       ]
     })
 
-    // ── Impressum & Datenschutz als echte Unterseiten anhängen ──────────────
-    // Der Fußbereich verlinkt beides seit jeher — ohne die Seiten wären das
-    // tote Links. Die Texte kommen aus dem Kundenkonto („Rechtstexte"); fehlen
-    // sie, steht dort ein klar erkennbarer Platzhalter statt erfundener Angaben.
+    // ── Impressum & Datenschutz als echte Unterseiten ───────────────────────
+    // Vollständig dynamisch: nur was der Kunde angelegt hat, wird zur Seite —
+    // und nur dann steht der Link im Fußbereich. Vorrang haben die Texte aus
+    // dem Baukasten, sonst die aus dem Kundenkonto („Rechtstexte").
     try {
-      let rechtstexte = {}
+      let rechtstexte = { text_impressum: '', text_datenschutz: '' }
       const nutzer = await nutzerAusToken(accessToken)
       if (nutzer) {
         const { data: profil } = await supabaseAdmin()
           .from('profile').select('text_impressum,text_datenschutz').eq('id', nutzer.id).maybeSingle()
-        if (profil) rechtstexte = profil
+        if (profil) rechtstexte = { ...rechtstexte, ...profil }
       }
-      Object.assign(pages, rechtsSeitenEinbauen(pages, rechtstexte, { platzhalter: true }))
+      if (formData.textImpressum !== undefined) rechtstexte.text_impressum = formData.textImpressum
+      if (formData.textDatenschutz !== undefined) rechtstexte.text_datenschutz = formData.textDatenschutz
+      const mitRecht = rechtsSeitenSync(pages, rechtstexte)
+      for (const k of Object.keys(mitRecht)) pages[k] = mitRecht[k]
     } catch (e) {
       console.warn('Rechtsseiten übersprungen:', e?.message)
     }

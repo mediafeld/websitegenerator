@@ -4,75 +4,13 @@ import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
 import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
 import { aktuellerNutzer } from '@/lib/projekte'
-import { rechtsSeitenEinbauen } from '@/lib/rechtsseiten'
+import { rechtsSeitenSync } from '@/lib/rechtsseiten'
+import { ausProfil, impressumText, datenschutzText } from '@/lib/rechtstexteVorlagen'
 
-function impressumErzeugen(p) {
-  if (!p?.nachname || !p?.strasse || !p?.plz || !p?.ort) {
-    return '[ Bitte zuerst unter „Meine Daten" Name und Anschrift vervollständigen, dann hier neu erzeugen. ]'
-  }
-  const name = [p.anrede === 'sie' ? '' : '', p.vorname, p.nachname].filter(Boolean).join(' ')
-  const zeilen = [
-    p.firma || name,
-    p.firma ? `Inhaber: ${name}` : null,
-    p.zusatz || null,
-    `${p.strasse}`,
-    `${p.plz} ${p.ort}${p.land && p.land !== 'Deutschland' ? ', ' + p.land : ''}`,
-    '',
-    'Kontakt:',
-    p.telefon ? `Telefon: ${p.telefon}` : null,
-    `E-Mail: ${p.rechnung_mail || '[ E-Mail-Adresse ergänzen ]'}`,
-    '',
-    p.ust_id ? `Umsatzsteuer-ID gemäß § 27 a Umsatzsteuergesetz: ${p.ust_id}` : null,
-    p.steuernummer && !p.ust_id ? `Steuernummer: ${p.steuernummer}` : null,
-    '',
-    'Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV:',
-    name,
-    '(Anschrift wie oben)',
-    '',
-    'Streitschlichtung:',
-    'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:',
-    'https://ec.europa.eu/consumers/odr/',
-    'Zur Teilnahme an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle sind wir nicht verpflichtet und nicht bereit.',
-  ].filter(l => l !== null).join('\n')
-  return zeilen
-}
-
-function datenschutzErzeugen(p) {
-  const verantwortlich = p?.firma || [p?.vorname, p?.nachname].filter(Boolean).join(' ') || '[ Name/Firma ergänzen ]'
-  return [
-    '1. Verantwortlicher',
-    `${verantwortlich}, ${p?.strasse || '[ Straße ]'}, ${p?.plz || '[ PLZ ]'} ${p?.ort || '[ Ort ]'}`,
-    `E-Mail: ${p?.rechnung_mail || '[ E-Mail ]'}`,
-    '',
-    '2. Hosting',
-    'Diese Website wird bei einem Hosting-Anbieter in Deutschland/der EU betrieben. Beim Aufruf werden automatisch',
-    'Server-Logdaten (u. a. IP-Adresse, Datum, Uhrzeit, aufgerufene Seite) verarbeitet, um den Betrieb sicherzustellen',
-    '(Art. 6 Abs. 1 lit. f DSGVO).',
-    '',
-    '3. Kontaktformular',
-    'Wenn du uns über das Kontaktformular schreibst, verarbeiten wir deine Angaben zur Bearbeitung der Anfrage',
-    '(Art. 6 Abs. 1 lit. b DSGVO). Die Daten werden gelöscht, sobald die Anfrage abschließend bearbeitet ist und',
-    'keine gesetzlichen Aufbewahrungspflichten entgegenstehen.',
-    '',
-    '4. Schriftarten',
-    'Schriftarten werden lokal auf unserem Server ausgeliefert. Es findet keine Verbindung zu Google Fonts oder',
-    'anderen externen Font-Anbietern statt.',
-    '',
-    '5. Cookies',
-    'Diese Website verwendet nur technisch notwendige Cookies. Cookies für Statistik oder Werbung werden nicht',
-    'ohne vorherige Einwilligung gesetzt.',
-    '',
-    '6. Kartendienst (OpenStreetMap)',
-    'Sofern auf dieser Website eine Anfahrtskarte eingebunden ist, wird sie erst nach deinem ausdrücklichen Klick',
-    'geladen (Zwei-Klick-Lösung). Erst dann werden Daten (u. a. deine IP-Adresse) an die OpenStreetMap Foundation',
-    'übertragen (Art. 6 Abs. 1 lit. a DSGVO). Ohne Klick findet keine Übertragung statt.',
-    '',
-    '7. Deine Rechte',
-    'Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit',
-    'und Widerspruch. Wende dich dazu an die oben genannte E-Mail-Adresse. Außerdem besteht ein Beschwerderecht',
-    'bei der zuständigen Datenschutz-Aufsichtsbehörde.',
-  ].join('\n')
-}
+// Die Vorlagen liegen zentral in lib/rechtstexteVorlagen.js — damit der
+// Baukasten (Erstkonfiguration) und das Kundenkonto denselben Text erzeugen.
+const impressumErzeugen = (p) => impressumText(ausProfil(p))
+const datenschutzErzeugen = (p) => datenschutzText(ausProfil(p))
 
 // Speichert den Text im Konto UND trägt ihn als Unterseite in alle eigenen
 // Websites ein (Footer verlinkt bereits auf impressum.html/datenschutz.html).
@@ -83,7 +21,7 @@ async function inWebsitesUebernehmen(userId, texte) {
   let anzahl = 0
   for (const p of projekte || []) {
     if (!p?.pages || !Object.keys(p.pages).length) continue
-    const neu = rechtsSeitenEinbauen(p.pages, texte)
+    const neu = rechtsSeitenSync(p.pages, texte)
     if (neu === p.pages) continue
     const { data, error: schreibFehler } = await supabase
       .from('projekte').update({ pages: neu }).eq('id', p.id).select('id')
@@ -137,11 +75,20 @@ function RechtstextKarte({ art, titel, erzeugen }) {
     // …und direkt in die Websites eintragen (beide Texte, damit Impressum und
     // Datenschutz immer zusammen aktuell sind)
     const { anzahl, fehler: uebernahmeFehler } = await inWebsitesUebernehmen(u.id, p)
+    const wort = anzahl === 1 ? 'Website' : 'Websites'
     setStatus('gespeichert')
-    if (uebernahmeFehler) setFehler(`Gespeichert — aber die Übernahme in die Website hat nicht geklappt: ${uebernahmeFehler}`)
-    else setInfo(anzahl === 0
-      ? 'Gespeichert. Sobald eine Website erzeugt ist, erscheint der Text dort automatisch im Fußbereich.'
-      : `Gespeichert und in ${anzahl} ${anzahl === 1 ? 'Website' : 'Websites'} übernommen — im Fußbereich verlinkt.`)
+    if (uebernahmeFehler) {
+      setFehler(`Gespeichert — aber die Übernahme in die Website hat nicht geklappt: ${uebernahmeFehler}`)
+    } else if (!text.trim()) {
+      // Leerer Text = Seite soll weg
+      setInfo(anzahl === 0
+        ? 'Der Text ist entfernt. Auf deinen Websites gibt es dazu keine Unterseite und keinen Link im Fußbereich.'
+        : `Der Text ist entfernt — die Unterseite und der Link im Fußbereich sind auf ${anzahl} ${wort} verschwunden.`)
+    } else {
+      setInfo(anzahl === 0
+        ? 'Gespeichert. Sobald eine Website erzeugt ist, erscheint die Seite dort automatisch — verlinkt im Fußbereich.'
+        : `Gespeichert und in ${anzahl} ${wort} übernommen — als Unterseite, verlinkt im Fußbereich.`)
+    }
     setTimeout(() => setStatus(''), 3000)
   }
 
@@ -150,7 +97,10 @@ function RechtstextKarte({ art, titel, erzeugen }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 6 }}>
         <div>
           <h2 style={{ marginBottom: 4 }}>{titel}</h2>
-          <p className="unter" style={{ marginBottom: 0 }}>Selbst schreiben oder aus deinen Konto-Angaben erzeugen lassen — beides jederzeit änderbar.</p>
+          <p className="unter" style={{ marginBottom: 0 }}>
+            Selbst schreiben oder aus deinen Konto-Angaben erzeugen lassen. Steht hier ein Text, bekommt deine
+            Website eine eigene Unterseite dafür und einen Link im Fußbereich — ist das Feld leer, gibt es beides nicht.
+          </p>
         </div>
         <button className="btnleer" onClick={neuErzeugen}>
           <i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 7 }} aria-hidden="true" />Aus meinen Daten erzeugen
@@ -160,9 +110,11 @@ function RechtstextKarte({ art, titel, erzeugen }) {
         style={{ width: '100%', minHeight: 260, marginTop: 14, padding: '16px 18px', fontSize: 13.5, lineHeight: 1.7, fontFamily: 'ui-monospace,monospace',
           border: `2px solid ${D.linie}`, borderRadius: 12, outline: 'none', resize: 'vertical', color: D.text }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
-        <button className="btnfest" onClick={speichern} disabled={!text.trim() || status === 'speichert'}>
-          <i className={`fa-solid ${status === 'speichert' ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}`} style={{ marginRight: 7 }} aria-hidden="true" />
-          {status === 'speichert' ? 'Speichert …' : 'Speichern & in Website übernehmen'}
+        {/* Leerer Text ist erlaubt und BEDEUTET ETWAS: die Seite verschwindet
+            wieder — samt Link im Fußbereich. Deshalb kein disabled mehr. */}
+        <button className="btnfest" onClick={speichern} disabled={status === 'speichert'}>
+          <i className={`fa-solid ${status === 'speichert' ? 'fa-spinner fa-spin' : text.trim() ? 'fa-floppy-disk' : 'fa-trash'}`} style={{ marginRight: 7 }} aria-hidden="true" />
+          {status === 'speichert' ? 'Speichert …' : text.trim() ? 'Speichern & in Website übernehmen' : 'Leeren — Seite von der Website entfernen'}
         </button>
         {status === 'gespeichert' && !fehler && (
           <span style={{ fontSize: 13, color: '#1F9D55', fontWeight: 700 }}>

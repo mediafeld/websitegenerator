@@ -517,8 +517,13 @@ export const FOOTER = {
     <div style="border-top:1px solid rgba(255,255,255,0.08);padding:20px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <span style="font-size:13px;">© ${new Date().getFullYear()} ${ed('rechteText', c.rechteText || 'Ihr Unternehmen. Alle Rechte vorbehalten.')}</span>
       <div style="display:flex;gap:20px;">
-        <a href="impressum.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">${ed('lblImpressum', c.lblImpressum || 'Impressum')}</a>
-        <a href="datenschutz.html" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">${ed('lblDatenschutz', c.lblDatenschutz || 'Datenschutz')}</a>
+        ${/* Rechtslinks kommen aus dem Inhalt: nur verlinken, was es als Seite
+             wirklich gibt (rechtsSeitenSync pflegt das). Ohne die Angabe gilt
+             das alte Verhalten – wichtig für bereits erzeugte Websites. */''}
+        ${(Array.isArray(c.rechtsLinks)
+          ? c.rechtsLinks
+          : [{ label: c.lblImpressum || 'Impressum', href: 'impressum.html' }, { label: c.lblDatenschutz || 'Datenschutz', href: 'datenschutz.html' }]
+        ).map((l, i) => `<a href="${esc(l.href)}" style="font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;">${ed(`rechtsLinks.${i}.label`, l.label)}</a>`).join('')}
       </div>
     </div>
   </div>

@@ -8,6 +8,8 @@ import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
 import MenuBuilder from '@/components/MenuBuilder'
 import { aktuellerNutzer, projektLaden } from '@/lib/projekte'
+import { supabase } from '@/lib/supabaseClient'
+import { ausFormular, impressumText, datenschutzText } from '@/lib/rechtstexteVorlagen'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Fuss } from '@/components/Fuss'
 import { useWarenkorb } from '@/lib/warenkorb'
@@ -198,6 +200,8 @@ function WizardInnen() {
   })
 
   const [nutzer, setNutzer] = useState(null)
+  const [profil, setProfil] = useState(null)      // Konto-Angaben für die Rechtstexte
+  const rechtAutoRef = useRef(true)               // false, sobald der Kunde selbst tippt
   // gesetzt, wenn eine BESTEHENDE Website neu konfiguriert wird
   const [neuAufbau, setNeuAufbau] = useState(null)
   useEffect(() => { aktuellerNutzer().then(setNutzer).catch(() => {}) }, [])
@@ -247,6 +251,42 @@ function WizardInnen() {
 
   const upd = (k, v) => setFd(prev => ({ ...prev, [k]: v }))
   const updDetail = (k, v) => setFd(prev => ({ ...prev, brancheDetails: { ...prev.brancheDetails, [k]: v } }))
+
+  // ── Rechtstexte im Baukasten ──────────────────────────────────────────────
+  // Beide Texte werden aus den Angaben vorbereitet, sobald Schritt 8 erreicht
+  // ist. Wer eine Seite nicht will, schaltet sie ab (= leeres Feld) — dann gibt
+  // es später weder die Unterseite noch den Link im Fußbereich.
+  useEffect(() => {
+    if (!nutzer) return
+    supabase.from('profile').select('*').eq('id', nutzer.id).maybeSingle()
+      .then(({ data }) => setProfil(data || null)).catch(() => {})
+  }, [nutzer])
+
+  useEffect(() => {
+    if (step !== 8) return
+    setFd(prev => {
+      const erstesMal = prev.textImpressum === undefined && prev.textDatenschutz === undefined
+      // Nur nachbessern, solange der Kunde die Texte nicht selbst angefasst hat
+      if (!erstesMal && !rechtAutoRef.current) return prev
+      const d = ausFormular(prev, profil)
+      const imp = impressumText(d)
+      const dat = datenschutzText(d)
+      if (prev.textImpressum === imp && prev.textDatenschutz === dat) return prev
+      return {
+        ...prev,
+        // Abgeschaltete Seiten ('') bleiben abgeschaltet
+        textImpressum: prev.textImpressum === '' ? '' : imp,
+        textDatenschutz: prev.textDatenschutz === '' ? '' : dat,
+      }
+    })
+  }, [step, profil])
+
+  function rechtstextSchalten(key, an) {
+    rechtAutoRef.current = false
+    if (!an) { upd(key, ''); return }
+    const d = ausFormular(fd, profil)
+    upd(key, key === 'textImpressum' ? impressumText(d) : datenschutzText(d))
+  }
 
   // Paket wählen (Kauf ODER Miete) → in Wizard-Daten UND direkt in den Warenkorb.
   // oeffnen=true klappt den Warenkorb auf, damit jede Preisänderung sofort
@@ -800,15 +840,55 @@ function WizardInnen() {
                 )}
               </Panel>
 
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: 16, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <i className="fa-solid fa-scale-balanced" style={{ color: '#92400e', fontSize: 15, marginTop: 2, flexShrink: 0 }} aria-hidden="true" />
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, color: '#92400e' }}>Impressum, Datenschutz &amp; Cookie-Banner</div>
-                  <p style={{ fontSize: 12, color: '#78716c', lineHeight: 1.6 }}>
-                    Werden automatisch generiert und sind inklusive. <b>Wichtiger Hinweis:</b> Wir übernehmen <b>keine Haftung</b> für die rechtliche Vollständigkeit. Eine <b>anwaltliche Prüfung</b> sollte vor Veröffentlichung immer erfolgen. Eine automatische Cookie-Erklärung ist enthalten. Auf Wunsch beraten wir dich gerne.
-                  </p>
+              {/* Rechtstexte: der Kunde entscheidet, ob es die Seiten gibt.
+                  Text da → eigene Unterseite + Link im Fußbereich.
+                  Feld leer/abgeschaltet → beides nicht vorhanden. */}
+              <Panel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <i className="fa-solid fa-scale-balanced" style={{ color: primary, fontSize: 16 }} aria-hidden="true" />
+                  <div style={{ fontWeight: 800, fontSize: 15.5, color: '#0f172a' }}>Impressum &amp; Datenschutz</div>
                 </div>
-              </div>
+                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65, marginBottom: 16 }}>
+                  Wir erzeugen beides aus deinen Angaben. Jede eingeschaltete Seite wird als eigene Unterseite
+                  angelegt und im Fußbereich verlinkt — ausgeschaltet gibt es weder Seite noch Link.
+                  Ändern kannst du die Texte später jederzeit im Kundenkonto unter „Rechtstexte".
+                </p>
+                {[
+                  ['textImpressum', 'Impressum', 'Für geschäftsmäßige Websites in Deutschland Pflicht.'],
+                  ['textDatenschutz', 'Datenschutzerklärung', 'Nach DSGVO Pflicht, sobald Daten verarbeitet werden.'],
+                ].map(([key, label, hinweis]) => {
+                  const an = !!String(fd[key] || '').trim()
+                  return (
+                    <div key={key} style={{ border: `1.5px solid ${an ? primary + '55' : '#e5e5e5'}`, background: an ? primary + '08' : '#fff', borderRadius: 12, padding: '14px 16px', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => rechtstextSchalten(key, !an)}
+                          aria-pressed={an}
+                          style={{ width: 46, height: 26, borderRadius: 99, border: 'none', cursor: 'pointer', background: an ? primary : '#cbd5e1', position: 'relative', flexShrink: 0, padding: 0 }}>
+                          <span style={{ position: 'absolute', top: 3, left: an ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .15s' }} />
+                        </button>
+                        <div style={{ flex: 1, minWidth: 160 }}>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{label}</div>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>{hinweis}</div>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: an ? primary : '#94a3b8' }}>
+                          {an ? 'wird angelegt' : 'wird nicht angelegt'}
+                        </span>
+                      </div>
+                      {an && (
+                        <textarea value={fd[key] || ''} onChange={e => { rechtAutoRef.current = false; upd(key, e.target.value) }}
+                          style={{ width: '100%', minHeight: 170, marginTop: 12, padding: '13px 15px', fontSize: 12.5, lineHeight: 1.65,
+                            fontFamily: 'ui-monospace,monospace', border: '1px solid #e5e5e5', borderRadius: 10, outline: 'none', resize: 'vertical', background: '#fff' }} />
+                      )}
+                    </div>
+                  )
+                })}
+                <p style={{ fontSize: 12, color: '#78716c', lineHeight: 1.65, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '12px 14px' }}>
+                  <b>Wichtiger Hinweis:</b> Das sind Textvorlagen, keine Rechtsberatung. Wir übernehmen
+                  <b> keine Haftung</b> für rechtliche Vollständigkeit — eine <b>anwaltliche Prüfung</b> vor der
+                  Veröffentlichung ist zu empfehlen. Ein Cookie-Hinweis ist enthalten. In eckigen Klammern
+                  markierte Stellen musst du noch ergänzen.
+                </p>
+              </Panel>
             </>
           )}
 
