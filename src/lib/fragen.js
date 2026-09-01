@@ -32,4 +32,16 @@ export const FRAGEN = [
   { g: 'Preise & Abrechnung', weg: 'mieten', f: 'Was passiert nach der Kündigung mit meiner Website?', a: 'Du kannst sie bis zum Vertragsende jederzeit als ZIP herunterladen und behalten. Die Domain übertragen wir auf deinen Wunsch zu einem anderen Anbieter — sie läuft ja auf deinen Namen. Nach Vertragsende nehmen wir die Seite von unserem Server.', top: true },
 ]
 
-export const GRUPPEN_REIHE = ['Preise & Abrechnung', 'Ablauf', 'Inhalte & Bilder', 'Technik & Domain', 'Recht & Daten']
+// ── Kontaktformular ────────────────────────────────────────────────────────
+// Hier steht bewusst genau, WOHIN die Nachrichten gehen und was passiert,
+// wenn der Versand einmal nicht klappt — das ist die häufigste Rückfrage.
+FRAGEN.push(
+  { g: 'Kontaktformular', weg: 'beide', f: 'Wohin gehen die Nachrichten aus dem Kontaktformular?', a: 'An die E-Mail-Adresse, die du ganz am Anfang im Baukasten unter „Dein Unternehmen" einträgst. Die wird beim Erzeugen mitgespeichert und ist automatisch das Ziel des Formulars — du musst nichts weiter einstellen. Mit der Domain hat das nichts zu tun: die brauchen wir nur für die Adresse deiner Website selbst.', top: true },
+  { g: 'Kontaktformular', weg: 'kaufen', f: 'Muss ich beim Kauf etwas einrichten?', a: 'In der ZIP liegt eine Datei mail.php, in der deine E-Mail-Adresse bereits eingetragen ist. Sie funktioniert, sobald die Website bei einem Hoster mit PHP liegt — das können praktisch alle üblichen Hoster. Solange die Seiten nur lokal auf deinem Rechner liegen oder du sie in der Vorschau ansiehst, wird nichts verschickt. Kann dein Hosting kein PHP, springt automatisch der Notfallweg an (siehe nächste Frage).' },
+  { g: 'Kontaktformular', weg: 'mieten', f: 'Und bei der Miete?', a: 'Da läuft der Versand über unseren Server: Die Anfrage kommt bei uns an und wird sofort an deine hinterlegte Adresse zugestellt — mit „Antworten an" den Absender, du antwortest also direkt aus deinem E-Mail-Programm. Einrichten musst du nichts. Das greift, sobald deine Website online geschaltet ist.' },
+  { g: 'Kontaktformular', weg: 'beide', f: 'Was passiert, wenn der Versand mal nicht klappt?', a: 'Das Formular versucht zuerst den einen Weg, dann den anderen. Klappt beides nicht, bekommt der Besucher einen Knopf „Nachricht jetzt per E-Mail-Programm senden" — Betreff und der komplette Text sind darin schon eingetragen — sowie deine Telefonnummer zum Anrufen. Seine Eingaben bleiben stehen. So geht keine Anfrage verloren.' },
+  { g: 'Kontaktformular', weg: 'beide', f: 'Kann ich die Empfänger-Adresse später ändern?', a: 'Ja. Im Kundenkonto über „Angaben & Produkt ändern" die E-Mail-Adresse anpassen — die Website wird dann mit der neuen Adresse neu aufgebaut, dein bisheriger Stand wird vorher im Verlauf gesichert. Beim Kauf geht es noch schneller: in der Datei mail.php oben die Zeile mit $empfaenger ändern und die Datei neu hochladen.' },
+  { g: 'Kontaktformular', weg: 'beide', f: 'Kommt Spam an?', a: 'Das Formular hat ein unsichtbares Feld, das nur Bots ausfüllen — solche Nachrichten werden still verworfen. Bei der Miete kommen zusätzlich Bremsen dazu: höchstens fünf Nachrichten je Absender in zehn Minuten und 30 pro Website und Stunde.' },
+)
+
+export const GRUPPEN_REIHE = ['Preise & Abrechnung', 'Ablauf', 'Inhalte & Bilder', 'Kontaktformular', 'Technik & Domain', 'Recht & Daten']

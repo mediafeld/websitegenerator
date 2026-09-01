@@ -112,7 +112,7 @@ function Field({ label, value, onChange, placeholder, type = 'text', primary, hi
     <div style={{ marginBottom: 14 }}>
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
         {label}
-        {badge && <span style={{ fontSize: 10, fontWeight: 600, background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: 99 }}>{badge}</span>}
+        {badge && <span style={{ fontSize: 10, fontWeight: 700, background: '#E7F4FC', color: '#1B93D2', padding: '2px 8px', borderRadius: 99 }}>{badge}</span>}
       </label>
       {type === 'textarea' ? (
         <textarea value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows} style={base}
@@ -580,7 +580,7 @@ function WizardInnen() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <Field label="Firmenname *" value={fd.firmenname} onChange={v => upd('firmenname', v)} placeholder="Muster GmbH" primary={primary} />
                   <Field label="Telefon *" value={fd.telefon} onChange={v => upd('telefon', v)} placeholder="030 1234567" primary={primary} />
-                  <Field label="E-Mail *" value={fd.email} onChange={v => upd('email', v)} placeholder="info@muster.de" type="email" primary={primary} />
+                  <Field label="E-Mail *" value={fd.email} onChange={v => upd('email', v)} placeholder="info@muster.de" type="email" primary={primary} badge="Kontaktformular" hint="An diese Adresse gehen später die Anfragen aus dem Kontaktformular deiner Website. Später änderbar." />
                   <Field label="Website" value={fd.website} onChange={v => upd('website', v)} placeholder="https://muster.de" primary={primary} />
                   <Field label="Straße & Nr." value={fd.strasse} onChange={v => upd('strasse', v)} placeholder="Musterstr. 1" primary={primary} />
                   <Field label="PLZ" value={fd.plz} onChange={v => upd('plz', v)} placeholder="10115" primary={primary} />
@@ -588,6 +588,20 @@ function WizardInnen() {
                   <Field label="Land" value={fd.land} onChange={v => upd('land', v)} placeholder="Deutschland" primary={primary} />
                 </div>
                 <Field label="Öffnungszeiten *" value={fd.oeffnung} onChange={v => upd('oeffnung', v)} type="textarea" rows={2} placeholder="Mo-Fr: 9:00-18:00 Uhr&#10;Sa: nach Vereinbarung" primary={primary} />
+
+                {/* Wichtigste Rückfrage überhaupt: wohin gehen die Anfragen? */}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: '#E7F4FC', border: '1px solid #BBE0F4', borderRadius: 12, padding: '13px 15px', marginTop: 4 }}>
+                  <i className="fa-solid fa-envelope-circle-check" style={{ color: '#1B93D2', fontSize: 15, marginTop: 2, flexShrink: 0 }} aria-hidden="true" />
+                  <p style={{ fontSize: 12.5, color: '#0A1824', lineHeight: 1.65 }}>
+                    <b>Kontaktformular:</b> Anfragen von deiner Website gehen an die E-Mail-Adresse oben —
+                    du musst nichts einrichten.{' '}
+                    {fd.zahlungsart === 'mieten'
+                      ? 'Bei der Miete stellen wir sie über unseren Server zu, sobald die Website online ist.'
+                      : 'Beim Kauf liegt dafür eine fertig eingestellte mail.php in deiner ZIP; sie arbeitet, sobald die Seiten bei einem Hoster mit PHP liegen.'}
+                    {' '}Klappt der Versand einmal nicht, bekommt der Besucher automatisch einen Knopf, um dir die
+                    Nachricht per E-Mail-Programm zu schicken — es geht also nichts verloren.
+                  </p>
+                </div>
               </Panel>
 
               <Panel>
