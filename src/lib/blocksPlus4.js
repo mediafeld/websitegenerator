@@ -777,16 +777,492 @@ faNeu('fa-karten', 'Karten mit Icon', (c) => faSekt('fa-karten', c, `${faKopf(c)
 
 export const FRAGEN = { type: 'fragen', label: 'FAQ / Häufige Fragen', variants: FA }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FULL WIDTH DUO (38 Varianten)
+// Sektionen über die VOLLE Breite, exakt 50 % / 50 % geteilt. Die Bildseite
+// füllt die ganze Höhe (object-fit:cover), die Textseite ist mittig gesetzt.
+// Auf dem Handy stehen beide Hälften untereinander (wg-split).
+// Bewusst OHNE Video-Playknöpfe.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DUO_HOEHE = 'clamp(420px,52vw,640px)'
+
+// Sektion: volle Breite, kein Innenabstand, zwei gleich große Hälften
+const duoSekt = (id, c, links, rechts, fallback = 'background:#fff;', hoehe = DUO_HOEHE) =>
+  `<section data-block="duo" data-variant="${id}" class="wg-sekt" style="${bg(c, fallback)}padding-top:0;padding-bottom:0;">
+  <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;min-height:${hoehe};">
+${links}
+${rechts}
+  </div>
+</section>`
+
+// Bildhälfte über die volle Höhe
+const duoBild = (key, src, n = 1, extra = '') =>
+  `    <div class="wg-bildbox" style="position:relative;overflow:hidden;min-height:300px;${extra}">${bild(key, src, 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;')}</div>`
+
+// Bildhälfte mit Textauflage
+const duoBildText = (c, key, src, n = 1) =>
+  `    <div class="wg-bildbox wg-dunkelzone" style="position:relative;overflow:hidden;min-height:300px;display:flex;align-items:flex-end;">
+      ${bild(key, src, 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;')}
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,15,28,.8),transparent 65%);"></div>
+      <div style="position:relative;color:#fff;padding:clamp(22px,3.4vw,42px);">
+        <div style="font-size:clamp(17px,2.2vw,23px);font-weight:800;">${txt('bildTitel', c.bildTitel, 'Bildunterschrift')}</div>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.8);margin-top:5px;">${txt('bildUnter', c.bildUnter, 'Kurze Erläuterung')}</div>
+      </div>
+    </div>`
+
+// Texthälfte (hell oder dunkel), Inhalt mittig gesetzt
+const duoText = (innen, dunkel = false, grund = '') =>
+  `    <div class="wg-reveal${dunkel ? ' wg-dunkelzone' : ''}" style="display:flex;align-items:center;padding:clamp(28px,5vw,72px);${dunkel ? 'background:var(--p900);color:#fff;' : (grund || '')}">
+      <div style="width:100%;max-width:540px;">
+${innen}
+      </div>
+    </div>`
+
+const duoKopf = (c, dunkel = false, dTitle = 'Ihre Überschrift für diesen Bereich') => `
+        <span class="wg-eyebrow"${dunkel ? ' style="color:var(--accent);"' : ''}>${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;${dunkel ? 'color:#fff;' : ''}">${txt('title', c.title, dTitle)}</h2>
+        <span class="wg-strichlinie"></span>`
+
+const duoLead = (c, dunkel = false) =>
+  `        <div style="font-size:16px;line-height:1.75;color:${dunkel ? 'rgba(255,255,255,.78)' : '#64748b'};">${txt('text', c.text, LOREM.absatz)}</div>`
+
+const duoKnoepfe = (c, dunkel = false) => `
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:26px;">
+          <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+          <a href="${esc(c.cta2Href || 'leistungen.html')}" class="wg-btn-leer"${dunkel ? ' style="color:#fff;border-color:rgba(255,255,255,.4);"' : ''}>${txt('cta2', c.cta2, 'Mehr erfahren')}</a>
+        </div>`
+
+const duoHaken = (c, dunkel = false) => `
+        <ul style="list-style:none;padding:0;margin:22px 0 0;display:grid;gap:11px;">
+          ${misch(c.punkte, ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4']).map((p, i) => `<li style="display:flex;gap:12px;align-items:flex-start;font-size:15px;color:${dunkel ? 'rgba(255,255,255,.85)' : '#334155'};">
+            <span style="width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;"><i class="fa-solid fa-check"></i></span>${ed(`punkte.${i}`, p)}</li>`).join('')}
+        </ul>`
+
+const duoStats = (c, dunkel = false, spalten = 3) => `
+        <div style="display:grid;grid-template-columns:repeat(${spalten},1fr);gap:14px;margin-top:26px;">
+          ${misch(c.stats, D_STATS).slice(0, spalten).map((st, i) => `<div style="text-align:center;padding:16px 8px;border-radius:13px;background:${dunkel ? 'rgba(255,255,255,.08)' : 'var(--p50)'};">
+            <div style="font-size:clamp(22px,2.6vw,30px);font-weight:900;color:${dunkel ? '#fff' : 'var(--p700)'};">${ed(`stats.${i}.num`, st.num)}</div>
+            <div style="font-size:12px;color:${dunkel ? 'rgba(255,255,255,.7)' : '#64748b'};margin-top:3px;">${ed(`stats.${i}.label`, st.label)}</div>
+          </div>`).join('')}
+        </div>`
+
+const duoIcons = (c, dunkel = false) => `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px;">
+          ${items(c, 4).map((it, i) => `<div>
+            <span style="width:42px;height:42px;border-radius:12px;background:${dunkel ? 'rgba(255,255,255,.1)' : 'var(--p50)'};color:${dunkel ? 'var(--accent)' : 'var(--p700)'};display:inline-flex;align-items:center;justify-content:center;font-size:16px;">${icon(`items.${i}.icon`, it.icon)}</span>
+            <h3 style="font-size:15px;font-weight:800;margin:10px 0 4px;${dunkel ? 'color:#fff;' : ''}">${ed(`items.${i}.titel`, it.titel)}</h3>
+            <div style="font-size:12.5px;line-height:1.6;color:${dunkel ? 'rgba(255,255,255,.7)' : '#64748b'};">${ed(`items.${i}.text`, it.text)}</div>
+          </div>`).join('')}
+        </div>`
+
+const DU = []
+const duNeu = (id, name, render) => DU.push({ id, name, render })
+
+// ── 1–4: Grundformen hell/dunkel, Bild links/rechts ────────────────────────
+duNeu('du-bild-links', 'Bild links, Text rechts', (c) => duoSekt('du-bild-links', c,
+  duoBild('bildHaupt', c.bildHaupt, 1),
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoKnoepfe(c)}`)))
+
+duNeu('du-bild-rechts', 'Text links, Bild rechts', (c) => duoSekt('du-bild-rechts', c,
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoKnoepfe(c)}`),
+  duoBild('bildHaupt', c.bildHaupt, 2)))
+
+duNeu('du-dunkel-links', 'Bild links, dunkler Text', (c) => duoSekt('du-dunkel-links', c,
+  duoBild('bildHaupt', c.bildHaupt, 3),
+  duoText(`${duoKopf(c, true)}${duoLead(c, true)}${duoKnoepfe(c, true)}`, true)))
+
+duNeu('du-dunkel-rechts', 'Dunkler Text, Bild rechts', (c) => duoSekt('du-dunkel-rechts', c,
+  duoText(`${duoKopf(c, true)}${duoLead(c, true)}${duoKnoepfe(c, true)}`, true),
+  duoBild('bildHaupt', c.bildHaupt, 4)))
+
+// ── 5–8: mit Häkchenliste ──────────────────────────────────────────────────
+duNeu('du-liste-links', 'Bild links, Häkchenliste', (c) => duoSekt('du-liste-links', c,
+  duoBild('bildHaupt', c.bildHaupt, 5),
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoHaken(c)}${duoKnoepfe(c)}`)))
+
+duNeu('du-liste-rechts', 'Häkchenliste, Bild rechts', (c) => duoSekt('du-liste-rechts', c,
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoHaken(c)}${duoKnoepfe(c)}`),
+  duoBild('bildHaupt', c.bildHaupt, 6)))
+
+duNeu('du-liste-dunkel', 'Dunkle Häkchenliste', (c) => duoSekt('du-liste-dunkel', c,
+  duoBild('bildHaupt', c.bildHaupt, 7),
+  duoText(`${duoKopf(c, true)}${duoHaken(c, true)}${duoKnoepfe(c, true)}`, true)))
+
+duNeu('du-liste-grau', 'Häkchenliste auf Grau', (c) => duoSekt('du-liste-grau', c,
+  duoText(`${duoKopf(c)}${duoHaken(c)}${duoKnoepfe(c)}`, false, 'background:var(--p50);'),
+  duoBild('bildHaupt', c.bildHaupt, 8)))
+
+// ── 9–12: mit Zahlen ───────────────────────────────────────────────────────
+duNeu('du-zahlen-links', 'Bild links, Zahlen', (c) => duoSekt('du-zahlen-links', c,
+  duoBild('bildHaupt', c.bildHaupt, 9),
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoStats(c)}`)))
+
+duNeu('du-zahlen-rechts', 'Zahlen, Bild rechts', (c) => duoSekt('du-zahlen-rechts', c,
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoStats(c)}`),
+  duoBild('bildHaupt', c.bildHaupt, 10)))
+
+duNeu('du-zahlen-dunkel', 'Dunkle Zahlen-Seite', (c) => duoSekt('du-zahlen-dunkel', c,
+  duoText(`${duoKopf(c, true)}${duoLead(c, true)}${duoStats(c, true)}`, true),
+  duoBild('bildHaupt', c.bildHaupt, 11)))
+
+duNeu('du-grosse-zahl', 'Mit großer Zahl', (c) => duoSekt('du-grosse-zahl', c,
+  duoBild('bildHaupt', c.bildHaupt, 12),
+  duoText(`
+        <div style="font-size:clamp(56px,7vw,104px);font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--p600);">${txt('zahl', c.zahl, '0')}</div>
+        <div style="font-size:14px;font-weight:800;color:#64748b;margin:8px 0 16px;">${txt('zahlLabel', c.zahlLabel, 'Ihre Kennzahl – hier eintragen')}</div>
+        <h2 class="wg-t2">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        ${duoLead(c)}`)))
+
+// ── 13–16: mit Icon-Merkmalen ──────────────────────────────────────────────
+duNeu('du-icons-links', 'Bild links, Icon-Merkmale', (c) => duoSekt('du-icons-links', c,
+  duoBild('bildHaupt', c.bildHaupt, 13),
+  duoText(`${duoKopf(c)}${duoIcons(c)}`)))
+
+duNeu('du-icons-rechts', 'Icon-Merkmale, Bild rechts', (c) => duoSekt('du-icons-rechts', c,
+  duoText(`${duoKopf(c)}${duoIcons(c)}`),
+  duoBild('bildHaupt', c.bildHaupt, 14)))
+
+duNeu('du-icons-dunkel', 'Dunkle Icon-Merkmale', (c) => duoSekt('du-icons-dunkel', c,
+  duoBild('bildHaupt', c.bildHaupt, 15),
+  duoText(`${duoKopf(c, true)}${duoIcons(c, true)}`, true)))
+
+duNeu('du-icon-liste', 'Merkmale untereinander', (c) => duoSekt('du-icon-liste', c,
+  duoText(`${duoKopf(c)}
+        <div style="display:grid;gap:18px;margin-top:22px;">
+          ${items(c, 3).map((it, i) => `<div style="display:flex;gap:14px;align-items:flex-start;">
+            <span style="width:42px;height:42px;border-radius:12px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</span>
+            <div>
+              <h3 style="font-size:15.5px;font-weight:800;margin:0 0 4px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+              <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+            </div>
+          </div>`).join('')}
+        </div>`),
+  duoBild('bildHaupt', c.bildHaupt, 16)))
+
+// ── 17–20: Schritte, Balken, Chips, Badge ──────────────────────────────────
+duNeu('du-schritte', 'Mit nummerierten Schritten', (c) => duoSekt('du-schritte', c,
+  duoBild('bildHaupt', c.bildHaupt, 17),
+  duoText(`${duoKopf(c, false, 'So läuft es Schritt für Schritt')}
+        <div style="display:grid;gap:16px;margin-top:22px;">
+          ${items(c, 3).map((it, i) => `<div style="display:flex;gap:14px;align-items:flex-start;">
+            <span style="width:34px;height:34px;border-radius:10px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">${i + 1}</span>
+            <div>
+              <h3 style="font-size:15.5px;font-weight:800;margin:0 0 3px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+              <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+            </div>
+          </div>`).join('')}
+        </div>`)))
+
+duNeu('du-balken', 'Mit Balken', (c) => duoSekt('du-balken', c,
+  duoText(`${duoKopf(c)}
+        <div style="display:grid;gap:18px;margin-top:24px;">
+          ${misch(c.balken, [{ label: 'Ihr Merkmal', wert: 0 }, { label: 'Ihr Merkmal', wert: 0 }, { label: 'Ihr Merkmal', wert: 0 }]).map((b, i) => `<div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;">
+              <span style="font-size:14.5px;font-weight:700;">${ed(`balken.${i}.label`, b.label)}</span>
+              <span style="font-size:12.5px;color:#94a3b8;font-weight:700;">${ed(`balken.${i}.wert`, b.wert)}%</span>
+            </div>
+            <div style="height:7px;border-radius:99px;background:var(--p100);overflow:hidden;">
+              <div style="height:100%;width:${Math.max(0, Math.min(100, parseInt(b.wert, 10) || 0))}%;background:linear-gradient(90deg,var(--p600),var(--accent));border-radius:99px;"></div>
+            </div>
+          </div>`).join('')}
+        </div>`),
+  duoBild('bildHaupt', c.bildHaupt, 18)))
+
+duNeu('du-chips', 'Mit Stichwort-Chips', (c) => duoSekt('du-chips', c,
+  duoBild('bildHaupt', c.bildHaupt, 19),
+  duoText(`${duoKopf(c)}${duoLead(c)}
+        <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:22px;">
+          ${misch(c.chips, ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4', 'Stichwort 5']).map((ch, i) =>
+            `<span style="background:var(--p50);border:1px solid var(--p100);color:var(--p700);font-size:13px;font-weight:700;border-radius:99px;padding:8px 16px;">${ed(`chips.${i}`, ch)}</span>`).join('')}
+        </div>`)))
+
+duNeu('du-badge', 'Mit Badge', (c) => duoSekt('du-badge', c,
+  duoText(`
+        <span style="display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;border-radius:99px;padding:7px 15px;">${txt('badge', c.badge, 'Ihr Stichwort')}</span>
+        <h2 class="wg-t2" style="margin-top:16px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        <span class="wg-strichlinie"></span>${duoLead(c)}${duoKnoepfe(c)}`),
+  duoBild('bildHaupt', c.bildHaupt, 20)))
+
+// ── 21–24: Zitat, Person, Bewertung, Unterschrift ──────────────────────────
+duNeu('du-zitat', 'Mit Zitat', (c) => duoSekt('du-zitat', c,
+  duoBild('bildHaupt', c.bildHaupt, 21),
+  duoText(`
+        <i class="fa-solid fa-quote-left" style="font-size:32px;color:var(--accent);"></i>
+        <blockquote style="margin:16px 0 0;font-size:clamp(19px,2.4vw,26px);font-weight:700;line-height:1.45;">${txt('zitat', c.zitat, 'Hier steht später ein echtes Zitat – im Editor anklicken und ersetzen.')}</blockquote>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:20px;">
+          <span style="width:34px;height:3px;background:var(--accent);border-radius:2px;"></span>
+          <div>
+            <div style="font-weight:800;font-size:15px;">${txt('name', c.name, 'Vorname Nachname')}</div>
+            <div style="font-size:12.5px;color:#94a3b8;">${txt('rolle', c.rolle, 'Ihre Position')}</div>
+          </div>
+        </div>`)))
+
+duNeu('du-person', 'Person vorstellen', (c) => duoSekt('du-person', c,
+  duoBild('bildHaupt', c.bildHaupt, 22),
+  duoText(`
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('name', c.name, 'Vorname Nachname')}</h2>
+        <div style="font-size:13px;color:#94a3b8;margin-top:-6px;">${txt('rolle', c.rolle, 'Ihre Position')}</div>
+        <span class="wg-strichlinie"></span>${duoLead(c)}
+        <div style="display:flex;gap:12px;margin-top:22px;">
+          ${misch(c.sozial, [{ icon: 'phone' }, { icon: 'envelope' }, { icon: 'location-dot' }]).map((sz, i) =>
+            `<span style="width:40px;height:40px;border-radius:50%;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:15px;">${icon(`sozial.${i}.icon`, sz.icon)}</span>`).join('')}
+        </div>`)))
+
+duNeu('du-bewertung', 'Mit Bewertung', (c) => duoSekt('du-bewertung', c,
+  duoText(`
+        <div style="display:inline-flex;align-items:center;gap:10px;background:var(--p50);border:1px solid var(--p100);border-radius:99px;padding:8px 16px;margin-bottom:18px;">
+          <span style="color:var(--accent);font-size:13px;">${'<i class="fa-solid fa-star"></i>'.repeat(5)}</span>
+          <span style="font-size:13px;font-weight:700;">${txt('badge', c.badge, 'Ihre echte Bewertung eintragen')}</span>
+        </div>
+        <h2 class="wg-t2">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        <span class="wg-strichlinie"></span>${duoLead(c)}${duoKnoepfe(c)}`),
+  duoBild('bildHaupt', c.bildHaupt, 23)))
+
+duNeu('du-signatur', 'Mit Unterschrift', (c) => duoSekt('du-signatur', c,
+  duoBild('bildHaupt', c.bildHaupt, 24),
+  duoText(`${duoKopf(c)}${duoLead(c)}
+        <div style="margin-top:24px;">
+          <div style="font-family:'Segoe Script','Brush Script MT',cursive;font-size:26px;line-height:1.1;color:var(--p800);">${txt('signatur', c.signatur, 'Ihr Name')}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:5px;">${txt('rolle', c.rolle, 'Ihre Position')}</div>
+        </div>`)))
+
+// ── 25–28: Formular, Newsletter, Öffnungszeiten, Kontaktdaten ──────────────
+duNeu('du-formular', 'Mit Kontaktformular', (c) => duoSekt('du-formular', c,
+  duoBild('bildHaupt', c.bildHaupt, 25),
+  duoText(`${duoKopf(c, false, 'Schreiben Sie uns')}
+        <form data-contact-form style="display:grid;gap:11px;margin-top:20px;">
+          <input type="text" name="name" placeholder="Name" style="border:1.5px solid var(--p100);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;">
+          <input type="email" name="email" placeholder="E-Mail" style="border:1.5px solid var(--p100);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;">
+          <textarea name="nachricht" rows="4" placeholder="Ihre Nachricht" style="border:1.5px solid var(--p100);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;resize:vertical;"></textarea>
+          <button type="submit" class="wg-btn" style="border:none;cursor:pointer;justify-self:start;">${txt('cta', c.cta, 'Nachricht senden')}</button>
+        </form>`)))
+
+duNeu('du-newsletter', 'Mit Newsletter-Feld', (c) => duoSekt('du-newsletter', c,
+  duoText(`${duoKopf(c, true, 'Bleiben Sie auf dem Laufenden')}
+        <div style="font-size:15px;color:rgba(255,255,255,.78);line-height:1.7;">${txt('text', c.text, 'Ein kurzer Satz dazu, was Empfänger erwartet.')}</div>
+        <form data-contact-form style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;">
+          <input type="email" name="email" placeholder="E-Mail-Adresse" style="flex:1;min-width:200px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:13px 15px;font-size:14px;font-family:inherit;outline:none;">
+          <button type="submit" class="wg-btn" style="border:none;cursor:pointer;">${txt('cta', c.cta, 'Eintragen')}</button>
+        </form>
+        <div style="font-size:11.5px;color:rgba(255,255,255,.55);margin-top:12px;">${txt('hinweis', c.hinweis, 'Abmeldung jederzeit möglich.')}</div>`, true),
+  duoBild('bildHaupt', c.bildHaupt, 26)))
+
+duNeu('du-zeiten', 'Mit Öffnungszeiten', (c) => duoSekt('du-zeiten', c,
+  duoBild('bildHaupt', c.bildHaupt, 27),
+  duoText(`${duoKopf(c, false, 'Wann Sie uns erreichen')}
+        <div style="display:grid;gap:0;margin-top:20px;">
+          ${misch(c.zeiten, [
+            { tag: 'Montag – Freitag', zeit: 'Ihre Zeiten eintragen' },
+            { tag: 'Samstag', zeit: 'Ihre Zeiten eintragen' },
+            { tag: 'Sonntag', zeit: 'Ihre Zeiten eintragen' },
+          ]).map((z, i) => `<div style="display:flex;justify-content:space-between;gap:16px;padding:13px 2px;${i ? 'border-top:1px solid var(--p100);' : ''}">
+            <span style="font-size:14.5px;font-weight:700;">${ed(`zeiten.${i}.tag`, z.tag)}</span>
+            <span style="font-size:14.5px;color:#64748b;">${ed(`zeiten.${i}.zeit`, z.zeit)}</span>
+          </div>`).join('')}
+        </div>`)))
+
+duNeu('du-kontakt', 'Mit Kontaktdaten', (c) => duoSekt('du-kontakt', c,
+  duoText(`${duoKopf(c, true, 'So erreichen Sie uns')}
+        <div style="display:grid;gap:12px;margin-top:22px;">
+          ${misch(c.kontakt, [
+            { icon: 'phone', label: 'Telefon', wert: 'Ihre Telefonnummer' },
+            { icon: 'envelope', label: 'E-Mail', wert: 'Ihre E-Mail-Adresse' },
+            { icon: 'location-dot', label: 'Adresse', wert: 'Ihre Anschrift' },
+          ]).map((k, i) => `<div style="display:flex;gap:13px;align-items:center;background:rgba(255,255,255,.07);border-radius:12px;padding:13px 16px;">
+            <span style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon(`kontakt.${i}.icon`, k.icon)}</span>
+            <div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em;">${ed(`kontakt.${i}.label`, k.label)}</div>
+              <div style="font-size:14.5px;font-weight:700;color:#fff;">${ed(`kontakt.${i}.wert`, k.wert)}</div>
+            </div>
+          </div>`).join('')}
+        </div>`, true),
+  duoBild('bildHaupt', c.bildHaupt, 28)))
+
+// ── 29–32: Akkordeon, Preis, Karten, Downloads ─────────────────────────────
+duNeu('du-fragen', 'Mit Aufklapp-Fragen', (c) => duoSekt('du-fragen', c,
+  duoBild('bildHaupt', c.bildHaupt, 29),
+  duoText(`${duoKopf(c, false, 'Häufige Fragen')}
+        <div style="display:grid;margin-top:18px;">
+          ${misch(c.fragen, [
+            { q: 'Hier steht eine häufige Frage?', a: 'Und hier die passende Antwort – im Editor anklicken und ersetzen.' },
+            { q: 'Hier steht eine häufige Frage?', a: 'Und hier die passende Antwort – im Editor anklicken und ersetzen.' },
+            { q: 'Hier steht eine häufige Frage?', a: 'Und hier die passende Antwort – im Editor anklicken und ersetzen.' },
+          ]).map((it, i) => `<details style="border-bottom:1px solid var(--p100);">
+            <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 2px;font-size:15px;font-weight:700;">
+              <span style="flex:1;">${ed(`fragen.${i}.q`, it.q)}</span>
+              <span class="wg-fa-plus" style="width:24px;height:24px;border-radius:50%;background:var(--p50);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:transform .25s;"><i class="fa-solid fa-plus"></i></span>
+            </summary>
+            <div style="padding:0 36px 14px 2px;font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`fragen.${i}.a`, it.a)}</div>
+          </details>`).join('')}
+        </div>
+        <style>details[open] .wg-fa-plus{transform:rotate(45deg)}summary::-webkit-details-marker{display:none}</style>`)))
+
+duNeu('du-preis', 'Mit Angebot', (c) => duoSekt('du-preis', c,
+  duoText(`${duoKopf(c, false, 'Unser Angebot')}
+        <div class="wg-karte" style="background:var(--p50);border-radius:18px;padding:clamp(20px,3vw,30px);margin-top:20px;">
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span style="font-size:clamp(28px,3.6vw,42px);font-weight:900;color:var(--p700);">${txt('preis', c.preis, 'Ihr Preis')}</span>
+            <span style="font-size:13px;color:#94a3b8;">${txt('preisHinweis', c.preisHinweis, 'Hinweis eintragen')}</span>
+          </div>
+          <ul style="list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px;">
+            ${misch(c.punkte, ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4']).map((p, i) => `<li style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:#334155;">
+              <span style="color:var(--accent);font-size:12px;margin-top:3px;"><i class="fa-solid fa-check"></i></span>${ed(`punkte.${i}`, p)}</li>`).join('')}
+          </ul>
+          <a href="${esc(c.ctaHref || 'kontakt.html')}" class="wg-btn" style="margin-top:18px;">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+        </div>`),
+  duoBild('bildHaupt', c.bildHaupt, 30)))
+
+duNeu('du-karten', 'Mit kleinen Karten', (c) => duoSekt('du-karten', c,
+  duoBild('bildHaupt', c.bildHaupt, 31),
+  duoText(`${duoKopf(c)}
+        <div style="display:grid;gap:12px;margin-top:22px;">
+          ${items(c, 3).map((it, i) => `<div class="wg-karte" style="display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--p100);border-radius:14px;padding:16px 18px;">
+            <span style="color:var(--p600);font-size:18px;margin-top:2px;">${icon(`items.${i}.icon`, it.icon)}</span>
+            <div>
+              <h3 style="font-size:15px;font-weight:800;margin:0 0 3px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+              <div style="font-size:13px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+            </div>
+          </div>`).join('')}
+        </div>`, false, 'background:var(--p50);')))
+
+duNeu('du-downloads', 'Mit Download-Liste', (c) => duoSekt('du-downloads', c,
+  duoText(`${duoKopf(c, false, 'Unterlagen zum Mitnehmen')}
+        <div style="display:grid;gap:10px;margin-top:22px;">
+          ${misch(c.dateien, [
+            { titel: 'Ihr Dokument', unter: 'PDF' },
+            { titel: 'Ihr Dokument', unter: 'PDF' },
+          ]).map((d, i) => `<a href="${esc(d.href || '#')}" class="wg-karte" style="display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--p100);border-radius:14px;padding:15px 18px;text-decoration:none;color:inherit;">
+            <span style="width:40px;height:40px;border-radius:11px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon(`dateien.${i}.icon`, d.icon || 'file-lines')}</span>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:800;">${ed(`dateien.${i}.titel`, d.titel)}</div>
+              <div style="font-size:12px;color:#94a3b8;">${ed(`dateien.${i}.unter`, d.unter)}</div>
+            </div>
+            <i class="fa-solid fa-arrow-down" style="color:var(--p300);font-size:14px;"></i>
+          </a>`).join('')}
+        </div>`),
+  duoBild('bildHaupt', c.bildHaupt, 32)))
+
+// ── 33–38: Sonderformen ────────────────────────────────────────────────────
+duNeu('du-bild-text', 'Bild mit Beschriftung', (c) => duoSekt('du-bild-text', c,
+  duoBildText(c, 'bildHaupt', c.bildHaupt, 33),
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoKnoepfe(c)}`)))
+
+duNeu('du-zwei-bilder', 'Zwei Bilder', (c) => duoSekt('du-zwei-bilder', c,
+  duoBildText(c, 'bildHaupt', c.bildHaupt, 34),
+  `    <div class="wg-bildbox wg-dunkelzone" style="position:relative;overflow:hidden;min-height:300px;display:flex;align-items:flex-end;">
+      ${bild('bildZwei', c.bildZwei, 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;')}
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,15,28,.8),transparent 65%);"></div>
+      <div style="position:relative;color:#fff;padding:clamp(22px,3.4vw,42px);">
+        <div style="font-size:clamp(17px,2.2vw,23px);font-weight:800;">${txt('bildTitel2', c.bildTitel2, 'Bildunterschrift')}</div>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.8);margin-top:5px;">${txt('bildUnter2', c.bildUnter2, 'Kurze Erläuterung')}</div>
+      </div>
+    </div>`))
+
+duNeu('du-zwei-texte', 'Zwei Textflächen', (c) => duoSekt('du-zwei-texte', c,
+  duoText(`${duoKopf(c)}${duoLead(c)}${duoKnoepfe(c)}`, false, 'background:var(--p50);'),
+  duoText(`
+        <h2 class="wg-t2" style="color:#fff;">${txt('title2', c.title2, 'Zweite Überschrift')}</h2>
+        <span class="wg-strichlinie"></span>
+        <div style="font-size:16px;line-height:1.75;color:rgba(255,255,255,.78);">${txt('text2', c.text2, LOREM.absatz)}</div>`, true)))
+
+duNeu('du-riesenwort', 'Mit Riesenwort', (c) => duoSekt('du-riesenwort', c,
+  `    <div class="wg-dunkelzone wg-reveal" style="position:relative;overflow:hidden;background:var(--p900);color:#fff;display:flex;align-items:center;justify-content:center;padding:clamp(24px,4vw,48px);">
+      ${feMuster()}
+      <div style="position:relative;text-align:center;">
+        <div style="font-size:clamp(38px,6vw,84px);font-weight:900;letter-spacing:-.04em;line-height:1;">${txt('wort', c.wort, 'Ihr Wort')}</div>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.7);margin-top:12px;">${txt('wortUnter', c.wortUnter, 'Kurze Erläuterung')}</div>
+      </div>
+    </div>`,
+  duoBild('bildHaupt', c.bildHaupt, 35)))
+
+duNeu('du-karte-osm', 'Mit Anfahrtskarte', (c) => duoSekt('du-karte-osm', c,
+  duoText(`${duoKopf(c, false, 'So finden Sie uns')}
+        <div style="font-size:15px;color:#64748b;line-height:1.75;">${txt('adresse', c.adresse, 'Ihre Anschrift eintragen')}</div>
+        ${duoKnoepfe(c)}`),
+  `    <div class="wg-bildbox" style="position:relative;overflow:hidden;min-height:300px;">
+      ${bild('bildHaupt', c.bildHaupt, 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;')}
+    </div>`))
+
+duNeu('du-abschluss', 'Abschluss-Aufruf', (c) => duoSekt('du-abschluss', c,
+  duoBild('bildHaupt', c.bildHaupt, 36),
+  duoText(`
+        <span class="wg-chip glas">${txt('tag', c.tag, 'Nächster Schritt')}</span>
+        <h2 style="font-size:clamp(24px,3.4vw,42px);font-weight:900;letter-spacing:-.03em;line-height:1.15;color:#fff;margin:16px 0 12px;">${txt('title', c.title, 'Ihre Aufforderung in einem Satz')}</h2>
+        <div style="font-size:15.5px;color:rgba(255,255,255,.78);line-height:1.7;">${txt('text', c.text, 'Ein kurzer Satz, der erklärt, was als Nächstes passiert.')}</div>
+        ${duoKnoepfe(c, true)}`, true)))
+
+export const DUO = { type: 'duo', label: 'Full Width Duo (50/50)', variants: DU }
+
 export const MERKMALE = { type: 'merkmale', label: 'Features / Merkmale', variants: FE }
 
-export const ZUSATZ4_BLOECKE = { merkmale: MERKMALE, fragen: FRAGEN }
+export const ZUSATZ4_BLOECKE = { merkmale: MERKMALE, fragen: FRAGEN, duo: DUO }
 
 export const ZUSATZ4_ADDABLE = [
   { type: 'merkmale', label: 'Features / Merkmale', fa: 'list-check', cat: 'Inhalt' },
   { type: 'fragen', label: 'FAQ / Häufige Fragen', fa: 'circle-question', cat: 'Inhalt' },
+  { type: 'duo', label: 'Full Width Duo (50/50)', fa: 'table-columns', cat: 'Inhalt' },
 ]
 
 export const ZUSATZ4_DEFAULTS = {
+  duo: {
+    tag: 'Über uns',
+    title: 'Ihre Überschrift für diesen Bereich',
+    title2: 'Zweite Überschrift',
+    text: LOREM.absatz,
+    text2: LOREM.absatz,
+    cta: 'Jetzt anfragen', ctaHref: 'kontakt.html',
+    cta2: 'Mehr erfahren', cta2Href: 'leistungen.html',
+    badge: 'Ihr Stichwort',
+    hinweis: 'Abmeldung jederzeit möglich.',
+    zahl: '0', zahlLabel: 'Ihre Kennzahl – hier eintragen',
+    wort: 'Ihr Wort', wortUnter: 'Kurze Erläuterung',
+    preis: 'Ihr Preis', preisHinweis: 'Hinweis eintragen',
+    zitat: 'Hier steht später ein echtes Zitat – im Editor anklicken und ersetzen.',
+    name: 'Vorname Nachname', rolle: 'Ihre Position', signatur: 'Ihr Name',
+    adresse: 'Ihre Anschrift eintragen',
+    bildTitel: 'Bildunterschrift', bildUnter: 'Kurze Erläuterung',
+    bildTitel2: 'Bildunterschrift', bildUnter2: 'Kurze Erläuterung',
+    punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4'],
+    chips: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4', 'Stichwort 5'],
+    items: [
+      { icon: 'bolt', titel: 'Ihr Merkmal', text: 'Beschreiben Sie hier dieses Merkmal kurz.' },
+      { icon: 'shield-halved', titel: 'Ihr Merkmal', text: 'Beschreiben Sie hier dieses Merkmal kurz.' },
+      { icon: 'gears', titel: 'Ihr Merkmal', text: 'Beschreiben Sie hier dieses Merkmal kurz.' },
+      { icon: 'gem', titel: 'Ihr Merkmal', text: 'Beschreiben Sie hier dieses Merkmal kurz.' },
+    ],
+    stats: [
+      { num: '0', label: 'Ihre Kennzahl' },
+      { num: '0', label: 'Ihre Kennzahl' },
+      { num: '0', label: 'Ihre Kennzahl' },
+    ],
+    balken: [
+      { label: 'Ihr Merkmal', wert: 0 },
+      { label: 'Ihr Merkmal', wert: 0 },
+      { label: 'Ihr Merkmal', wert: 0 },
+    ],
+    sozial: [{ icon: 'phone' }, { icon: 'envelope' }, { icon: 'location-dot' }],
+    zeiten: [
+      { tag: 'Montag – Freitag', zeit: 'Ihre Zeiten eintragen' },
+      { tag: 'Samstag', zeit: 'Ihre Zeiten eintragen' },
+      { tag: 'Sonntag', zeit: 'Ihre Zeiten eintragen' },
+    ],
+    kontakt: [
+      { icon: 'phone', label: 'Telefon', wert: 'Ihre Telefonnummer' },
+      { icon: 'envelope', label: 'E-Mail', wert: 'Ihre E-Mail-Adresse' },
+      { icon: 'location-dot', label: 'Adresse', wert: 'Ihre Anschrift' },
+    ],
+    fragen: [
+      { q: 'Hier steht eine häufige Frage?', a: 'Und hier die passende Antwort – im Editor anklicken und ersetzen.' },
+      { q: 'Hier steht eine häufige Frage?', a: 'Und hier die passende Antwort – im Editor anklicken und ersetzen.' },
+      { q: 'Hier steht eine häufige Frage?', a: 'Und hier die passende Antwort – im Editor anklicken und ersetzen.' },
+    ],
+    dateien: [
+      { icon: 'file-lines', titel: 'Ihr Dokument', unter: 'PDF', href: '#' },
+      { icon: 'file-lines', titel: 'Ihr Dokument', unter: 'PDF', href: '#' },
+    ],
+  },
   fragen: {
     tag: 'FAQ',
     title: 'Häufige Fragen',
