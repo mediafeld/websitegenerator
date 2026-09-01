@@ -5,7 +5,7 @@ import { Kopf, D, BASIS_CSS, CI } from '@/components/Kopf'
 import { Umschalter } from '@/components/Effekte'
 import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
-import { KAUF, MIETE, ZUSATZ, MIETE_BEDINGUNGEN, eur } from '@/lib/preise'
+import { KAUF, MIETE, ZUSATZ, SORGENFREI, MIETE_BEDINGUNGEN, eur } from '@/lib/preise'
 
 // Große, dünne Preiszahl mit hochgestellten Cent — wie im Angebots-Rechner-Stil
 function Preis({ betrag }) {
@@ -28,6 +28,9 @@ export default function PreiseSeite() {
         .tabelle td{padding:14px;border-bottom:1px solid ${D.linie};color:#41506B;vertical-align:top}
         .tabelle tr:last-child td{border-bottom:none}
         .tabelle tr:hover td{background:${D.blauZart}}
+        .sorglos{display:grid;grid-template-columns:1.25fr 1fr;gap:28px;align-items:start}
+        .sorglos-liste{grid-template-columns:1fr 1fr}
+        @media(max-width:820px){.sorglos{grid-template-columns:1fr}.sorglos-liste{grid-template-columns:1fr}}
       ` }} />
       <Kopf aktiv="Preise" />
 
@@ -57,7 +60,7 @@ export default function PreiseSeite() {
                 <h2 className="display" style={{ fontSize: 21, marginBottom: 4 }}>{p.name}</h2>
                 <p style={{ fontSize: 13, color: D.textMatt, marginBottom: 18 }}>{p.kurz}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span className="display" style={{ fontSize: 54, fontWeight: 100, color: '#FF5722' }}><Preis betrag={p.preis} /></span>
+                  <span className="display" style={{ fontSize: 54, fontWeight: 100, color: '#1B93D2' }}><Preis betrag={p.preis} /></span>
                   <span style={{ fontSize: 17, fontWeight: 700, color: D.textMatt }}>€ *</span>
                   <span style={{ fontSize: 12.5, color: D.grauHell, marginLeft: 4 }}>{modus === 'kaufen' ? 'einmalig' : '/ Monat'}</span>
                 </div>
@@ -75,6 +78,44 @@ export default function PreiseSeite() {
                 <button className={p.beliebt ? 'btnfest' : 'btnleer'} onClick={() => router.push(`/start?paket=${p.id}`)} style={{ width: '100%', padding: 12 }}>Mit {p.name} starten</button>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Keine-Sorgen-Paket — Startseite und Menü verlinken auf #sorgenfrei;
+          ohne diesen Abschnitt lief der Link ins Leere. */}
+      <section id="sorgenfrei" style={{ padding: '32px 0', scrollMarginTop: 90 }}>
+        <div className="wrap" style={{ maxWidth: 1500 }}>
+          <div className="karte sorglos" style={{ padding: '30px 28px', borderColor: D.blau, borderWidth: 2 }}>
+            <div>
+              <span className="display" style={{ background: D.blau, color: '#fff', fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', padding: '4px 11px', borderRadius: 99 }}>Rundum-sorglos</span>
+              <h2 className="display" style={{ fontSize: 26, margin: '14px 0 6px' }}>{SORGENFREI.name}</h2>
+              <p style={{ fontSize: 14.5, color: D.textMatt, lineHeight: 1.7, marginBottom: 18 }}>{SORGENFREI.kurz}</p>
+              <ul className="sorglos-liste" style={{ listStyle: 'none', display: 'grid', gap: 9 }}>
+                {SORGENFREI.punkte.map(t => (
+                  <li key={t} style={{ display: 'flex', gap: 9, fontSize: 13.8, color: D.text, lineHeight: 1.5 }}>
+                    <span aria-hidden="true" style={{ color: D.blau, fontWeight: 800 }}>&#10003;</span>{t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={{ background: D.grau, borderRadius: 14, padding: '24px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span className="display" style={{ fontSize: 46, fontWeight: 100, color: D.blau }}>{eur(SORGENFREI.preis)}</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: D.textMatt }}>&euro;</span>
+                <span style={{ fontSize: 12.5, color: D.grauHell }}>/ Monat</span>
+              </div>
+              <p style={{ fontSize: 11.5, color: D.textMatt, margin: '6px 0 16px' }}>
+                inkl. MwSt. &middot; oder {eur(SORGENFREI.jahr)} &euro; im Jahr &middot; 12 Monate Laufzeit
+              </p>
+              <p style={{ fontSize: 13.5, color: D.textMatt, lineHeight: 1.65, marginBottom: 16 }}>
+                Hier übernehmen wir laufend Arbeit für dich — deshalb besprechen wir das Paket
+                kurz persönlich und richten danach alles ein.
+              </p>
+              <a href="/kontakt" className="btnfest" style={{ width: '100%', justifyContent: 'center' }}>
+                <i className="fa-solid fa-headset" aria-hidden="true" />Beratung anfragen
+              </a>
+            </div>
           </div>
         </div>
       </section>

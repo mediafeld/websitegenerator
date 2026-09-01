@@ -80,17 +80,17 @@ a{color:inherit;text-decoration:none}
 /* ── Hervorhebung: fett + ein einzelner handgezeichneter Schwung, zieht sich einmal ein ── */
 .vschrift{position:relative;display:inline-block;color:${CI.text};font-weight:800;padding-bottom:9px}
 .vschrift:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23FF5722' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%231B93D2' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
 .reveal.an .vschrift:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
 .vschrift-hell{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:9px}
 .vschrift-hell:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23FF5722' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%231B93D2' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
 .reveal.an .vschrift-hell:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
 .vschrift-bewegt{position:relative;display:inline-block;color:#fff;font-weight:800;padding-bottom:9px}
 .vschrift-bewegt:after{content:'';position:absolute;left:-2px;right:-2px;bottom:0;height:11px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%23FF5722' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M4,15.5 Q100,2 196,11' stroke='%231B93D2' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat;clip-path:inset(0 100% 0 0)}
 .reveal.an .vschrift-bewegt:after{animation:strichzeichnen .95s .35s cubic-bezier(.25,.7,.3,1) forwards}
 @keyframes strichzeichnen{to{clip-path:inset(0 0 0 0)}}
@@ -162,7 +162,7 @@ a{color:inherit;text-decoration:none}
 
 /* ── Einleitungs-Textblock: Auftakt auf Unterseiten (auf allen Seiten nutzbar) ── */
 .einleitung{position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;padding:64px 0 56px}
-.eink-punkt{position:absolute;top:0;left:0;width:13px;height:13px;border:1.5px solid #FF5722;border-radius:50%}
+.eink-punkt{position:absolute;top:0;left:0;width:13px;height:13px;border:1.5px solid #1B93D2;border-radius:50%}
 .eink-kopf{padding-top:30px}
 .einleitung .lauf{padding-top:30px}
 @media(max-width:900px){.einleitung{grid-template-columns:1fr;gap:16px;padding:44px 0 36px}.eink-kopf{padding-top:20px}.einleitung .lauf{padding-top:0}}

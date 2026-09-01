@@ -5,10 +5,11 @@ import { supabase, supabaseBereit, fehlerText } from '@/lib/supabaseClient'
 import { KontoLayout } from '@/components/KontoLayout'
 import { D } from '@/components/Kopf'
 import { MIETE, KAUF, eur } from '@/lib/preise'
-import { produktStand, UMFANG_NAME, UMFANG_KURZ, GROESSE } from '@/lib/produkt'
+import { produktStand, istBezahlt, UMFANG_NAME, UMFANG_KURZ, GROESSE } from '@/lib/produkt'
 import { starteCheckout } from '@/lib/checkout'
 import { aktuellerNutzer, profilLuecken, projektLaden, lokalenStandUebernehmen } from '@/lib/projekte'
 import { websiteAlsZip } from '@/lib/exportZip'
+import { useWarenkorb } from '@/lib/warenkorb'
 
 // Spalten, die für die Produkt-Anzeige gebraucht werden. bezahlt_am kommt aus
 // migration_v39 — ohne die Migration fällt produktStand() automatisch auf den
@@ -58,6 +59,7 @@ function DashboardInnen() {
   const [reWerte, setReWerte] = useState({})           // Formularwerte der re_*-Felder
   const [reStatus, setReStatus] = useState('')         // '', 'laedt', 'speichert', 'ok'
   const [reFehler, setReFehler] = useState('')        // Fehler direkt im Formular anzeigen
+  const { setzePaket, artikel } = useWarenkorb()      // Warenkorb synchron halten
 
   const laden = useCallback(async () => {
     if (!supabaseBereit) return
@@ -84,6 +86,16 @@ function DashboardInnen() {
 
   useEffect(() => { laden() }, [laden])
 
+  // Warenkorb aufräumen: ein Paket für eine bereits bezahlte oder gelöschte
+  // Website hat dort nichts mehr verloren — sonst steht dauerhaft ein altes
+  // Produkt im Korb, das nicht mehr zum Konto passt.
+  useEffect(() => {
+    if (!projekte.length && !artikel.length) return
+    const veraltet = artikel.some(a => String(a.id).startsWith('paket-') && a.projektId
+      && !projekte.some(p => p.id === a.projektId && !istBezahlt(p)))
+    if (veraltet) setzePaket(null)
+  }, [projekte, artikel, setzePaket])
+
   // Tab aus der Adresse übernehmen (?website=…) — praktisch für Links aus E-Mails
   useEffect(() => {
     const w = params.get('website')
@@ -92,6 +104,17 @@ function DashboardInnen() {
 
   async function buchen(projekt, paketId, art) {
     setBucht(projekt.id); setFehler('')
+    // Warenkorb mitziehen, damit dort nie ein anderes Produkt steht als das,
+    // was gerade bezahlt wird.
+    const paket = (art === 'mieten' ? MIETE : KAUF).find(p => p.id === paketId)
+    if (paket) setzePaket({
+      id: 'paket-' + paket.id,
+      titel: `Website ${art === 'mieten' ? 'mieten' : 'kaufen'} — ${paket.name}`,
+      unter: paket.kurz, preis: paket.preis, fest: true,
+      art: art === 'mieten' ? 'monatlich' : 'einmalig',
+      projektId: projekt.id, website: projekt.name,
+      domain: art === 'mieten' ? (projekt.domain || '') : '',
+    })
     const { error } = await starteCheckout({
       paketId, modus: art, projektId: projekt.id,
       domain: art === 'mieten' ? projekt.domain : '',
@@ -293,6 +316,13 @@ function DashboardInnen() {
                         style={{ background: D.dunkel, color: '#fff' }}>
                         <i className="fa-solid fa-pen" aria-hidden="true" />Bearbeiten
                       </button>
+                      {/* Vorschau in eigenem Tab — mit allen Unterseiten zum Durchklicken */}
+                      <a className="wgakt" href={`/vorschau?projekt=${aktiv.id}`} target="_blank" rel="noreferrer"
+                        title="Website ansehen wie live — öffnet in einem neuen Tab"
+                        style={{ background: '#fff', color: D.dunkel, border: `1px solid ${D.hellLinie}` }}>
+                        <i className="fa-solid fa-eye" aria-hidden="true" />Vorschau
+                        <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 10, opacity: .55 }} aria-hidden="true" />
+                      </a>
 
                       {s.aktion === 'kaufen' && (
                         <button className="wgakt" onClick={() => setPaketOffen(paketOffen === aktiv.id ? null : aktiv.id)}
@@ -316,11 +346,21 @@ function DashboardInnen() {
                         </button>
                       )}
                       {s.aktion === 'ansehen' && (
-                        aktiv.domain
-                          ? <a className="wgakt" href={`https://${String(aktiv.domain).replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" style={{ background: s.info.farbe, color: '#fff' }}>
-                              <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />Website ansehen
-                            </a>
-                          : <span style={{ fontSize: 13, color: D.hellGrau }}>Domain wird eingerichtet — wir melden uns.</span>
+                        <>
+                          {aktiv.domain
+                            ? <a className="wgakt" href={`https://${String(aktiv.domain).replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" style={{ background: s.info.farbe, color: '#fff' }}>
+                                <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />Website ansehen
+                              </a>
+                            : <span style={{ fontSize: 13, color: D.hellGrau }}>Domain wird eingerichtet — wir melden uns.</span>}
+                          {/* Auch bei Miete: die Dateien gehören dem Kunden —
+                              genau so steht es in der Preistabelle. */}
+                          <button className="wgakt" disabled={laedtZip === aktiv.id} onClick={() => zipLaden(aktiv)}
+                            title="Alle Seiten als HTML-Dateien herunterladen"
+                            style={{ background: '#fff', color: D.dunkel, border: `1px solid ${D.hellLinie}`, opacity: laedtZip === aktiv.id ? .7 : 1 }}>
+                            <i className={`fa-solid ${laedtZip === aktiv.id ? 'fa-spinner fa-spin' : 'fa-file-zipper'}`} aria-hidden="true" />
+                            {laedtZip === aktiv.id ? 'Wird gepackt …' : 'Dateien sichern (ZIP)'}
+                          </button>
+                        </>
                       )}
                       {s.aktion === 'waehlen' && (
                         <a className="wgakt" href={`/start?projekt=${aktiv.id}`} style={{ background: D.blau, color: '#fff' }}>

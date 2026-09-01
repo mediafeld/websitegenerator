@@ -8,6 +8,7 @@ import { projektLaden } from '@/lib/projekte'
 import { websiteAlsZip } from '@/lib/exportZip'
 import { Kopf, BASIS_CSS, D } from '@/components/Kopf'
 import { Brotkrumen } from '@/components/Brotkrumen'
+import { useWarenkorb } from '@/lib/warenkorb'
 
 function DankeInhalt() {
   const router = useRouter()
@@ -16,11 +17,15 @@ function DankeInhalt() {
   const [projekt, setProjekt] = useState(null)
   const [laedt, setLaedt] = useState(false)
   const [meldung, setMeldung] = useState('')
+  const { setzePaket } = useWarenkorb()
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setModus(p.get('modus') === 'mieten' ? 'mieten' : 'kaufen')
     const id = p.get('projekt')
+    // Bezahltes Paket aus dem Warenkorb nehmen — sonst steht es dort weiter,
+    // obwohl die Website längst gekauft/gebucht ist.
+    try { setzePaket(null) } catch {}
     if (id) {
       setProjektId(id)
       projektLaden(id).then(pr => {
@@ -51,8 +56,8 @@ function DankeInhalt() {
       </div>
       <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '50px 18px', fontFamily: '"Inter Tight",sans-serif' }}>
         <div style={{ maxWidth: 560, textAlign: 'center' }}>
-          <div style={{ width: 84, height: 84, borderRadius: '50%', background: '#16a34a14', border: '2px solid #16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 22px' }}>
-            <i className="fa-solid fa-check" style={{ fontSize: 34, color: '#16a34a' }} aria-hidden="true" />
+          <div style={{ width: 84, height: 84, borderRadius: '50%', background: '#1F9D5514', border: '2px solid #1F9D55', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 22px' }}>
+            <i className="fa-solid fa-check" style={{ fontSize: 34, color: '#1F9D55' }} aria-hidden="true" />
           </div>
           <h1 style={{ fontSize: 'clamp(26px,4vw,38px)', fontWeight: 300, letterSpacing: '-0.02em', color: '#0f172a', margin: '0 0 10px' }}>Vielen Dank – <b style={{ fontWeight: 800 }}>Zahlung eingegangen!</b></h1>
           {kauf ? (
@@ -60,7 +65,7 @@ function DankeInhalt() {
               <p style={{ fontSize: 16, color: '#64748b', lineHeight: 1.7, marginBottom: 26 }}>
                 Deine Website gehört jetzt dir. Lade sie als ZIP herunter – darin liegen alle Seiten als fertige HTML-Dateien, das Kontaktformular-Skript und eine kurze Anleitung fürs Hochladen bei deinem Hoster.
               </p>
-              <button onClick={herunterladen} disabled={laedt} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 12, padding: '16px 34px', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: laedt ? .7 : 1 }}>
+              <button onClick={herunterladen} disabled={laedt} style={{ background: '#1F9D55', color: '#fff', border: 'none', borderRadius: 12, padding: '16px 34px', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: laedt ? .7 : 1 }}>
                 <i className={`fa-solid fa-${laedt ? 'spinner fa-spin' : 'file-zipper'}`} style={{ marginRight: 9 }} aria-hidden="true" />{laedt ? 'Wird gepackt…' : 'Website als ZIP herunterladen'}
               </button>
               <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 12 }}>Der Download steht dir jederzeit auch im Kundenkonto zur Verfügung.</div>

@@ -2134,6 +2134,13 @@ export default function EditorPage() {
           <i className={`fa-solid fa-${bewegungStopp ? 'play' : 'pause'}`} />
         </button>
         <button onClick={() => { const n = !vorschau; setVorschau(n); if (n) { setSelected(null); setContSel(null) } }} title={vorschau ? 'Zurück zum Bearbeiten' : 'Vorschau – Seite ohne Baukasten-Elemente ansehen'} style={{ height: 30, border: `1px solid ${vorschau ? '#16a34a' : '#e5e5e5'}`, borderRadius: 7, background: vorschau ? '#16a34a14' : '#fff', cursor: 'pointer', fontSize: 12, color: vorschau ? '#16a34a' : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className={`fa-solid fa-${vorschau ? 'pen' : 'eye'}`} />{vorschau ? 'Bearbeiten' : 'Vorschau'}</button>
+        {projektIdRef.current && (
+          <a href={`/vorschau?projekt=${projektIdRef.current}&seite=${encodeURIComponent(activePage || '')}`} target="_blank" rel="noreferrer"
+            title="Vorschau in neuem Tab – dort durch alle Unterseiten klicken"
+            style={{ height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', fontSize: 12, color: '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700, textDecoration: 'none' }}>
+            <i className="fa-solid fa-arrow-up-right-from-square" />Neuer Tab
+          </a>
+        )}
         <button onClick={() => setNavOffen(o => !o)} title="Navigator – Struktur der Seite" style={{ height: 30, border: `1px solid ${navOffen ? PINK : '#e5e5e5'}`, borderRadius: 7, background: navOffen ? PINK + '14' : '#fff', cursor: 'pointer', fontSize: 12, color: navOffen ? PINK : '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-layer-group" />Navigator</button>
         <button onClick={() => setSeoPanel(true)} title="Google & Teilen: Titel, Beschreibung, Favicon" style={{ height: 30, border: '1px solid #e5e5e5', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, color: '#475569', padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}><i className="fa-solid fa-magnifying-glass" />SEO</button>
         {projektIdRef.current && !adminModusRef.current && (
@@ -2182,7 +2189,13 @@ export default function EditorPage() {
             <button disabled={kauft} onClick={async () => {
               if (!nutzer) { router.push('/login'); return }
               // Warenkorb synchron halten …
-              setzePaket({ id: 'paket-' + p.id, titel: `Website ${art === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`, unter: p.kurz, preis: p.preis, art: art === 'mieten' ? 'monatlich' : 'einmalig' })
+              setzePaket({
+                id: 'paket-' + p.id, titel: `Website ${art === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`,
+                unter: p.kurz, preis: p.preis, art: art === 'mieten' ? 'monatlich' : 'einmalig', fest: true,
+                projektId: projektIdRef.current || null,
+                website: fd.firmenname || blocks.find(b => b.type === 'nav')?.content?.firmenname || 'Meine Website',
+                domain: art === 'mieten' ? (fd.domain || '') : '',
+              })
               // … und direkt zu Stripe weiterleiten
               setKauft(true)
               const { error } = await starteCheckout({ paketId: p.id, modus: art, projektId: projektIdRef.current, domain: art === 'mieten' ? fd.domain : '' })
@@ -2320,9 +2333,24 @@ export default function EditorPage() {
             {tab === 'pages' && (
               <>
                 <div style={{ fontSize: 9, color: '#bbb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 4px', marginBottom: 4 }}>Seiten</div>
-                {pageList.map(pg => (
-                  <div key={pg} onClick={() => setActivePage(pg)} style={{ padding: '10px 12px', border: `1px solid ${activePage === pg ? primary : '#e5e5e5'}`, borderRadius: 8, marginBottom: 4, cursor: 'pointer', background: activePage === pg ? `${primary}12` : '#fff', fontSize: 12, fontWeight: activePage === pg ? 600 : 400 }}>{pg}</div>
-                ))}
+                {pageList.map(pg => {
+                  const recht = pg === 'Impressum' || pg === 'Datenschutz'
+                  return (
+                    <div key={pg} onClick={() => setActivePage(pg)} style={{ padding: '10px 12px', border: `1px solid ${activePage === pg ? primary : '#e5e5e5'}`, borderRadius: 8, marginBottom: 4, cursor: 'pointer', background: activePage === pg ? `${primary}12` : '#fff', fontSize: 12, fontWeight: activePage === pg ? 600 : 400, display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <i className={`fa-solid ${recht ? 'fa-scale-balanced' : 'fa-file'}`} style={{ fontSize: 11, color: '#94a3b8' }} />{pg}
+                    </div>
+                  )
+                })}
+                {/* Rechtsseiten entstehen aus den Texten im Kundenkonto —
+                    ohne Text gibt es weder Seite noch Link im Fußbereich. */}
+                {!pageList.some(p => p === 'Impressum' || p === 'Datenschutz') && (
+                  <div style={{ marginTop: 10, padding: '10px 11px', border: '1px dashed #cbd5e1', borderRadius: 8, background: '#fafbff', fontSize: 10.5, color: '#64748b', lineHeight: 1.6 }}>
+                    <i className="fa-solid fa-scale-balanced" style={{ marginRight: 6, color: '#94a3b8' }} />
+                    Impressum und Datenschutz fehlen noch. Im Kundenkonto unter{' '}
+                    <a href="/rechtstexte" target="_blank" rel="noreferrer" style={{ color: primary, fontWeight: 700 }}>Rechtstexte</a>{' '}
+                    anlegen — sie erscheinen dann hier als Unterseiten und im Fußbereich.
+                  </div>
+                )}
               </>
             )}
           </div>

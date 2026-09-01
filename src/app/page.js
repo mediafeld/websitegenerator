@@ -877,7 +877,7 @@ const CSS = `
 .preisblock{background:${CI.grau};border:1px solid ${CI.linie};border-radius:14px;padding:22px;margin-bottom:22px}
 .preis-top .preisblock{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
 .preiszeile{display:flex;align-items:baseline;gap:7px;font-size:15px;color:${CI.textMatt}}
-.preiszeile b{font-size:clamp(50px,5.6vw,64px);font-weight:100;letter-spacing:-.03em;color:#FF5722;line-height:1}
+.preiszeile b{font-size:clamp(50px,5.6vw,64px);font-weight:100;letter-spacing:-.03em;color:#1B93D2;line-height:1}
 .preiszeile b .dez{font-size:0.42em;font-weight:300;letter-spacing:-.01em}
 .preiszeile.hell b{color:#FF8A57}
 .preiszeile.hell{color:#A9C2D2;justify-content:center}

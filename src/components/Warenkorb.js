@@ -49,12 +49,25 @@ export function WarenkorbPanel() {
 
   // Echte Stripe-Kasse: Hauptpaket wird bezahlt (Miete = Abo, Kauf = einmalig).
   // Stripe kann Abo + Einmalzahlung nicht mischen → Zusatzposten laufen separat.
+  //
+  // WICHTIG: Ohne Website-ID kann die Zahlung später keiner Website zugeordnet
+  // werden — der Stripe-Webhook braucht projekt_id. Vorher ging es hier OHNE
+  // ID zur Kasse: die Zahlung lief ins Leere. Deshalb jetzt: erst die Website
+  // anlegen, bezahlt wird aus dem Kundenkonto heraus.
   const zurKasse = async () => {
     const paket = artikel.find(a => String(a.id).startsWith('paket-'))
     if (!paket) { window.location.href = anfrageLink(); return }
+    if (!paket.projektId) {
+      alert('Für die Bezahlung fehlt noch die Website selbst.\n\nLege sie zuerst im Baukasten an — danach buchst oder kaufst du sie im Kundenkonto mit einem Klick.')
+      window.location.href = '/start'
+      return
+    }
     const pid = String(paket.id).replace('paket-', '')
     const modus = MIETE_IDS.has(pid) ? 'mieten' : 'kaufen'
-    const { error } = await starteCheckout({ paketId: pid, modus })
+    const { error } = await starteCheckout({
+      paketId: pid, modus, projektId: paket.projektId,
+      domain: modus === 'mieten' ? (paket.domain || '') : '',
+    })
     if (error) alert(error)
   }
   const hatPaket = artikel.some(a => String(a.id).startsWith('paket-'))
@@ -82,6 +95,7 @@ export function WarenkorbPanel() {
                   <div className="wk-artikel-info">
                     <b>{a.titel}</b>
                     {a.unter && <span>{a.unter}</span>}
+                    {a.website && <span><i className="fa-solid fa-globe" style={{ marginRight: 5 }} aria-hidden="true" />für „{a.website}"</span>}
                     <em>{a.gratis ? 'inklusive' : a.art === 'monatlich' ? 'monatlich' : 'einmalig'}</em>
                     {!!(a.punkte?.length) && (
                       <ul className="wk-punkte">
@@ -129,7 +143,7 @@ export function WarenkorbPanel() {
 
 export const WARENKORB_CSS = `
 .wk-knopf{position:relative;background:none;border:none;cursor:pointer;color:#fff;font-size:16px;padding:8px;display:flex;align-items:center}
-.wk-zahl{position:absolute;top:0;right:0;background:#FF5722;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;
+.wk-zahl{position:absolute;top:0;right:0;background:#1B93D2;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;
   border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 .wk-overlay{position:fixed;inset:0;background:rgba(10,24,36,.5);z-index:2147483000;animation:wkoverlayein .2s ease}
 @keyframes wkoverlayein{from{opacity:0}to{opacity:1}}
@@ -144,7 +158,7 @@ export const WARENKORB_CSS = `
   letter-spacing:.03em;transition:transform .18s,box-shadow .18s}
 .wk-fab:hover{transform:translateY(1px);box-shadow:0 12px 28px rgba(10,24,36,.4)}
 .wk-fab-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
-.wk-fab-zahl{position:absolute;top:-8px;right:-9px;background:#FF5722;color:#fff;font-size:10px;font-weight:800;
+.wk-fab-zahl{position:absolute;top:-8px;right:-9px;background:#1B93D2;color:#fff;font-size:10px;font-weight:800;
   min-width:17px;height:17px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 @media(max-width:600px){.wk-fab-txt{display:none}.wk-fab{padding:10px;right:12px;top:9px}}
 @keyframes wkpanelein{from{transform:translateX(100%)}to{transform:translateX(0)}}

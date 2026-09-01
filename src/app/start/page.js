@@ -314,6 +314,11 @@ function WizardInnen() {
       art: zahlungsart === 'mieten' ? 'monatlich' : 'einmalig',
       fest: true,
       punkte: paketLeistungen(size, zahlungsart === 'mieten'),
+      // Zur Website gehörig — ohne diese ID kann die Kasse die Zahlung später
+      // keiner Website zuordnen (der Stripe-Webhook braucht sie).
+      projektId: neuAufbau?.id || null,
+      website: fd.firmenname || 'Neue Website',
+      domain: zahlungsart === 'mieten' ? (fd.domain || '') : '',
     })
     if (oeffnen) setOffen(true)
   }
