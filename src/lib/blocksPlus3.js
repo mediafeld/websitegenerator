@@ -1016,16 +1016,428 @@ sbNeu('sb-bild-abschluss', 'Schritte + Bild-Karte', (c) => sbSekt('sb-bild-absch
 
 export const ABLAUF = { type: 'ablauf', label: 'Step Box / Abläufe', variants: SB }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ICON-BOXEN (30 Varianten)
+// Vorteils-/Merkmal-Kacheln mit Icon, Titel, Text — vom schlichten Raster
+// bis zu Glas-Karten. Icons sind anklickbar (Icon-Auswahl), jede Box ist
+// über das pinke Panel klon-/lösch-/verschiebbar (Liste `items`).
+// ═══════════════════════════════════════════════════════════════════════════
+
+const D_IB_TEXT = 'Beschreiben Sie hier diesen Vorteil in ein bis zwei Sätzen.'
+const D_IB3 = [
+  { icon: 'bolt', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+  { icon: 'shield-halved', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+  { icon: 'handshake', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+]
+const D_IB4 = [
+  { icon: 'bolt', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+  { icon: 'shield-halved', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+  { icon: 'handshake', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+  { icon: 'gem', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+]
+const D_IB6 = D_IB4.concat([
+  { icon: 'clock', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+  { icon: 'star', titel: 'Ihr Vorteil', text: D_IB_TEXT },
+])
+
+const ibKopf = (c, dTitle = 'Warum Kunden sich für uns entscheiden') => `
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto clamp(28px,4.5vw,54px);">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'Vorteile')}</span>
+      <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, dTitle)}</h2>
+      <span class="wg-strichlinie mitte"></span>
+      ${c.subtitle ? `<div class="wg-lead">${ed('subtitle', c.subtitle)}</div>` : ''}
+    </div>`
+
+const ibItems = (c, n = 4) => misch(c.items, n === 3 ? D_IB3 : (n === 6 ? D_IB6 : D_IB4))
+
+const IB = []
+const ibNeu = (id, name, render) => IB.push({ id, name, render })
+const ibSekt = (id, c, innen, fallback = 'background:#fff;') =>
+  `<section data-block="iconboxen" data-variant="${id}" class="wg-sekt" style="${bg(c, fallback)}">
+  <div class="wg-wrap">
+${innen}
+  </div>
+</section>`
+
+// Bausteine für Wiederverwendung
+const ibIconKreis = (it, i, gr = 62, extra = '') =>
+  `<span style="width:${gr}px;height:${gr}px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:${Math.round(gr * .38)}px;${extra}">${icon(`items.${i}.icon`, it.icon)}</span>`
+
+// 1 — Drei Spalten zentriert
+ibNeu('ib-drei', 'Drei Spalten', (c) => ibSekt('ib-drei', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,3vw,36px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        ${ibIconKreis(it, i)}
+        <h3 style="font-size:18px;font-weight:800;margin:16px 0 8px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;max-width:300px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 2 — Vier Spalten kompakt
+ibNeu('ib-vier', 'Vier Spalten', (c) => ibSekt('ib-vier', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,28px);">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        ${ibIconKreis(it, i, 54)}
+        <h3 style="font-size:15.5px;font-weight:800;margin:13px 0 6px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 3 — Weiße Karten mit Schatten
+ibNeu('ib-karten', 'Karten mit Schatten', (c) => ibSekt('ib-karten', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border-radius:18px;padding:clamp(24px,3.4vw,36px);box-shadow:0 18px 50px rgba(15,23,42,.09);">
+        <span style="width:52px;height:52px;border-radius:14px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:20px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:15px 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 4 — Icon links, Text rechts (2 Spalten)
+ibNeu('ib-links', 'Icon links', (c) => ibSekt('ib-links', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.8vw,34px);max-width:960px;margin:0 auto;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="display:flex;gap:16px;align-items:flex-start;">
+        <span style="width:46px;height:46px;border-radius:12px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <div>
+          <h3 style="font-size:16px;font-weight:800;margin:0 0 5px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`))
+
+// 5 — Outline-Kreise
+ibNeu('ib-outline', 'Outline-Kreise', (c) => ibSekt('ib-outline', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,28px);">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="width:64px;height:64px;border-radius:50%;border:2.5px solid var(--p600);color:var(--p600);display:inline-flex;align-items:center;justify-content:center;font-size:22px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:15.5px;font-weight:800;margin:13px 0 6px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 6 — Eckige Icon-Kacheln
+ibNeu('ib-quadrate', 'Eckige Kacheln', (c) => ibSekt('ib-quadrate', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:12px;padding:clamp(22px,3vw,32px);">
+        <span style="width:50px;height:50px;border-radius:10px;background:var(--p900);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:19px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:15px 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 7 — Dunkle Fläche
+ibNeu('ib-dunkel', 'Dunkle Fläche', (c) => `
+<section data-block="iconboxen" data-variant="ib-dunkel" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:linear-gradient(160deg,var(--p900),#0d1b2a 75%);')}">
+  <div class="wg-wrap">
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto clamp(28px,4.5vw,54px);color:#fff;">
+      <span class="wg-chip glas">${txt('tag', c.tag, 'Vorteile')}</span>
+      <h2 class="wg-t2" style="color:#fff;margin-top:14px;">${txt('title', c.title, 'Warum Kunden sich für uns entscheiden')}</h2>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="text-align:center;color:#fff;">
+        <span style="width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.1);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:21px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:15.5px;font-weight:800;margin:13px 0 6px;color:#fff;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13px;color:rgba(255,255,255,.72);line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+</section>`)
+
+// 8 — Dunkle Einzelkarten
+ibNeu('ib-dunkle-karten', 'Dunkle Karten', (c) => ibSekt('ib-dunkle-karten', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-dunkelzone wg-karte-hover wg-reveal" style="background:var(--p900);border-radius:18px;padding:clamp(24px,3.4vw,36px);color:#fff;">
+        <span style="width:50px;height:50px;border-radius:13px;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:19px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:15px 0 7px;color:#fff;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 9 — Linker Akzentbalken
+ibNeu('ib-akzentrand', 'Akzentbalken links', (c) => ibSekt('ib-akzentrand', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(14px,2.4vw,26px);max-width:900px;margin:0 auto;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-karte wg-reveal" style="background:var(--p50);border-left:5px solid var(--accent);border-radius:0 14px 14px 0;padding:20px 22px;display:flex;gap:15px;align-items:flex-start;">
+        <span style="color:var(--p700);font-size:22px;margin-top:2px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <div>
+          <h3 style="font-size:15.5px;font-weight:800;margin:0 0 4px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`))
+
+// 10 — Karten mit Oberlinie
+ibNeu('ib-oberlinie', 'Karten mit Oberlinie', (c) => ibSekt('ib-oberlinie', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-top:4px solid var(--p600);border-radius:12px;padding:clamp(18px,2.6vw,26px);">
+        <span style="color:var(--p600);font-size:24px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:15.5px;font-weight:800;margin:12px 0 6px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 11 — Erste Karte hervorgehoben
+ibNeu('ib-hervorgehoben', 'Eine hervorgehoben', (c) => ibSekt('ib-hervorgehoben', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal${i === 0 ? ' wg-dunkelzone' : ''}" style="border-radius:18px;padding:clamp(24px,3.4vw,36px);${i === 0 ? 'background:var(--p700);color:#fff;box-shadow:0 20px 55px rgba(15,23,42,.25);' : 'background:#fff;border:1px solid var(--p100);'}">
+        <span style="width:52px;height:52px;border-radius:50%;background:${i === 0 ? 'rgba(255,255,255,.16)' : 'var(--p50)'};color:${i === 0 ? '#fff' : 'var(--p700)'};display:inline-flex;align-items:center;justify-content:center;font-size:20px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:15px 0 7px;${i === 0 ? 'color:#fff;' : ''}">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:14px;line-height:1.7;${i === 0 ? 'color:rgba(255,255,255,.78);' : 'color:#64748b;'}">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 12 — Minimal (Icon + Titel)
+ibNeu('ib-minimal', 'Minimal', (c) => ibSekt('ib-minimal', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,30px);max-width:920px;margin:0 auto;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="color:var(--p600);font-size:30px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:14.5px;font-weight:800;margin:10px 0 0;">${ed(`items.${i}.titel`, it.titel)}</h3>
+      </div>`).join('')}
+    </div>`))
+
+// 13 — Zwei große Boxen
+ibNeu('ib-zwei-gross', 'Zwei große Boxen', (c) => ibSekt('ib-zwei-gross', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,3vw,34px);">
+      ${ibItems(c, 3).slice(0, 2).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:var(--p50);border-radius:22px;padding:clamp(28px,4vw,48px);">
+        ${ibIconKreis(it, i, 66)}
+        <h3 style="font-size:clamp(19px,2.4vw,24px);font-weight:800;margin:18px 0 9px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:15px;color:#64748b;line-height:1.75;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 14 — Große Icons, viel Weißraum
+ibNeu('ib-luftig', 'Groß & luftig', (c) => ibSekt('ib-luftig', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(24px,4vw,60px);max-width:1000px;margin:0 auto;">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="color:var(--accent);font-size:44px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:18px;font-weight:800;margin:18px 0 9px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:14.5px;color:#64748b;line-height:1.75;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 15 — Icon + Nummer
+ibNeu('ib-nummer', 'Mit Nummern', (c) => ibSekt('ib-nummer', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-karte wg-reveal" style="position:relative;background:#fff;border:1px solid var(--p100);border-radius:14px;padding:clamp(18px,2.6vw,26px);overflow:hidden;">
+        <span style="position:absolute;top:-10px;right:-2px;font-size:58px;font-weight:900;color:var(--p50);line-height:1;">${String(i + 1).padStart(2, '0')}</span>
+        <span style="position:relative;color:var(--p600);font-size:24px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="position:relative;font-size:15.5px;font-weight:800;margin:12px 0 6px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="position:relative;font-size:13px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 16 — Pillen-Zeilen
+ibNeu('ib-pillen', 'Pillen-Zeilen', (c) => ibSekt('ib-pillen', c, `${ibKopf(c)}
+    <div style="max-width:640px;margin:0 auto;display:grid;gap:12px;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="display:flex;gap:15px;align-items:center;background:#fff;border:1px solid var(--p100);border-radius:99px;padding:12px 20px 12px 12px;">
+        <span style="width:44px;height:44px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <div style="flex:1;">
+          <h3 style="font-size:15px;font-weight:800;margin:0;display:inline;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <span style="font-size:13px;color:#64748b;"> — ${ed(`items.${i}.text`, it.text)}</span>
+        </div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 17 — Verlaufs-Icons
+ibNeu('ib-verlauf', 'Verlaufs-Icons', (c) => ibSekt('ib-verlauf', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="width:66px;height:66px;border-radius:20px;background:linear-gradient(135deg,var(--p500),var(--p800));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 14px 34px rgba(15,23,42,.2);transform:rotate(-4deg);">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:17px;font-weight:800;margin:16px 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.7;max-width:300px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 18 — Schwebende Icons über Karte
+ibNeu('ib-schwebend', 'Schwebende Icons', (c) => ibSekt('ib-schwebend', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);padding-top:26px;">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:44px 24px 26px;text-align:center;position:relative;margin-top:26px;">
+        <span style="position:absolute;top:-26px;left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 12px 30px rgba(15,23,42,.22);border:4px solid #fff;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16.5px;font-weight:800;margin:0 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 19 — Treppen-Versatz
+ibNeu('ib-versetzt', 'Treppen-Versatz', (c) => ibSekt('ib-versetzt', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);align-items:start;">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border-radius:18px;padding:clamp(22px,3vw,32px);box-shadow:0 16px 44px rgba(15,23,42,.09);margin-top:${i * 24}px;">
+        <span style="width:50px;height:50px;border-radius:14px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:19px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16.5px;font-weight:800;margin:14px 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 20 — Vertikale Trennlinien
+ibNeu('ib-trennlinien', 'Mit Trennlinien', (c) => {
+  const liste = ibItems(c, 3)
+  return ibSekt('ib-trennlinien', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:${liste.map(() => '1fr').join(' auto ')};gap:clamp(16px,2.8vw,40px);align-items:start;">
+      ${liste.map((it, i) => `<div class="wg-reveal" style="text-align:center;">
+        <span style="color:var(--p600);font-size:28px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16px;font-weight:800;margin:12px 0 6px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>${i < liste.length - 1 ? '<div class="wg-hide-mob" style="width:1px;background:var(--p100);align-self:stretch;"></div>' : ''}`).join('')}
+    </div>`)
+})
+
+// 21 — Intro links + Icon-Raster rechts
+ibNeu('ib-intro-raster', 'Intro + Raster', (c) => ibSekt('ib-intro-raster', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.25fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Vorteile')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Warum Kunden sich für uns entscheiden')}</h2>
+        <span class="wg-strichlinie"></span>
+        <div class="wg-lead">${txt('text', c.text, LOREM.satz)}</div>
+        <a href="kontakt.html" class="wg-btn" style="margin-top:22px;">${txt('cta', c.cta, 'Kontakt aufnehmen')}</a>
+      </div>
+      <div class="wg-reveal re" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        ${ibItems(c, 4).map((it, i) => `<div class="wg-karte" style="background:var(--p50);border-radius:14px;padding:20px;">
+          <span style="color:var(--p600);font-size:22px;">${icon(`items.${i}.icon`, it.icon)}</span>
+          <h3 style="font-size:14.5px;font-weight:800;margin:10px 0 4px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <div style="font-size:12.5px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, it.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+// 22 — Badge über dem Titel
+ibNeu('ib-badge', 'Mit Badge', (c) => ibSekt('ib-badge', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(22px,3vw,32px);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <span style="width:46px;height:46px;border-radius:12px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:17px;">${icon(`items.${i}.icon`, it.icon)}</span>
+          <span style="background:var(--p50);color:var(--p700);font-size:10.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;border-radius:99px;padding:5px 12px;">${ed(`items.${i}.badge`, it.badge || 'Stichwort')}</span>
+        </div>
+        <h3 style="font-size:16.5px;font-weight:800;margin:0 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 23 — Blasser Riesen-Kreis hinterm Icon
+ibNeu('ib-kreisgrund', 'Kreis-Hintergrund', (c) => ibSekt('ib-kreisgrund', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,3vw,40px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-reveal" style="text-align:center;position:relative;padding-top:18px;">
+        <span style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:96px;height:96px;border-radius:50%;background:var(--p50);"></span>
+        <span style="position:relative;color:var(--p700);font-size:34px;line-height:96px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16.5px;font-weight:800;margin:14px 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.65;max-width:280px;margin:0 auto;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+// 24 — Schmale Mittelliste
+ibNeu('ib-mittig', 'Schmale Liste', (c) => ibSekt('ib-mittig', c, `${ibKopf(c)}
+    <div style="max-width:560px;margin:0 auto;display:grid;gap:0;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="display:flex;gap:16px;align-items:flex-start;padding:18px 4px;border-bottom:1px solid var(--p50);">
+        <span style="width:40px;height:40px;border-radius:50%;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <div>
+          <h3 style="font-size:15.5px;font-weight:800;margin:0 0 3px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`))
+
+// 25 — Mit Abschluss-Karte
+ibNeu('ib-mit-cta', 'Mit Abschluss-Karte', (c) => ibSekt('ib-mit-cta', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,26px);align-items:stretch;">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(18px,2.6vw,26px);">
+        <span style="width:46px;height:46px;border-radius:13px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:15.5px;font-weight:800;margin:13px 0 6px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13px;color:#64748b;line-height:1.65;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+      <div class="wg-karte wg-dunkelzone wg-reveal" style="background:var(--p700);border-radius:16px;padding:clamp(18px,2.6vw,26px);color:#fff;display:flex;flex-direction:column;justify-content:center;text-align:center;">
+        <div style="font-size:16.5px;font-weight:800;">${txt('ctaTitel', c.ctaTitel, 'Überzeugen Sie sich selbst')}</div>
+        <a href="kontakt.html" class="wg-btn" style="margin:15px auto 0;">${txt('cta', c.cta, 'Jetzt anfragen')}</a>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 26 — Glas-Karten auf Verlauf
+ibNeu('ib-glas', 'Glas-Karten', (c) => `
+<section data-block="iconboxen" data-variant="ib-glas" class="wg-sekt wg-dunkelzone" style="${bg(c, 'background:linear-gradient(135deg,var(--p700),var(--p900) 70%);')}">
+  <div class="wg-wrap">
+    <div class="wg-reveal" style="text-align:center;max-width:720px;margin:0 auto clamp(28px,4.5vw,54px);color:#fff;">
+      <span class="wg-chip glas">${txt('tag', c.tag, 'Vorteile')}</span>
+      <h2 class="wg-t2" style="color:#fff;margin-top:14px;">${txt('title', c.title, 'Warum Kunden sich für uns entscheiden')}</h2>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-reveal" style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);border-radius:18px;padding:clamp(22px,3vw,34px);color:#fff;backdrop-filter:blur(6px);">
+        <span style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:19px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16.5px;font-weight:800;margin:15px 0 7px;color:#fff;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:rgba(255,255,255,.78);line-height:1.7;">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+</section>`)
+
+// 27 — Sechser-Raster
+ibNeu('ib-sechs', 'Sechser-Raster', (c) => ibSekt('ib-sechs', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2.4vw,26px);">
+      ${ibItems(c, 6).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:14px;padding:20px;display:flex;gap:14px;align-items:flex-start;">
+        <span style="width:40px;height:40px;border-radius:11px;background:var(--p50);color:var(--p700);display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <div>
+          <h3 style="font-size:14.5px;font-weight:800;margin:0 0 4px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <div style="font-size:12.5px;color:#64748b;line-height:1.6;">${ed(`items.${i}.text`, it.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 28 — Mit Pfeil-Link je Box
+ibNeu('ib-pfeil-link', 'Mit Pfeil-Link', (c) => ibSekt('ib-pfeil-link', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2.6vw,30px);">
+      ${ibItems(c, 3).map((it, i) => `<div class="wg-karte wg-karte-hover wg-reveal" style="background:#fff;border:1px solid var(--p100);border-radius:16px;padding:clamp(22px,3vw,32px);display:flex;flex-direction:column;">
+        <span style="width:50px;height:50px;border-radius:14px;background:var(--p600);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:19px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16.5px;font-weight:800;margin:14px 0 7px;">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.7;flex:1;">${ed(`items.${i}.text`, it.text)}</div>
+        <a href="kontakt.html" style="display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-weight:800;color:var(--p600);text-decoration:none;font-size:13.5px;">${ed(`items.${i}.cta`, it.cta || 'Mehr erfahren')} <i class="fa-solid fa-arrow-right" style="font-size:12px;"></i></a>
+      </div>`).join('')}
+    </div>`))
+
+// 29 — Icon-Band in einer Reihe
+ibNeu('ib-band', 'Icon-Band', (c) => ibSekt('ib-band', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,30px);align-items:center;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-reveal" style="display:flex;gap:13px;align-items:center;justify-content:center;">
+        <span style="color:var(--accent);font-size:26px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <div>
+          <h3 style="font-size:14.5px;font-weight:800;margin:0;">${ed(`items.${i}.titel`, it.titel)}</h3>
+          <div style="font-size:12px;color:#94a3b8;">${ed(`items.${i}.text`, it.text)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`, 'background:var(--p50);'))
+
+// 30 — Wechselnde Ausrichtung (Schachbrett)
+ibNeu('ib-schach', 'Schachbrett', (c) => ibSekt('ib-schach', c, `${ibKopf(c)}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2.4vw,26px);max-width:900px;margin:0 auto;">
+      ${ibItems(c, 4).map((it, i) => `<div class="wg-karte wg-reveal${i % 3 === 0 ? ' wg-dunkelzone' : ''}" style="border-radius:16px;padding:clamp(20px,3vw,30px);${i % 3 === 0 ? 'background:var(--p900);color:#fff;' : 'background:var(--p50);'}">
+        <span style="width:46px;height:46px;border-radius:12px;background:${i % 3 === 0 ? 'rgba(255,255,255,.14)' : '#fff'};color:${i % 3 === 0 ? 'var(--accent)' : 'var(--p700)'};display:inline-flex;align-items:center;justify-content:center;font-size:17px;">${icon(`items.${i}.icon`, it.icon)}</span>
+        <h3 style="font-size:16px;font-weight:800;margin:13px 0 6px;${i % 3 === 0 ? 'color:#fff;' : ''}">${ed(`items.${i}.titel`, it.titel)}</h3>
+        <div style="font-size:13.5px;line-height:1.65;${i % 3 === 0 ? 'color:rgba(255,255,255,.75);' : 'color:#64748b;'}">${ed(`items.${i}.text`, it.text)}</div>
+      </div>`).join('')}
+    </div>`))
+
+export const ICONBOXEN = { type: 'iconboxen', label: 'Icon-Boxen (Vorteile)', variants: IB }
+
 export const KOMBI = { type: 'kombi', label: 'Bild + Text Kombis', variants: V }
 
-export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF }
+export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF, iconboxen: ICONBOXEN }
 
 export const ZUSATZ3_ADDABLE = [
   { type: 'kombi', label: 'Bild + Text Kombis', fa: 'object-group', cat: 'Inhalt' },
   { type: 'ablauf', label: 'Step Box / Abläufe', fa: 'stairs', cat: 'Inhalt' },
+  { type: 'iconboxen', label: 'Icon-Boxen (Vorteile)', fa: 'icons', cat: 'Inhalt' },
 ]
 
 export const ZUSATZ3_DEFAULTS = {
+  iconboxen: {
+    tag: 'Vorteile',
+    title: 'Warum Kunden sich für uns entscheiden',
+    text: LOREM.satz,
+    cta: 'Kontakt aufnehmen',
+    ctaTitel: 'Überzeugen Sie sich selbst',
+    items: [
+      { icon: 'bolt', titel: 'Ihr Vorteil', text: 'Beschreiben Sie hier diesen Vorteil in ein bis zwei Sätzen.', badge: 'Stichwort', cta: 'Mehr erfahren' },
+      { icon: 'shield-halved', titel: 'Ihr Vorteil', text: 'Beschreiben Sie hier diesen Vorteil in ein bis zwei Sätzen.', badge: 'Stichwort', cta: 'Mehr erfahren' },
+      { icon: 'handshake', titel: 'Ihr Vorteil', text: 'Beschreiben Sie hier diesen Vorteil in ein bis zwei Sätzen.', badge: 'Stichwort', cta: 'Mehr erfahren' },
+      { icon: 'gem', titel: 'Ihr Vorteil', text: 'Beschreiben Sie hier diesen Vorteil in ein bis zwei Sätzen.', badge: 'Stichwort', cta: 'Mehr erfahren' },
+    ],
+  },
   ablauf: {
     tag: 'Ablauf',
     title: 'So läuft es Schritt für Schritt',
