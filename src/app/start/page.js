@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { KAUF, MIETE, eur, ALLE_TLDS, TLD_PREISE } from '@/lib/preise'
+import { ARTEN } from '@/lib/produkt'
 import { generateCIPalette } from '@/lib/colorSystem'
 import { BRANCHEN, getBranche, getBranchenFelder } from '@/lib/branchen'
 import { FONTS, FONT_PAIRS, BRANCHEN_FONT, allGoogleFontsParam } from '@/lib/fonts'
@@ -387,6 +388,16 @@ function WizardInnen() {
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          {/* Produkt-Anzeige: in JEDEM Schritt sichtbar, damit nie unklar ist,
+              ob gerade eine Miet- oder eine Kauf-Website gebaut wird. */}
+          {(() => {
+            const a = ARTEN[fd.zahlungsart === 'mieten' ? 'mieten' : 'kaufen']
+            return (
+              <span title={a.satz} style={{ fontSize: 12.5, fontWeight: 800, color: a.farbe, background: a.bg, border: `1px solid ${a.rand}`, borderRadius: 99, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+                <i className={`fa-solid ${a.icon}`} aria-hidden="true" />{a.name}
+              </span>
+            )
+          })()}
           {fd.domain && (
             <span title="Gewählte Domain" style={{ fontSize: 12.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
               <i className="fa-solid fa-globe" aria-hidden="true" />{fd.domain}

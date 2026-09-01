@@ -1,5 +1,6 @@
 'use client'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
+import { paketIdFuer } from '@/lib/produkt'
 
 // Ist jemand angemeldet? Gibt den Nutzer oder null zurück.
 export async function aktuellerNutzer() {
@@ -8,8 +9,24 @@ export async function aktuellerNutzer() {
   return data?.session?.user || null
 }
 
+// ── Produkt-Felder aus den Formulardaten ableiten ───────────────────────────
+// Bisher wurde „mieten oder kaufen" ERST vom Stripe-Webhook in die Datenbank
+// geschrieben. Bis dahin wusste das Kundenkonto nicht, was der Kunde eigentlich
+// vorhat — deshalb stand auch bei einer Kauf-Website „Online schalten" und es
+// kam die Mietpaket-Auswahl. Jetzt wird die Wahl aus dem Baukasten sofort
+// mitgespeichert; der Webhook überschreibt sie später mit dem, was tatsächlich
+// bezahlt wurde.
+function produktFelder(daten) {
+  const fd = daten?.form_data || {}
+  const art = daten?.zahlungsart
+    || (fd.zahlungsart === 'mieten' ? 'mieten' : fd.zahlungsart === 'kaufen' ? 'kaufen' : null)
+  if (!art) return {}
+  return { zahlungsart: art, paket_id: daten?.paket_id || paketIdFuer(art, fd.paket) }
+}
+
 // Neues Projekt anlegen. Gibt die neue ID zurück.
-export async function projektAnlegen({ name, firma, branche, form_data, pages, palette, font }) {
+export async function projektAnlegen(daten) {
+  const { name, firma, branche, form_data, pages, palette, font } = daten || {}
   const user = await aktuellerNutzer()
   if (!user) return null
 
@@ -25,6 +42,7 @@ export async function projektAnlegen({ name, firma, branche, form_data, pages, p
       pages: pages || null,
       palette: palette || null,
       font: font || null,
+      ...produktFelder(daten),
     })
     .select('id')
     .single()
@@ -60,10 +78,39 @@ export async function projektAnlegenOderAktualisieren(daten) {
       pages: daten.pages || null,
       palette: daten.palette || null,
       font: daten.font || null,
+      ...produktFelder(daten),
     })
     if (ok) return entwurf.id
   }
   return projektAnlegen(daten)
+}
+
+// ── Produkt einer Website festlegen/wechseln ────────────────────────────────
+// Nur solange nichts bezahlt ist. Schreibt die Wahl in die Projekt-Spalten UND
+// in die Formulardaten, damit Baukasten, Editor und Konto dasselbe anzeigen.
+export async function produktSetzen(id, art, paketIdOderGroesse) {
+  if (!id || !['mieten', 'kaufen'].includes(art)) return { error: 'Ungültige Produktart.' }
+  const user = await aktuellerNutzer()
+  if (!user) return { error: 'Bitte zuerst einloggen.' }
+
+  const { data: p, error: leseFehler } = await supabase
+    .from('projekte').select('id,status,bezahlt_am,paket_id,form_data').eq('id', id).maybeSingle()
+  if (leseFehler) return { error: leseFehler.message }
+  if (!p) return { error: 'Website nicht gefunden.' }
+  if (p.bezahlt_am || ['online', 'gekauft', 'gekuendigt'].includes(p.status)) {
+    return { error: 'Diese Website ist bereits bezahlt — das Produkt lässt sich nicht mehr wechseln.' }
+  }
+
+  const groesse = paketIdOderGroesse || p.form_data?.paket || p.paket_id || 'multipage'
+  const paketId = paketIdFuer(art, groesse)
+  const fd = { ...(p.form_data || {}), zahlungsart: art, paket: (p.form_data?.paket || 'multipage') }
+
+  const { data, error } = await supabase.from('projekte')
+    .update({ zahlungsart: art, paket_id: paketId, form_data: fd })
+    .eq('id', id).select('id,zahlungsart,paket_id')
+  if (error) return { error: error.message }
+  if (!data || !data.length) return { error: 'Die Änderung konnte nicht gespeichert werden.' }
+  return { zahlungsart: art, paket_id: paketId }
 }
 
 // Bestehendes Projekt aktualisieren.

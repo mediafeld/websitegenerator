@@ -6,6 +6,7 @@ import { Fuss } from '@/components/Fuss'
 import { Chat } from '@/components/Chat'
 import { Brotkrumen } from '@/components/Brotkrumen'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
+import { produktStand } from '@/lib/produkt'
 
 const BEREICHE = [
   { gruppe: 'Ihr Benutzerkonto', punkte: [
@@ -52,6 +53,7 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
   const router = useRouter()
   const [nutzer, setNutzer] = useState(null)
   const [laedt, setLaedt] = useState(true)
+  const [meineWebsites, setMeineWebsites] = useState([])
 
   useEffect(() => {
     if (!supabaseBereit) { setLaedt(false); return }
@@ -60,6 +62,24 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
       setNutzer(data.session.user); setLaedt(false)
     })
   }, [router])
+
+  // Produktliste für die Seitenleiste — in JEDEM Konto-Bereich sichtbar,
+  // damit immer klar ist, welche Websites es gibt und was sie sind.
+  useEffect(() => {
+    if (!nutzer) return
+    let abgebrochen = false
+    const laden = async () => {
+      let { data, error } = await supabase.from('projekte')
+        .select('id,name,status,zahlungsart,paket_id,bezahlt_am').order('geaendert_am', { ascending: false })
+      if (error && /bezahlt_am/i.test(error.message || '')) {
+        ;({ data } = await supabase.from('projekte')
+          .select('id,name,status,zahlungsart,paket_id').order('geaendert_am', { ascending: false }))
+      }
+      if (!abgebrochen) setMeineWebsites(data || [])
+    }
+    laden().catch(() => {})
+    return () => { abgebrochen = true }
+  }, [nutzer])
 
   const rahmen = (inhalt) => (
     <div className="arbeit" style={{ background: D.hellGrund, color: D.hellText, fontFamily: '"InterTight",system-ui,sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -123,6 +143,30 @@ export function KontoLayout({ aktiv, titel, unter, kinder, css = '' }) {
               </button>
             </div>
           </div>
+
+          {meineWebsites.length > 0 && (
+            <div className="sblock">
+              <div className="skopf">Meine Websites</div>
+              {meineWebsites.map(w => {
+                const s = produktStand(w)
+                return (
+                  <a key={w.id} href={`/dashboard?website=${w.id}`} className="spunkt" style={{ alignItems: 'flex-start', gap: 10 }}>
+                    <i className={`fa-solid ${s.info?.icon || 'fa-globe'}`} style={{ marginTop: 3, color: s.info?.farbe || undefined }} aria-hidden="true" />
+                    <span style={{ minWidth: 0, flex: 1 }}>
+                      <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: D.hellGrauHell, marginTop: 2 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.farben.punkt, display: 'inline-block' }} />
+                        {s.info?.kurz || 'Produkt offen'} · {s.text.replace('Entwurf · ', '')}
+                      </span>
+                    </span>
+                  </a>
+                )
+              })}
+              <a href="/start" className="spunkt" style={{ color: D.blau }}>
+                <i className="fa-solid fa-plus" aria-hidden="true" />Neue Website
+              </a>
+            </div>
+          )}
 
           <div className="sblock" style={{ padding: 16 }}>
             <div className="skopf" style={{ padding: '0 0 8px' }}>Direkter Kontakt</div>

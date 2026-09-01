@@ -4,8 +4,11 @@ import { KontoLayout } from '@/components/KontoLayout'
 import { D, EMAIL } from '@/components/Kopf'
 import { supabase, supabaseBereit } from '@/lib/supabaseClient'
 import { aktuellerNutzer } from '@/lib/projekte'
+import { produktStand, istBezahlt } from '@/lib/produkt'
 
 const eur = (n) => Number(n).toFixed(2).replace('.', ',')
+const SPALTEN = 'id,name,domain,status,zahlungsart,paket_id,bezahlt_am,geaendert_am'
+const SPALTEN_ALT = 'id,name,domain,status,zahlungsart,paket_id,geaendert_am'
 
 export default function Abrechnungen() {
   const [vertraege, setVertraege] = useState([])
@@ -18,11 +21,16 @@ export default function Abrechnungen() {
     if (!supabaseBereit) { setLaedt(false); return }
     aktuellerNutzer().then(async (u) => {
       if (!u) { setLaedt(false); return }
-      const [{ data: p }, { data: r }] = await Promise.all([
-        supabase.from('projekte').select('id,name,domain,status,zahlungsart,paket_id,geaendert_am').eq('user_id', u.id),
+      let [{ data: p, error: pFehler }, { data: r }] = await Promise.all([
+        supabase.from('projekte').select(SPALTEN).eq('user_id', u.id),
         supabase.from('rechnungen').select('*').eq('user_id', u.id).order('erstellt_am', { ascending: false }),
       ])
-      setVertraege((p || []).filter(x => x.zahlungsart))
+      if (pFehler && /bezahlt_am/i.test(pFehler.message || '')) {
+        ;({ data: p } = await supabase.from('projekte').select(SPALTEN_ALT).eq('user_id', u.id))
+      }
+      // Nur BEZAHLTE Websites sind Verträge. Entwürfe haben jetzt zwar auch
+      // schon eine Produktart, sind aber selbstverständlich kein Vertrag.
+      setVertraege((p || []).filter(istBezahlt))
       setRechnungen(r || [])
       setLaedt(false)
     })
@@ -49,7 +57,11 @@ export default function Abrechnungen() {
 
           <div className="kkarte" style={{ marginBottom: 16 }}>
             <h2><i className="fa-solid fa-file-contract" style={{ color: D.magenta, marginRight: 10, fontSize: 17 }} aria-hidden="true" />Laufende Verträge</h2>
-            <p className="unter">Noch kein Vertrag aktiv. Solange du nichts kaufst oder mietest, entstehen keine Kosten.</p>
+            <p className="unter">
+              {vertraege.length === 0
+                ? 'Noch kein Vertrag aktiv. Solange du nichts kaufst oder mietest, entstehen keine Kosten.'
+                : 'Miete läuft monatlich weiter, ein Kauf ist mit der Zahlung abgeschlossen.'}
+            </p>
             {laedt ? (
               <p style={{ fontSize: 14, color: D.hellGrau }}>Lädt …</p>
             ) : vertraege.length === 0 ? (
@@ -58,17 +70,26 @@ export default function Abrechnungen() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {vertraege.map(v => (
-                  <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', background: D.hellGrund, borderRadius: 11, padding: '14px 16px' }}>
-                    <div style={{ flex: 1, minWidth: 160 }}>
-                      <div style={{ fontSize: 14.5, fontWeight: 700 }}>{v.name}</div>
-                      <div style={{ fontSize: 12.5, color: D.hellGrau }}>{v.domain || 'noch keine Domain'} · {v.zahlungsart === 'mieten' ? 'Mietpaket' : 'Kauf'} {v.paket_id && `· ${v.paket_id}`}</div>
+                {vertraege.map(v => {
+                  const s = produktStand(v)
+                  return (
+                    <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', background: D.hellGrund, borderRadius: 11, padding: '14px 16px', borderLeft: `4px solid ${s.info?.farbe || D.hellLinie}` }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: s.info?.bg || '#fff', border: `1px solid ${s.info?.rand || D.hellLinie}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <i className={`fa-solid ${s.info?.icon || 'fa-globe'}`} style={{ color: s.info?.farbe || D.hellGrau, fontSize: 15 }} aria-hidden="true" />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 160 }}>
+                        <div style={{ fontSize: 14.5, fontWeight: 700 }}>{v.name}</div>
+                        <div style={{ fontSize: 12.5, color: D.hellGrau }}>
+                          {s.zeile}{s.art === 'mieten' ? ` · ${v.domain || 'Domain in Einrichtung'}` : ''}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: s.farben.farbe, background: s.farben.bg, border: `1px solid ${s.farben.rand}`, borderRadius: 99, padding: '4px 12px' }}>
+                        {s.art === 'kaufen' && s.stufe === 'aktiv' ? 'Abgeschlossen' : s.stufe === 'aktiv' ? 'Aktiv' : s.text}
+                      </span>
+                      <a href={`/dashboard?website=${v.id}`} className="btnleer" style={{ padding: '8px 14px', fontSize: 12.5 }}>Öffnen</a>
                     </div>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: v.status === 'online' ? '#15803D' : '#92400E', background: v.status === 'online' ? '#F0FDF4' : '#FFFBEB', borderRadius: 99, padding: '4px 12px' }}>
-                      {v.status === 'online' ? 'Aktiv' : v.status}
-                    </span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             {vertraege.some(v => v.zahlungsart === 'mieten') && (

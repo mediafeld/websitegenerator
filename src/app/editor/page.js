@@ -20,7 +20,9 @@ import { supabase } from '@/lib/supabaseClient'
 import { starteCheckout } from '@/lib/checkout'
 import { WarenkorbKnopf } from '@/components/Warenkorb'
 import { useWarenkorb } from '@/lib/warenkorb'
-import { KAUF, MIETE } from '@/lib/preise'
+import { KAUF, MIETE, eur } from '@/lib/preise'
+import { produktStand, paketFuer } from '@/lib/produkt'
+import { websiteAlsZip } from '@/lib/exportZip'
 import { Kopf, BASIS_CSS } from '@/components/Kopf'
 import { Brotkrumen } from '@/components/Brotkrumen'
 import { istPfad, pfadSetzen, listeAendern, layoutNachStruktur } from '@/lib/blockSchema'
@@ -232,6 +234,10 @@ export default function EditorPage() {
   const [speicherStatus, setSpeicherStatus] = useState('')   // '' | 'speichert' | 'gespeichert' | 'fehler'
   const [nutzer, setNutzer] = useState(null)
   const [kauft, setKauft] = useState(false)
+  // Produkt-Zustand der offenen Website (mieten/kaufen, bezahlt ja/nein).
+  // Damit im Editor NIE „Kaufen" steht, wenn die Website gemietet wird –
+  // und nach dem Kauf direkt der ZIP-Download angeboten wird.
+  const [projektMeta, setProjektMeta] = useState(null)
   const [bewegungStopp, setBewegungStopp] = useState(false)
   const [domainModal, setDomainModal] = useState(false)
   const [domainWunsch, setDomainWunsch] = useState('')
@@ -270,6 +276,10 @@ export default function EditorPage() {
       projektIdRef.current = id
       ladeProjektUniversal(id).then(p => {
         if (!p) { router.push('/dashboard'); return }
+        setProjektMeta({
+          zahlungsart: p.zahlungsart || null, paket_id: p.paket_id || null,
+          status: p.status || 'entwurf', bezahlt_am: p.bezahlt_am || null, domain: p.domain || null,
+        })
         if (!p.pages) {
           // Projekt wurde angelegt, aber nie fertig generiert (z. B. abgebrochene Generierung).
           // Die Angaben sind noch da — wir generieren einfach neu, statt tatenlos zurückzuspringen.
@@ -2086,9 +2096,16 @@ export default function EditorPage() {
             das, was zum Projekt gehört: Firmenname + gebuchte Domain. */}
         {adminModusRef.current && <span style={{ background: '#e03131', color: '#fff', fontSize: 10.5, fontWeight: 800, borderRadius: 99, padding: '4px 11px', letterSpacing: '.05em', whiteSpace: 'nowrap' }}><i className="fa-solid fa-shield-halved" style={{ marginRight: 5 }} />ADMIN-MODUS · Kundenprojekt</span>}
         <span style={{ fontWeight: 700, color: '#0f172a', maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocks.find(b => b.type === 'nav')?.content?.firmenname || 'Deine Website'}</span>
-        {formDataRef.current?.zahlungsart === 'kaufen' ? (
-          <span title="Beim Kauf nutzt du deine eigene Domain – die fertige Website kommt als ZIP." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#94a3b8', background: '#f8fafc', border: '1px solid #eef2f6', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
-            <i className="fa-solid fa-file-zipper" />Kauf: ZIP-Download
+        {/* Produkt-Erkennung: Datenbank schlägt Formulardaten (die Wahl aus dem
+            Baukasten) — damit hier nie „Kauf" steht, wenn längst gemietet wird. */}
+        {(projektMeta?.zahlungsart || formDataRef.current?.zahlungsart) === 'mieten' && (
+          <span title="Website mieten — Domain, Hosting und SSL laufen bei uns." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
+            <i className="fa-solid fa-cloud" />Miete
+          </span>
+        )}
+        {(projektMeta?.zahlungsart || formDataRef.current?.zahlungsart) === 'kaufen' ? (
+          <span title="Beim Kauf nutzt du deine eigene Domain – die fertige Website kommt als ZIP." style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#7C3AED', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 99, padding: '4px 11px', whiteSpace: 'nowrap' }}>
+            <i className="fa-solid fa-download" />Kauf · ZIP-Download
           </span>
         ) : formDataRef.current?.domain ? (
           <a href={`https://${String(formDataRef.current.domain).replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" title="Website ansehen" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: primary, background: primary + '12', border: `1px solid ${primary}33`, borderRadius: 99, padding: '4px 11px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
@@ -2124,20 +2141,58 @@ export default function EditorPage() {
         )}
         <div style={{ width: 1, height: 18, background: '#e5e5e5', margin: '0 4px' }} />
         <button onClick={() => setAiPanel(o => !o)} style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-wand-magic-sparkles" />AI Designer</button>
-        <button disabled={kauft} onClick={async () => {
-          if (!nutzer) { router.push('/login'); return }
+        {/* Produkt-Knopf: zeigt IMMER das, was für diese Website gilt —
+            Miete → „Online schalten", Kauf → „Kaufen", bezahlt → Download. */}
+        {(() => {
           const fd = formDataRef.current || {}
-          const za = fd.zahlungsart === 'mieten' ? 'mieten' : 'kaufen'
-          const quelle = za === 'mieten' ? MIETE : KAUF
-          const size = fd.paket || 'multipage'
-          const p = quelle.find(x => (x.id === size) || (za === 'mieten' && { start: 'onepager', plus: 'multipage', pro: 'business' }[x.id] === size)) || quelle[1]
-          // Warenkorb synchron halten …
-          setzePaket({ id: 'paket-' + p.id, titel: `Website ${za === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`, unter: p.kurz, preis: p.preis, art: za === 'mieten' ? 'monatlich' : 'einmalig' })
-          // … und direkt zu Stripe weiterleiten
-          setKauft(true)
-          const { error } = await starteCheckout({ paketId: p.id, modus: za, projektId: projektIdRef.current, domain: fd.domain })
-          if (error) { setKauft(false); alert(error) }
-        }} style={{ background: primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>{kauft ? 'Öffne Kasse…' : <>Kaufen &amp; Download<i className="fa-solid fa-arrow-right" /></>}</button>
+          const basis = projektMeta || {
+            zahlungsart: fd.zahlungsart === 'mieten' ? 'mieten' : fd.zahlungsart === 'kaufen' ? 'kaufen' : null,
+            paket_id: fd.paket || null, status: 'entwurf',
+          }
+          const s = produktStand(basis)
+
+          // Bereits gekauft → direkter ZIP-Download statt Kasse
+          if (s.bezahlt && s.art === 'kaufen') return (
+            <button disabled={kauft} onClick={async () => {
+              setKauft(true)
+              const r = await websiteAlsZip({
+                pages, palette, font, domain: projektMeta?.domain || fd.domain || '',
+                form_data: fd, zahlungsart: 'kaufen',
+              })
+              if (r?.error) alert(r.error)
+              setKauft(false)
+            }} style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <i className={`fa-solid ${kauft ? 'fa-spinner fa-spin' : 'fa-file-zipper'}`} />{kauft ? 'Wird gepackt…' : 'ZIP herunterladen'}
+            </button>
+          )
+
+          // Gemietet und bezahlt → nichts zu kaufen, nur Zustand zeigen
+          if (s.bezahlt) return (
+            <a href="/dashboard" style={{ background: s.farben.bg, color: s.farben.farbe, border: `1px solid ${s.farben.rand}`, padding: '7px 14px', borderRadius: 8, fontWeight: 700, fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+              <i className="fa-solid fa-circle-check" />{s.text}
+            </a>
+          )
+
+          const art = s.art || 'kaufen'
+          const p = paketFuer(art, basis.paket_id || fd.paket)
+          const label = art === 'mieten'
+            ? `Online schalten — ${eur(p.preis)} €/Monat`
+            : `Kaufen & Download — ${eur(p.preis)} €`
+          return (
+            <button disabled={kauft} onClick={async () => {
+              if (!nutzer) { router.push('/login'); return }
+              // Warenkorb synchron halten …
+              setzePaket({ id: 'paket-' + p.id, titel: `Website ${art === 'mieten' ? 'mieten' : 'kaufen'} — ${p.name}`, unter: p.kurz, preis: p.preis, art: art === 'mieten' ? 'monatlich' : 'einmalig' })
+              // … und direkt zu Stripe weiterleiten
+              setKauft(true)
+              const { error } = await starteCheckout({ paketId: p.id, modus: art, projektId: projektIdRef.current, domain: art === 'mieten' ? fd.domain : '' })
+              if (error) { setKauft(false); alert(error) }
+            }} title={art === 'mieten' ? 'Mietpaket buchen — wir schalten mit Domain online' : 'Einmal zahlen, Website als ZIP herunterladen'}
+              style={{ background: art === 'mieten' ? '#1D4ED8' : primary, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: kauft ? 'wait' : 'pointer', opacity: kauft ? .7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {kauft ? 'Öffne Kasse…' : <>{label}<i className="fa-solid fa-arrow-right" /></>}
+            </button>
+          )
+        })()}
 
         {/* Konto/Warenkorb sitzen im echten Seiten-Header oben – hier bewusst nicht doppelt. */}
       </div>

@@ -21,7 +21,11 @@ export async function GET(req) {
 
     const [{ data: profile }, { data: projekte }, { data: rechnungen }, notizenErg, { data: nutzung }, { data: protokoll }] = await Promise.all([
       db.from('profile').select('*'),
-      db.from('projekte').select('id,user_id,name,firma,branche,status,zahlungsart,paket_id,domain,geaendert_am,stripe_customer_id,stripe_subscription_id,pages'),
+      // bezahlt_am kommt aus migration_v39 — fehlt sie noch, wird ohne sie geladen
+      db.from('projekte').select('id,user_id,name,firma,branche,status,zahlungsart,paket_id,bezahlt_am,domain,geaendert_am,stripe_customer_id,stripe_subscription_id,pages')
+        .then(r => r.error
+          ? db.from('projekte').select('id,user_id,name,firma,branche,status,zahlungsart,paket_id,domain,geaendert_am,stripe_customer_id,stripe_subscription_id,pages')
+          : r),
       db.from('rechnungen').select('*').order('erstellt_am', { ascending: false }).limit(500).then(r => r, () => ({ data: [] })),
       db.from('admin_notizen').select('*').order('erstellt_am', { ascending: false }).then(r => r, () => ({ data: null, error: { message: 'admin_notizen fehlt' } })),
       db.from('nutzung').select('user_id,art,menge,erstellt_am').order('erstellt_am', { ascending: false }).limit(5000).then(r => r, () => ({ data: [] })),
@@ -79,7 +83,7 @@ export async function GET(req) {
     const zahlen = {
       kunden: kunden.length,
       projekte: projekteLeicht.length,
-      bezahlt: projekteLeicht.filter(p => p.status === 'online').length,
+      bezahlt: projekteLeicht.filter(p => !!p.bezahlt_am || ['online', 'gekauft'].includes(p.status)).length,
       entwuerfe: projekteLeicht.filter(p => p.status === 'entwurf').length,
       abos: projekteLeicht.filter(p => p.stripe_subscription_id).length,
       umsatz,

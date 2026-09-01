@@ -21,7 +21,14 @@ function DankeInhalt() {
     const p = new URLSearchParams(window.location.search)
     setModus(p.get('modus') === 'mieten' ? 'mieten' : 'kaufen')
     const id = p.get('projekt')
-    if (id) { setProjektId(id); projektLaden(id).then(setProjekt) }
+    if (id) {
+      setProjektId(id)
+      projektLaden(id).then(pr => {
+        setProjekt(pr)
+        // Die Datenbank ist die Wahrheit — nicht der Adresszeilen-Parameter.
+        if (pr?.zahlungsart === 'mieten' || pr?.zahlungsart === 'kaufen') setModus(pr.zahlungsart)
+      })
+    }
   }, [])
 
   async function herunterladen() {

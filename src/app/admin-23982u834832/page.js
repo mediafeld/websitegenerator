@@ -11,8 +11,16 @@ const eur = (n) => (parseFloat(n) || 0).toFixed(2).replace('.', ',')
 const datum = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–'
 const zeit = (d) => d ? new Date(d).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '–'
 const STATUS_BADGE = {
-  online: ['Bezahlt / Online', F.gruen], entwurf: ['Entwurf', F.grau],
+  online: ['Miete aktiv', F.gruen], gekauft: ['Gekauft', F.gruen], entwurf: ['Entwurf', F.grau],
   zahlung_fehlgeschlagen: ['Zahlung offen!', F.rot], gekuendigt: ['Gekündigt', F.gelb],
+}
+// Produktart im Klartext — inkl. „geplant", solange nichts bezahlt ist.
+// (Die Art steht jetzt schon am Entwurf, nicht erst nach der Zahlung.)
+function artText(p) {
+  const bezahlt = !!p?.bezahlt_am || ['online', 'gekauft', 'gekuendigt', 'zahlung_fehlgeschlagen'].includes(p?.status)
+  if (p?.zahlungsart === 'mieten') return [bezahlt ? 'Miete' : 'Miete geplant', bezahlt ? F.blau : F.grau]
+  if (p?.zahlungsart === 'kaufen') return [bezahlt ? 'Kauf' : 'Kauf geplant', bezahlt ? '#7C3AED' : F.grau]
+  return ['–', F.grau]
 }
 
 export default function AdminSeite() {
@@ -332,7 +340,7 @@ export default function AdminSeite() {
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}><b>{p.name || '–'}</b>{p.firma ? ` · ${p.firma}` : ''}<br /><span style={{ color: F.grau, fontSize: 11 }}>{p.branche || ''}</span></span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.domain || '–'}</span>
                     <span><span style={{ background: stFarbe + '22', color: stFarbe, fontWeight: 800, fontSize: 10.5, borderRadius: 99, padding: '3px 9px' }}>{stText}</span></span>
-                    <span>{p.zahlungsart === 'mieten' ? 'Miete' : p.zahlungsart === 'kaufen' ? 'Kauf' : '–'}</span>
+                    <span style={{ color: artText(p)[1], fontWeight: 700 }}>{artText(p)[0]}</span>
                     <span>{datum(p.geaendert_am)}</span>
                     <span>{p.bilder}</span>
                     <span style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>

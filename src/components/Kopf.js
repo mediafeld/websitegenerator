@@ -42,7 +42,9 @@ export const D = {
   gruen: CI.blau, gruenZart: '#E7EFF3', gold: CI.blau, lila: CI.stahl,
   blauHell: CI.blauDunkel, blauZart: '#E7EFF3',
   hellGrund: CI.grau, hellKarte: CI.weiss, hellText: CI.text,
-  hellGrau: CI.textMatt, hellLinie: CI.linie,
+  // hellGrauHell fehlte bisher, wurde aber an mehreren Stellen benutzt
+  // (Konto-Seitenleiste, Rechtsseiten) — dort blieb der Text dadurch schwarz.
+  hellGrau: CI.textMatt, hellGrauHell: CI.textZart, hellLinie: CI.linie,
   verlauf: `linear-gradient(100deg, ${CI.blau}, ${CI.stahl})`,
 }
 export const VERLAUF = `linear-gradient(100deg, ${CI.blau}, ${CI.stahl})`

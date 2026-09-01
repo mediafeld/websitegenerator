@@ -48,11 +48,18 @@ export async function POST(req) {
           break
         }
 
+        // Kauf und Miete führen zu UNTERSCHIEDLICHEN Zuständen:
+        //   kaufen → 'gekauft'  (ZIP-Download frei, wir hosten nichts)
+        //   mieten → 'online'   (wir schalten mit Domain online)
+        // bezahlt_am ist ab jetzt die verlässliche Marke „ist bezahlt".
         const { data, error } = await db.from('projekte').update({
-          status: 'online',
+          status: modus === 'kaufen' ? 'gekauft' : 'online',
           zahlungsart: modus,
           paket_id,
-          domain: domain || null,
+          bezahlt_am: new Date().toISOString(),
+          // Beim Kauf wird KEINE Domain von uns registriert — eine im Baukasten
+          // eingetragene eigene Domain bleibt aber stehen (für sitemap.xml im ZIP).
+          ...(modus === 'kaufen' ? {} : { domain: domain || null }),
           stripe_customer_id: s.customer || null,
           stripe_subscription_id: s.subscription || null,
         }).eq('id', projekt_id).select()
