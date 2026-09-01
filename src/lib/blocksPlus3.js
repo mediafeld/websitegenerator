@@ -1764,18 +1764,419 @@ ctaNeu('cta-schlicht', 'Schlicht mit Linie', (c) => `
 
 export const AUFRUF = { type: 'aufruf', label: 'Call to Action', variants: CTA }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTENT (23 Varianten)
+// Redaktionelle Inhaltsbereiche: mehrspaltige Fließtexte, Text-Bild-Kombis,
+// Merkmal-Spalten mit Links, Autorenzeile mit Unterschrift, Können-Balken.
+// Für alles, was zwischen Hero und Aufruf an echtem Inhalt steht.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const D_IN_ABSATZ = LOREM.absatz
+const D_IN_SPALTEN = [
+  { text: LOREM.absatz },
+  { text: LOREM.absatz },
+]
+const D_IN_MERKMALE = [
+  { titel: 'Ihr Schwerpunkt', text: 'Beschreiben Sie hier diesen Punkt in ein bis zwei Sätzen.', cta: 'Mehr erfahren' },
+  { titel: 'Ihr Schwerpunkt', text: 'Beschreiben Sie hier diesen Punkt in ein bis zwei Sätzen.', cta: 'Mehr erfahren' },
+]
+const D_IN_LISTEN = [
+  { titel: 'Warum wir', punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4'], cta: 'Mehr erfahren' },
+  { titel: 'Unsere Leistungen', punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4'], cta: 'Mehr erfahren' },
+]
+const D_IN_KOENNEN = [
+  { label: 'Ihr Schwerpunkt', wert: 0 },
+  { label: 'Ihr Schwerpunkt', wert: 0 },
+  { label: 'Ihr Schwerpunkt', wert: 0 },
+]
+
+// Unterschrift-Zeile (frei beschreibbar, wirkt wie eine Signatur)
+const inSignatur = (c, hell = false) => `
+        <div style="margin-top:22px;">
+          <div style="font-family:'Segoe Script','Brush Script MT',cursive;font-size:26px;line-height:1.1;color:${hell ? '#fff' : 'var(--p800)'};">${txt('signatur', c.signatur, 'Ihr Name')}</div>
+          <div style="font-size:12px;color:${hell ? 'rgba(255,255,255,.6)' : '#94a3b8'};margin-top:5px;">${txt('signaturRolle', c.signaturRolle, 'Ihre Position')}</div>
+        </div>`
+
+const inKopfMitte = (c, dTitle) => `
+    <div class="wg-reveal" style="text-align:center;max-width:760px;margin:0 auto clamp(26px,4vw,46px);">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+      <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, dTitle)}</h2>
+      <span class="wg-strichlinie mitte"></span>
+    </div>`
+
+const inSpalten = (c, n = 2) => misch(c.spalten, D_IN_SPALTEN.slice(0, n))
+const inTextSpalten = (c, n = 2, farbe = '#64748b') => `
+      <div class="wg-split" style="display:grid;grid-template-columns:repeat(${n},1fr);gap:clamp(20px,3.4vw,44px);">
+        ${inSpalten(c, n).map((sp, i) => `<div class="wg-reveal" style="font-size:14.5px;color:${farbe};line-height:1.8;">${ed(`spalten.${i}.text`, sp.text)}</div>`).join('')}
+      </div>`
+
+const IN = []
+const inNeu = (id, name, render) => IN.push({ id, name, render })
+const inSekt = (id, c, innen, fallback = 'background:#fff;') =>
+  `<section data-block="inhalt" data-variant="${id}" class="wg-sekt" style="${bg(c, fallback)}">
+  <div class="wg-wrap">
+${innen}
+  </div>
+</section>`
+
+// 1 — Titel mittig, Bild links + zwei Bilder rechts, Textspalte
+inNeu('in-drei-bilder', 'Titel + drei Bilder', (c) => inSekt('in-drei-bilder', c, `${inKopfMitte(c, 'Ihre Überschrift für diesen Bereich')}
+    <div class="wg-split" style="display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(20px,3.4vw,44px);align-items:start;">
+      <div class="wg-reveal li">
+        <div class="wg-bildbox" style="height:clamp(260px,34vw,420px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 1)}</div>
+        <div style="font-size:14px;color:#64748b;line-height:1.75;margin-top:18px;">${txt('text', c.text, LOREM.satz)}</div>
+      </div>
+      <div class="wg-reveal re" style="display:grid;gap:14px;border-left:1px solid var(--p100);padding-left:clamp(18px,2.6vw,32px);">
+        <div>
+          <h3 style="font-size:17px;font-weight:800;margin:0 0 6px;">${txt('untertitel', c.untertitel, 'Ihr Schwerpunkt')}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${txt('untertext', c.untertext, LOREM.kurz)}</div>
+          <a href="${esc(c.ctaHref || 'leistungen.html')}" style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-weight:800;color:var(--accent);text-decoration:none;font-size:13px;">${txt('cta', c.cta, 'Mehr erfahren')} <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+        </div>
+        <div class="wg-bildbox" style="height:clamp(110px,14vw,150px);${RUND}overflow:hidden;">${bild('bildZwei', c.bildZwei, COVER, 2)}</div>
+        <div class="wg-bildbox" style="height:clamp(110px,14vw,150px);${RUND}overflow:hidden;">${bild('bildDrei', c.bildDrei, COVER, 3)}</div>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 2 — Text links, Können-Balken rechts
+inNeu('in-koennen', 'Mit Können-Balken', (c) => inSekt('in-koennen', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(26px,4.5vw,60px);align-items:center;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        <div class="wg-lead">${txt('text', c.text, LOREM.satz)}</div>
+        <div style="display:inline-flex;align-items:center;gap:12px;margin-top:20px;">
+          <span style="width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:16px;">${icon('icon', c.icon || 'phone')}</span>
+          <div style="font-size:17px;font-weight:800;">${txt('telefon', c.telefon, 'Ihre Telefonnummer')}</div>
+        </div>
+      </div>
+      <div class="wg-reveal re" style="display:grid;gap:18px;">
+        ${misch(c.koennen, D_IN_KOENNEN).map((k, i) => `<div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;">
+            <span style="font-size:14.5px;font-weight:700;">${ed(`koennen.${i}.label`, k.label)}</span>
+            <span style="font-size:12.5px;color:#94a3b8;font-weight:700;">${ed(`koennen.${i}.wert`, k.wert)}%</span>
+          </div>
+          <div style="height:6px;border-radius:99px;background:var(--p100);overflow:hidden;">
+            <div style="height:100%;width:${Math.max(0, Math.min(100, parseInt(k.wert, 10) || 0))}%;background:var(--accent);border-radius:99px;"></div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 3 — Titel oben, großes Bild links, kleines Bild mit Beschriftung rechts
+inNeu('in-zwei-bilder', 'Titel + zwei Bilder', (c) => inSekt('in-zwei-bilder', c, `
+    <div class="wg-reveal" style="max-width:640px;margin-bottom:clamp(24px,3.6vw,42px);">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+      <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+      <div style="font-size:14.5px;color:#64748b;line-height:1.75;margin-top:12px;">${txt('text', c.text, LOREM.satz)}</div>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:1.25fr 1fr;gap:clamp(20px,3.4vw,44px);align-items:end;">
+      <div class="wg-reveal li">
+        <div class="wg-bildbox" style="height:clamp(280px,36vw,440px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 4)}</div>
+        <h3 style="font-size:15px;font-weight:800;margin:14px 0 0;">${txt('bildTitel', c.bildTitel, 'Bildunterschrift')}</h3>
+        <div style="font-size:12.5px;color:#94a3b8;">${txt('bildUnter', c.bildUnter, 'Kurze Erläuterung')}</div>
+      </div>
+      <div class="wg-reveal re">
+        <div class="wg-bildbox" style="height:clamp(180px,22vw,280px);${RUND}overflow:hidden;">${bild('bildZwei', c.bildZwei, COVER, 5)}</div>
+        <h3 style="font-size:15px;font-weight:800;margin:14px 0 0;">${txt('bildTitel2', c.bildTitel2, 'Bildunterschrift')}</h3>
+        <div style="font-size:12.5px;color:#94a3b8;">${txt('bildUnter2', c.bildUnter2, 'Kurze Erläuterung')}</div>
+      </div>
+    </div>`))
+
+// 4 — Bild mittig, Text rechts, Titel links unten
+inNeu('in-versetzt', 'Versetzter Aufbau', (c) => inSekt('in-versetzt', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:clamp(20px,3.4vw,44px);align-items:center;">
+      <div class="wg-reveal li" style="order:2;">
+        <div class="wg-bildbox" style="height:clamp(240px,32vw,400px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 6)}</div>
+      </div>
+      <div class="wg-reveal" style="order:1;align-self:end;">
+        <h2 style="font-size:clamp(20px,2.6vw,30px);font-weight:900;letter-spacing:-.02em;line-height:1.25;margin:0;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+      </div>
+      <div class="wg-reveal re" style="order:3;font-size:14px;color:#64748b;line-height:1.8;">${txt('text', c.text, D_IN_ABSATZ)}</div>
+    </div>`, 'background:var(--p50);'))
+
+// 5 — Titel links, zwei Textspalten, Bild rechts
+inNeu('in-spalten-bild', 'Textspalten + Bild', (c) => inSekt('in-spalten-bild', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.3fr 1fr;gap:clamp(24px,4vw,54px);align-items:center;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin:12px 0 18px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        ${inTextSpalten(c, 2)}
+      </div>
+      <div class="wg-reveal re">${bildBox('bildHaupt', c.bildHaupt, 'clamp(280px,36vw,440px)', '', 7)}</div>
+    </div>`))
+
+// 6 — Bild links, rechts Text mit Trennlinie und Untertitel
+inNeu('in-trennlinie', 'Mit Trennlinie', (c) => inSekt('in-trennlinie', c, `${inKopfMitte(c, 'Ihre Überschrift für diesen Bereich')}
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1px 1fr;gap:clamp(20px,3.4vw,44px);align-items:center;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(240px,30vw,380px)', '', 8)}</div>
+      <div class="wg-hide-mob" style="background:var(--p100);align-self:stretch;"></div>
+      <div class="wg-reveal re">
+        <h3 style="font-size:19px;font-weight:800;margin:0 0 8px;">${txt('untertitel', c.untertitel, 'Ihr Schwerpunkt')}</h3>
+        <div style="font-size:14px;color:#64748b;line-height:1.8;">${txt('text', c.text, D_IN_ABSATZ)}</div>
+        <a href="${esc(c.ctaHref || 'leistungen.html')}" style="display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-weight:800;color:var(--accent);text-decoration:none;font-size:13.5px;">${txt('cta', c.cta, 'Mehr erfahren')} <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+      </div>
+    </div>`))
+
+// 7 — Großer Titel, drei Textspalten, Bild rechts
+inNeu('in-drei-spalten', 'Drei Textspalten', (c) => inSekt('in-drei-spalten', c, `
+    <div class="wg-reveal" style="max-width:720px;margin-bottom:clamp(22px,3.4vw,38px);">
+      <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+      <h2 style="font-size:clamp(22px,3.2vw,38px);font-weight:900;letter-spacing:-.03em;line-height:1.2;margin:12px 0 0;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:1.6fr 1fr;gap:clamp(22px,3.6vw,48px);align-items:start;">
+      <div class="wg-reveal li">
+        <h3 style="font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--p700);margin:0 0 14px;">${txt('untertitel', c.untertitel, 'Ihr Schwerpunkt')}</h3>
+        ${inTextSpalten(c, 3)}
+      </div>
+      <div class="wg-reveal re">
+        <div class="wg-bildbox" style="height:clamp(200px,26vw,320px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 9)}</div>
+        <div style="font-size:13px;font-weight:800;margin-top:12px;">${txt('bildTitel', c.bildTitel, 'Bildunterschrift')}</div>
+      </div>
+    </div>`))
+
+// 8 — Bild links, mehrspaltiger Text rechts
+inNeu('in-bild-spalten', 'Bild + zwei Spalten', (c) => inSekt('in-bild-spalten', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.4fr;gap:clamp(24px,4vw,54px);align-items:start;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(280px,36vw,440px)', '', 10)}</div>
+      <div class="wg-reveal re">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin:12px 0 18px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        ${inTextSpalten(c, 2)}
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 9 — Titel + Text, großes Bild darunter
+inNeu('in-text-bild', 'Text über Bild', (c) => inSekt('in-text-bild', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,54px);align-items:start;margin-bottom:clamp(24px,3.6vw,42px);">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+      </div>
+      <div class="wg-reveal re" style="font-size:14.5px;color:#64748b;line-height:1.8;">${txt('text', c.text, D_IN_ABSATZ)}</div>
+    </div>
+    <div class="wg-reveal">${bildBox('bildHaupt', c.bildHaupt, 'clamp(240px,32vw,420px)', '', 11)}</div>`))
+
+// 10 — Zentriert mit Unterschrift
+inNeu('in-signatur', 'Zentriert mit Unterschrift', (c) => inSekt('in-signatur', c, `${inKopfMitte(c, 'Warum Kunden sich für uns entscheiden')}
+    <div style="max-width:820px;margin:0 auto;">
+      ${inTextSpalten(c, 2)}
+      <div class="wg-reveal" style="text-align:center;">${inSignatur(c)}</div>
+    </div>`))
+
+// 11 — Person mit Bild, Text und Unterschrift
+inNeu('in-person', 'Person mit Unterschrift', (c) => inSekt('in-person', c, `
+    <div class="wg-reveal" style="text-align:center;max-width:640px;margin:0 auto;">
+      <div class="wg-bildbox" style="width:96px;height:96px;border-radius:50%;overflow:hidden;margin:0 auto;">${bild('bildHaupt', c.bildHaupt, COVER, 12)}</div>
+      <h3 style="font-size:19px;font-weight:800;margin:16px 0 4px;">${txt('name', c.name, 'Vorname Nachname')}</h3>
+      <div style="font-size:12.5px;color:#94a3b8;">${txt('rolle', c.rolle, 'Ihre Position')}</div>
+      <div style="font-size:14.5px;color:#64748b;line-height:1.8;margin-top:16px;">${txt('text', c.text, LOREM.satz)}</div>
+      ${inSignatur(c)}
+    </div>`, 'background:var(--p50);'))
+
+// 12 — Merkmal links, Bild rechts, zweites Merkmal unten
+inNeu('in-merkmal-bild', 'Merkmale + Bild', (c) => inSekt('in-merkmal-bild', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.3fr;gap:clamp(22px,3.6vw,48px);align-items:center;">
+      <div class="wg-reveal li" style="display:grid;gap:clamp(20px,3vw,34px);">
+        ${misch(c.merkmale, D_IN_MERKMALE).map((m, i) => `<div>
+          <h3 style="font-size:16.5px;font-weight:800;margin:0 0 6px;">${ed(`merkmale.${i}.titel`, m.titel)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`merkmale.${i}.text`, m.text)}</div>
+        </div>`).join('')}
+      </div>
+      <div class="wg-reveal re">${bildBox('bildHaupt', c.bildHaupt, 'clamp(260px,32vw,400px)', '', 13)}</div>
+    </div>`))
+
+// 13 — Großes Bild links, kompakter Text rechts oben
+inNeu('in-bild-gross', 'Großes Bild', (c) => inSekt('in-bild-gross', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.5fr 1fr;gap:clamp(22px,3.6vw,48px);align-items:start;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(280px,38vw,470px)', '', 14)}</div>
+      <div class="wg-reveal re">
+        <h2 class="wg-t2">${txt('title', c.title, 'Ihre Überschrift')}</h2>
+        <span class="wg-strichlinie"></span>
+        <div style="font-size:14px;color:#64748b;line-height:1.8;">${txt('text', c.text, D_IN_ABSATZ)}</div>
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 14 — Bild oben, zwei Textspalten darunter
+inNeu('in-bild-oben', 'Bild oben, Text unten', (c) => inSekt('in-bild-oben', c, `
+    <div class="wg-reveal" style="margin-bottom:clamp(24px,3.6vw,42px);">${bildBox('bildHaupt', c.bildHaupt, 'clamp(240px,32vw,420px)', '', 15)}</div>
+    ${inTextSpalten(c, 2)}`))
+
+// 15 — Bild oben links, Text rechts, zweites Bild unten rechts
+inNeu('in-treppe', 'Treppen-Anordnung', (c) => inSekt('in-treppe', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(20px,3.4vw,44px);align-items:start;">
+      <div class="wg-reveal li">
+        <div class="wg-bildbox" style="height:clamp(220px,28vw,340px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 16)}</div>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.75;margin-top:16px;">${txt('text', c.text, LOREM.satz)}</div>
+      </div>
+      <div class="wg-reveal re" style="margin-top:clamp(30px,5vw,70px);">
+        <div style="font-size:13.5px;color:#64748b;line-height:1.75;margin-bottom:16px;">${txt('text2', c.text2, LOREM.satz)}</div>
+        <div class="wg-bildbox" style="height:clamp(200px,26vw,320px);${RUND}overflow:hidden;">${bild('bildZwei', c.bildZwei, COVER, 17)}</div>
+      </div>
+    </div>`))
+
+// 16 — Kleines Bild links, großes rechts, Text darüber
+inNeu('in-bild-duo', 'Bild-Duo', (c) => inSekt('in-bild-duo', c, `
+    <div class="wg-reveal" style="max-width:620px;margin-bottom:clamp(22px,3.4vw,38px);">
+      <div style="font-size:14.5px;color:#64748b;line-height:1.8;">${txt('text', c.text, LOREM.satz)}</div>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.9fr;gap:clamp(16px,2.6vw,30px);align-items:end;">
+      <div class="wg-reveal li"><div class="wg-bildbox" style="height:clamp(150px,19vw,230px);${RUND}overflow:hidden;">${bild('bildZwei', c.bildZwei, COVER, 18)}</div></div>
+      <div class="wg-reveal re"><div class="wg-bildbox" style="height:clamp(220px,30vw,380px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 19)}</div></div>
+    </div>`, 'background:var(--p50);'))
+
+// 17 — Titel, zwei Spalten, Autorenzeile
+inNeu('in-autor', 'Mit Autorenzeile', (c) => inSekt('in-autor', c, `
+    <div class="wg-reveal" style="max-width:720px;margin-bottom:clamp(22px,3.4vw,38px);">
+      <h2 class="wg-t2">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+      <span class="wg-strichlinie"></span>
+    </div>
+    ${inTextSpalten(c, 2)}
+    <div class="wg-reveal" style="display:flex;align-items:center;gap:14px;margin-top:clamp(22px,3.4vw,36px);padding-top:20px;border-top:1px solid var(--p100);">
+      <div class="wg-bildbox" style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;">${bild('bildHaupt', c.bildHaupt, COVER, 20)}</div>
+      <div>
+        <div style="font-size:15px;font-weight:800;">${txt('name', c.name, 'Vorname Nachname')}</div>
+        <div style="font-size:12.5px;color:#94a3b8;">${txt('rolle', c.rolle, 'Ihre Position')}</div>
+      </div>
+    </div>`))
+
+// 18 — Text + Unterschrift links, zwei Häkchenlisten rechts
+inNeu('in-listen', 'Mit zwei Listen', (c) => inSekt('in-listen', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.15fr;gap:clamp(24px,4vw,56px);align-items:start;">
+      <div class="wg-reveal li">
+        <span class="wg-eyebrow">${txt('tag', c.tag, 'Über uns')}</span>
+        <h2 class="wg-t2" style="margin-top:12px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        <div style="font-size:14px;color:#64748b;line-height:1.8;margin-top:12px;">${txt('text', c.text, LOREM.satz)}</div>
+        ${inSignatur(c)}
+      </div>
+      <div class="wg-reveal re" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,3vw,36px);">
+        ${misch(c.listen, D_IN_LISTEN).map((l, i) => `<div>
+          <h3 style="font-size:15.5px;font-weight:800;margin:0 0 12px;">${ed(`listen.${i}.titel`, l.titel)}</h3>
+          <ul style="list-style:none;padding:0;margin:0;display:grid;gap:9px;">
+            ${(Array.isArray(l.punkte) ? l.punkte : []).map((p, j) => `<li style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#475569;">
+              <span style="color:var(--accent);font-size:12px;margin-top:3px;"><i class="fa-solid fa-check"></i></span>${ed(`listen.${i}.punkte.${j}`, p)}</li>`).join('')}
+          </ul>
+          <a href="${esc(l.href || 'leistungen.html')}" style="display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-weight:800;color:var(--accent);text-decoration:none;font-size:13px;">${ed(`listen.${i}.cta`, l.cta)} <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+        </div>`).join('')}
+      </div>
+    </div>`, 'background:var(--p50);'))
+
+// 19 — Titel links, Bild mittig, Einträge rechts
+inNeu('in-drei-zonen', 'Drei Zonen', (c) => inSekt('in-drei-zonen', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:clamp(20px,3.4vw,44px);align-items:center;">
+      <div class="wg-reveal li">
+        <h2 style="font-size:clamp(21px,2.8vw,32px);font-weight:900;letter-spacing:-.03em;line-height:1.2;margin:0 0 12px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        <div style="font-size:13.5px;color:#64748b;line-height:1.75;">${txt('text', c.text, LOREM.kurz)}</div>
+      </div>
+      <div class="wg-reveal"><div class="wg-bildbox" style="height:clamp(240px,30vw,380px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 21)}</div></div>
+      <div class="wg-reveal re" style="display:grid;gap:0;">
+        ${misch(c.merkmale, D_IN_MERKMALE).map((m, i) => `<div style="padding:16px 0;${i ? 'border-top:1px solid var(--p100);' : ''}">
+          <h3 style="font-size:15.5px;font-weight:800;margin:0 0 5px;">${ed(`merkmale.${i}.titel`, m.titel)}</h3>
+          <div style="font-size:13px;color:#64748b;line-height:1.65;">${ed(`merkmale.${i}.text`, m.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+// 20 — Titel links, zwei Text-Einträge mit Links rechts
+inNeu('in-zwei-links', 'Zwei Einträge mit Link', (c) => inSekt('in-zwei-links', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(24px,4vw,56px);align-items:start;">
+      <div class="wg-reveal li">
+        <h2 class="wg-t2">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+        <span class="wg-strichlinie"></span>
+      </div>
+      <div class="wg-reveal re" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,3vw,36px);">
+        ${misch(c.merkmale, D_IN_MERKMALE).map((m, i) => `<div>
+          <div style="font-size:13px;font-weight:900;color:var(--accent);margin-bottom:7px;">${ed(`merkmale.${i}.titel`, m.titel)}</div>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.75;">${ed(`merkmale.${i}.text`, m.text)}</div>
+          <a href="${esc(m.href || 'leistungen.html')}" style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-weight:800;color:var(--p700);text-decoration:none;font-size:13px;">${ed(`merkmale.${i}.cta`, m.cta)} <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></a>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+// 21 — Badge, Titel links, farbige Einträge rechts
+inNeu('in-badge', 'Mit Badge', (c) => inSekt('in-badge', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.15fr;gap:clamp(24px,4vw,56px);align-items:start;">
+      <div class="wg-reveal li">
+        <span style="display:inline-block;background:var(--p50);border:1px solid var(--p100);color:var(--p700);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;border-radius:99px;padding:6px 14px;">${txt('badge', c.badge, 'Ihr Stichwort')}</span>
+        <h2 class="wg-t2" style="margin-top:16px;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+      </div>
+      <div class="wg-reveal re" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,3vw,34px);">
+        ${misch(c.merkmale, D_IN_MERKMALE).map((m, i) => `<div class="wg-karte" style="background:var(--p50);border-radius:14px;padding:20px;">
+          <div style="font-size:14px;font-weight:900;color:var(--accent);margin-bottom:7px;">${ed(`merkmale.${i}.titel`, m.titel)}</div>
+          <div style="font-size:13px;color:#64748b;line-height:1.7;">${ed(`merkmale.${i}.text`, m.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+// 22 — Titel links, Text rechts, zwei Bilder unten
+inNeu('in-titel-bilder', 'Titel + Bilder unten', (c) => inSekt('in-titel-bilder', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(22px,3.6vw,48px);align-items:start;margin-bottom:clamp(22px,3.4vw,38px);">
+      <div class="wg-reveal li">
+        <h2 style="font-size:clamp(21px,2.9vw,34px);font-weight:900;letter-spacing:-.03em;line-height:1.2;margin:0;">${txt('title', c.title, 'Ihre Überschrift für diesen Bereich')}</h2>
+      </div>
+      <div class="wg-reveal re" style="font-size:14px;color:#64748b;line-height:1.8;">${txt('text', c.text, D_IN_ABSATZ)}</div>
+    </div>
+    <div class="wg-split" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.6vw,28px);">
+      <div class="wg-reveal li"><div class="wg-bildbox" style="height:clamp(200px,25vw,300px);${RUND}overflow:hidden;">${bild('bildHaupt', c.bildHaupt, COVER, 22)}</div></div>
+      <div class="wg-reveal re"><div class="wg-bildbox" style="height:clamp(200px,25vw,300px);${RUND}overflow:hidden;">${bild('bildZwei', c.bildZwei, COVER, 23)}</div></div>
+    </div>`, 'background:var(--p50);'))
+
+// 23 — Bild links, nummerierte Einträge rechts
+inNeu('in-bild-eintraege', 'Bild + Einträge', (c) => inSekt('in-bild-eintraege', c, `
+    <div class="wg-split" style="display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(22px,3.6vw,48px);align-items:center;">
+      <div class="wg-reveal li">${bildBox('bildHaupt', c.bildHaupt, 'clamp(240px,30vw,380px)', '', 24)}</div>
+      <div class="wg-reveal re" style="display:grid;gap:0;">
+        ${misch(c.merkmale, D_IN_MERKMALE).map((m, i) => `<div style="padding:18px 0;${i ? 'border-top:1px solid var(--p100);' : ''}">
+          <h3 style="font-size:16px;font-weight:800;margin:0 0 6px;">${ed(`merkmale.${i}.titel`, m.titel)}</h3>
+          <div style="font-size:13.5px;color:#64748b;line-height:1.7;">${ed(`merkmale.${i}.text`, m.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`))
+
+export const INHALT = { type: 'inhalt', label: 'Content / Textbereiche', variants: IN }
+
 export const KOMBI = { type: 'kombi', label: 'Bild + Text Kombis', variants: V }
 
-export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF, iconboxen: ICONBOXEN, aufruf: AUFRUF }
+export const ZUSATZ3_BLOECKE = { kombi: KOMBI, ablauf: ABLAUF, iconboxen: ICONBOXEN, aufruf: AUFRUF, inhalt: INHALT }
 
 export const ZUSATZ3_ADDABLE = [
   { type: 'kombi', label: 'Bild + Text Kombis', fa: 'object-group', cat: 'Inhalt' },
   { type: 'ablauf', label: 'Step Box / Abläufe', fa: 'stairs', cat: 'Inhalt' },
   { type: 'iconboxen', label: 'Icon-Boxen (Vorteile)', fa: 'icons', cat: 'Inhalt' },
   { type: 'aufruf', label: 'Call to Action', fa: 'bullhorn', cat: 'Konversion' },
+  { type: 'inhalt', label: 'Content / Textbereiche', fa: 'align-left', cat: 'Inhalt' },
 ]
 
 export const ZUSATZ3_DEFAULTS = {
+  inhalt: {
+    tag: 'Über uns',
+    title: 'Ihre Überschrift für diesen Bereich',
+    text: LOREM.absatz,
+    text2: LOREM.satz,
+    untertitel: 'Ihr Schwerpunkt',
+    untertext: LOREM.kurz,
+    cta: 'Mehr erfahren', ctaHref: 'leistungen.html',
+    badge: 'Ihr Stichwort',
+    icon: 'phone',
+    telefon: 'Ihre Telefonnummer',
+    name: 'Vorname Nachname', rolle: 'Ihre Position',
+    signatur: 'Ihr Name', signaturRolle: 'Ihre Position',
+    bildTitel: 'Bildunterschrift', bildUnter: 'Kurze Erläuterung',
+    bildTitel2: 'Bildunterschrift', bildUnter2: 'Kurze Erläuterung',
+    spalten: [{ text: LOREM.absatz }, { text: LOREM.absatz }, { text: LOREM.absatz }],
+    koennen: [
+      { label: 'Ihr Schwerpunkt', wert: 0 },
+      { label: 'Ihr Schwerpunkt', wert: 0 },
+      { label: 'Ihr Schwerpunkt', wert: 0 },
+    ],
+    merkmale: [
+      { titel: 'Ihr Schwerpunkt', text: 'Beschreiben Sie hier diesen Punkt in ein bis zwei Sätzen.', cta: 'Mehr erfahren', href: 'leistungen.html' },
+      { titel: 'Ihr Schwerpunkt', text: 'Beschreiben Sie hier diesen Punkt in ein bis zwei Sätzen.', cta: 'Mehr erfahren', href: 'leistungen.html' },
+    ],
+    listen: [
+      { titel: 'Warum wir', punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4'], cta: 'Mehr erfahren', href: 'leistungen.html' },
+      { titel: 'Unsere Leistungen', punkte: ['Stichwort 1', 'Stichwort 2', 'Stichwort 3', 'Stichwort 4'], cta: 'Mehr erfahren', href: 'leistungen.html' },
+    ],
+  },
   aufruf: {
     tag: 'Nächster Schritt',
     title: 'Ihre Aufforderung in einem Satz',
